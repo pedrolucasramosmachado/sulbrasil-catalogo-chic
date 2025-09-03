@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, LogOut, CheckCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminHeader } from '@/components/AdminHeader';
 
 interface ProductData {
   name: string;
@@ -29,14 +30,8 @@ const AdminImport = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
-
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   const parseCsvData = (csv: string): ProductData[] => {
     const lines = csv.trim().split('\n');
@@ -211,21 +206,10 @@ const AdminImport = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Importador de Catálogo - Sulbrasil</CardTitle>
-              <CardDescription>
-                Faça upload das imagens e dados dos produtos
-              </CardDescription>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </CardHeader>
-        </Card>
+        <AdminHeader 
+          title="Importador de Catálogo - Sulbrasil" 
+          description="Faça upload das imagens e dados dos produtos" 
+        />
 
         {/* Upload Progress */}
         {(isUploading || uploadProgress > 0) && (

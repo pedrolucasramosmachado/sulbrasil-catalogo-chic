@@ -2,36 +2,19 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
-import { Upload, Package, LogOut } from 'lucide-react';
+import { Upload, Package } from 'lucide-react';
+import { AdminHeader } from '@/components/AdminHeader';
 
 const AdminHome = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/admin/login');
-  };
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Painel Administrativo</h1>
-            <p className="text-muted-foreground mt-1">
-              Bem-vindo, {user?.email}
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
-        </div>
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        <AdminHeader 
+          title="Painel Administrativo" 
+          description={`Bem-vindo, ${user?.email}`} 
+        />
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
           <Card className="hover:shadow-lg transition-shadow">

@@ -19,6 +19,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { AdminHeader } from '@/components/AdminHeader';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -252,30 +253,10 @@ const AdminProducts = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Voltar
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Gerenciar Produtos</h1>
-              <p className="text-muted-foreground mt-1">
-                {products.length} produtos cadastrados
-              </p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={handleLogout}
-            className="flex items-center gap-2"
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
-        </div>
+        <AdminHeader 
+          title="Gerenciar Produtos" 
+          description={`${products.length} produtos cadastrados`} 
+        />
 
         <Card className="mb-6">
           <CardHeader>
