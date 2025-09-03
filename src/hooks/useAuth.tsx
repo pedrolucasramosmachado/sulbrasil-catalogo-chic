@@ -36,16 +36,8 @@ export const useAuth = () => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const redirectUrl = `${window.location.origin}/admin`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl
-      }
-    });
-    return { error };
+    // Signup removido - apenas para compatibilidade
+    return { error: new Error('Cadastro não disponível') };
   };
 
   const signOut = async () => {
