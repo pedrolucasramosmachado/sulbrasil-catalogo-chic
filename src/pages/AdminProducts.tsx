@@ -225,6 +225,31 @@ const AdminProducts = () => {
     }
   };
 
+  const deleteAllProducts = async () => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+      
+      if (error) throw error;
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Todos os produtos foram excluídos!',
+      });
+      
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao excluir todos os produtos:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao excluir produtos',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const formatPrice = (price: number | null) => {
     if (!price) return '-';
     return new Intl.NumberFormat('pt-BR', {
@@ -303,13 +328,42 @@ const AdminProducts = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openCreateDialog} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Novo Produto
-                  </Button>
-                </DialogTrigger>
+              <div className="flex gap-2">
+                {products.length > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="flex items-center gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Excluir Todos
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir TODOS os {products.length} produtos? 
+                          Esta ação é irreversível e não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={deleteAllProducts}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Sim, excluir todos
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={openCreateDialog} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Novo Produto
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -467,7 +521,8 @@ const AdminProducts = () => {
                     </form>
                   </Form>
                 </DialogContent>
-              </Dialog>
+                </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
