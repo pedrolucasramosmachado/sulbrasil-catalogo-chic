@@ -26,17 +26,17 @@ const Index = () => {
     sortBy: "name"
   });
 
-  // Get products based on category and filters
-  const displayProducts = useMemo(() => {
-    const categoryProducts = getProductsByCategory(selectedCategory);
-    return filterProducts(categoryProducts, filters.colors, filters.priceRange, filters.sortBy);
-  }, [selectedCategory, filters, products]);
-
-  const filterProducts = (products: Product[], colors: string[], priceRange: [number, number], sortBy: string) => {
+  // Helpers
+  function filterProducts(
+    products: Product[],
+    colors: string[],
+    priceRange: [number, number],
+    sortBy: string
+  ) {
     let filtered = [...products];
 
     // Filter by price range
-    filtered = filtered.filter(product => {
+    filtered = filtered.filter((product) => {
       const price = product.price || 0;
       return price >= priceRange[0] && price <= priceRange[1];
     });
@@ -56,7 +56,13 @@ const Index = () => {
     });
 
     return filtered;
-  };
+  }
+
+  // Get products based on category and filters
+  const displayProducts = useMemo(() => {
+    const categoryProducts = getProductsByCategory(selectedCategory);
+    return filterProducts(categoryProducts, filters.colors, filters.priceRange, filters.sortBy);
+  }, [selectedCategory, filters, products]);
 
   const categories = getCategories();
 
