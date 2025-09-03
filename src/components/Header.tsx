@@ -3,24 +3,17 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, Menu, Search, User } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import sulbrasilLogo from "@/assets/sulbrasil-logo.png";
-
-const categories = [
-  { name: "Blusas e Camisetas", color: "category-blusas", count: 45 },
-  { name: "Vestidos", color: "category-vestidos", count: 32 },
-  { name: "Calças", color: "category-calcas", count: 28 },
-  { name: "Shorts", color: "category-shorts", count: 22 },
-  { name: "Conjuntos", color: "category-conjuntos", count: 18 },
-  { name: "Listradas e Estonadas", color: "category-listradas", count: 35 }
-];
 
 interface HeaderProps {
   onCategorySelect: (category: string) => void;
   selectedCategory: string;
   cartItemsCount?: number;
+  categories: string[];
 }
 
-export const Header = ({ onCategorySelect, selectedCategory, cartItemsCount = 0 }: HeaderProps) => {
+export const Header = ({ onCategorySelect, selectedCategory, cartItemsCount = 0, categories }: HeaderProps) => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">
       <div className="container mx-auto px-4">
@@ -38,26 +31,20 @@ export const Header = ({ onCategorySelect, selectedCategory, cartItemsCount = 0 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6">
             <Button 
-              variant={selectedCategory === "" ? "default" : "ghost"}
-              onClick={() => onCategorySelect("")}
+              variant={selectedCategory === "todos" ? "default" : "ghost"}
+              onClick={() => onCategorySelect("todos")}
               className="text-sm font-medium"
             >
-              Início
+              Todos
             </Button>
-            {categories.map((category) => (
+            {categories.filter(c => c !== "todos").map((category) => (
               <Button
-                key={category.name}
-                variant={selectedCategory === category.name ? "default" : "ghost"}
-                onClick={() => onCategorySelect(category.name)}
-                className="text-sm font-medium relative"
+                key={category}
+                variant={selectedCategory === category ? "default" : "ghost"}
+                onClick={() => onCategorySelect(category)}
+                className="text-sm font-medium"
               >
-                {category.name}
-                <Badge 
-                  variant="secondary" 
-                  className="ml-2 text-xs bg-accent-soft text-accent-foreground"
-                >
-                  {category.count}
-                </Badge>
+                {category}
               </Button>
             ))}
           </nav>
@@ -81,9 +68,11 @@ export const Header = ({ onCategorySelect, selectedCategory, cartItemsCount = 0 
               )}
             </Button>
             
-            <Button variant="ghost" size="icon">
-              <User className="w-5 h-5" />
-            </Button>
+            <Link to="/admin/login">
+              <Button variant="ghost" size="icon">
+                <User className="w-5 h-5" />
+              </Button>
+            </Link>
 
             {/* Mobile Menu */}
             <Sheet>
@@ -103,29 +92,30 @@ export const Header = ({ onCategorySelect, selectedCategory, cartItemsCount = 0 
                   </div>
                   
                   <Button 
-                    variant={selectedCategory === "" ? "default" : "ghost"}
-                    onClick={() => onCategorySelect("")}
+                    variant={selectedCategory === "todos" ? "default" : "ghost"}
+                    onClick={() => onCategorySelect("todos")}
                     className="justify-start"
                   >
-                    Início
+                    Todos
                   </Button>
                   
-                  {categories.map((category) => (
+                  {categories.filter(c => c !== "todos").map((category) => (
                     <Button
-                      key={category.name}
-                      variant={selectedCategory === category.name ? "default" : "ghost"}
-                      onClick={() => onCategorySelect(category.name)}
-                      className="justify-between"
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "ghost"}
+                      onClick={() => onCategorySelect(category)}
+                      className="justify-start"
                     >
-                      <span>{category.name}</span>
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-accent-soft text-accent-foreground"
-                      >
-                        {category.count}
-                      </Badge>
+                      {category}
                     </Button>
                   ))}
+                  
+                  <Link to="/admin/login">
+                    <Button variant="outline" className="w-full justify-start mt-4">
+                      <User className="w-4 h-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
                 </div>
               </SheetContent>
             </Sheet>

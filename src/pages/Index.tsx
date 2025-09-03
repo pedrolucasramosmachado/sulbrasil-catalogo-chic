@@ -2,21 +2,23 @@ import { useState, useMemo, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HeroSection } from "@/components/HeroSection";
-import { ProductCard, Product } from "@/components/ProductCard";
+import { ProductCard } from "@/components/ProductCard";
 import { ProductFilters, FilterState } from "@/components/ProductFilters";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { mockProducts, getProductsByCategory, filterProducts } from "@/data/mockProducts";
+import { Product, useProducts } from "@/hooks/useProducts";
 import { Grid3X3, List, ArrowUp } from "lucide-react";
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState("todos");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showScrollTop, setShowScrollTop] = useState(false);
+  
+  const { products, loading, error, getProductsByCategory, getCategories } = useProducts();
   
   const [filters, setFilters] = useState<FilterState>({
     colors: [],
@@ -28,7 +30,35 @@ const Index = () => {
   const displayProducts = useMemo(() => {
     const categoryProducts = getProductsByCategory(selectedCategory);
     return filterProducts(categoryProducts, filters.colors, filters.priceRange, filters.sortBy);
-  }, [selectedCategory, filters]);
+  }, [selectedCategory, filters, products]);
+
+  const filterProducts = (products: Product[], colors: string[], priceRange: [number, number], sortBy: string) => {
+    let filtered = [...products];
+
+    // Filter by price range
+    filtered = filtered.filter(product => {
+      const price = product.price || 0;
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
+
+    // Sort products
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price":
+          return (a.price || 0) - (b.price || 0);
+        case "newest":
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  };
+
+  const categories = getCategories();
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -88,10 +118,11 @@ const Index = () => {
         onCategorySelect={handleCategorySelect}
         selectedCategory={selectedCategory}
         cartItemsCount={3}
+        categories={categories}
       />
 
-      {/* Hero Section - only show when no category is selected */}
-      {!selectedCategory && (
+      {/* Hero Section - only show when showing all products */}
+      {selectedCategory === "todos" && (
         <HeroSection onExploreProducts={handleExploreProducts} />
       )}
 
@@ -103,7 +134,7 @@ const Index = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-3xl font-bold text-foreground mb-2">
-                  {selectedCategory || "Todos os Produtos"}
+                  {selectedCategory === "todos" ? "Todos os Produtos" : selectedCategory}
                 </h2>
                 <p className="text-foreground-muted">
                   {displayProducts.length} produtos encontrados
@@ -139,43 +170,51 @@ const Index = () => {
 
             {/* Products Grid */}
             <div className="flex-1">
-              {displayProducts.length > 0 ? (
-                <div className={`grid gap-6 ${
-                  viewMode === "grid" 
-                    ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
-                    : "grid-cols-1"
-                }`}>
-                  {displayProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      onViewDetails={handleViewDetails}
-                      onConsult={handleConsult}
-                      onToggleFavorite={handleToggleFavorite}
-                    />
-                  ))}
-                </div>
-              ) : (
+              {loading ? (
                 <div className="text-center py-16">
-                  <div className="mb-4 text-6xl opacity-20">🔍</div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">
-                    Nenhum produto encontrado
-                  </h3>
-                  <p className="text-foreground-muted mb-4">
-                    Tente ajustar seus filtros ou explore outras categorias
-                  </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setFilters({ colors: [], priceRange: [0, 300], sortBy: "name" });
-                      setSelectedCategory("");
-                    }}
-                  >
-                    Limpar Filtros
-                  </Button>
+                  <div className="text-2xl mb-4">Carregando produtos...</div>
                 </div>
-              )}
-            </div>
+              ) : error ? (
+                <div className="text-center py-16">
+                  <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
+                </div>
+               ) : displayProducts.length > 0 ? (
+                 <div className={`grid gap-6 ${
+                   viewMode === "grid" 
+                     ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" 
+                     : "grid-cols-1"
+                 }`}>
+                   {displayProducts.map((product) => (
+                     <ProductCard
+                       key={product.id}
+                       product={product}
+                       onViewDetails={handleViewDetails}
+                       onConsult={handleConsult}
+                       onToggleFavorite={handleToggleFavorite}
+                     />
+                   ))}
+                 </div>
+               ) : (
+                 <div className="text-center py-16">
+                   <div className="mb-4 text-6xl opacity-20">🔍</div>
+                   <h3 className="text-xl font-semibold text-foreground mb-2">
+                     Nenhum produto encontrado
+                   </h3>
+                   <p className="text-foreground-muted mb-4">
+                     Tente ajustar seus filtros ou explore outras categorias
+                   </p>
+                   <Button
+                     variant="outline"
+                     onClick={() => {
+                       setFilters({ colors: [], priceRange: [0, 300], sortBy: "name" });
+                       setSelectedCategory("todos");
+                     }}
+                   >
+                     Limpar Filtros
+                   </Button>
+                 </div>
+               )}
+             </div>
           </div>
         </div>
       </section>

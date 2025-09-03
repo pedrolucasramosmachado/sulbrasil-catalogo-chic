@@ -4,18 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, MessageCircle, Heart } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-
-export interface Product {
-  id: string;
-  name: string;
-  image: string;
-  colors: string[];
-  retailPrice: number;
-  wholesalePrice: number;
-  category: string;
-  isNew?: boolean;
-  isFavorite?: boolean;
-}
+import { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
   product: Product;
@@ -48,7 +37,7 @@ export const ProductCard = ({
           onClick={() => onViewDetails(product)}
         >
           <img
-            src={product.image}
+            src={product.image_url || "/placeholder.svg"}
             alt={product.name}
             className={cn(
               "w-full h-full object-cover transition-all duration-500 group-hover:scale-110",
@@ -68,10 +57,7 @@ export const ProductCard = ({
               className="w-8 h-8 rounded-full bg-background/90 hover:bg-background border-card-border"
               onClick={handleToggleFavorite}
             >
-              <Heart className={cn(
-                "w-4 h-4 transition-colors",
-                product.isFavorite ? "fill-accent text-accent" : "text-foreground-muted"
-              )} />
+              <Heart className="w-4 h-4 text-foreground-muted" />
             </Button>
             <Button
               size="icon"
@@ -88,9 +74,9 @@ export const ProductCard = ({
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {product.isNew && (
+            {product.is_featured && (
               <Badge className="bg-accent text-accent-foreground text-xs font-medium">
-                Novo
+                Destaque
               </Badge>
             )}
           </div>
@@ -103,37 +89,49 @@ export const ProductCard = ({
             {product.name}
           </h3>
           
-          {/* Colors */}
-          <div className="flex flex-wrap gap-1">
-            {product.colors.slice(0, 6).map((color, index) => (
-              <div
-                key={index}
-                className="text-xs bg-accent-soft text-accent-foreground px-2 py-1 rounded-full font-medium"
-              >
-                {color}
-              </div>
-            ))}
-            {product.colors.length > 6 && (
-              <div className="text-xs bg-surface-elevated text-foreground-muted px-2 py-1 rounded-full font-medium">
-                +{product.colors.length - 6}
-              </div>
-            )}
-          </div>
+          {/* Tags */}
+          {product.tags && product.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {product.tags.slice(0, 6).map((tag, index) => (
+                <div
+                  key={index}
+                  className="text-xs bg-accent-soft text-accent-foreground px-2 py-1 rounded-full font-medium"
+                >
+                  {tag}
+                </div>
+              ))}
+              {product.tags.length > 6 && (
+                <div className="text-xs bg-surface-elevated text-foreground-muted px-2 py-1 rounded-full font-medium">
+                  +{product.tags.length - 6}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Prices */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground-muted">Varejo:</span>
-              <span className="font-semibold text-price-retail">
-                R$ {product.retailPrice.toFixed(2).replace('.', ',')}
-              </span>
+          {/* Description */}
+          {product.description && (
+            <p className="text-xs text-foreground-muted line-clamp-2">
+              {product.description}
+            </p>
+          )}
+
+          {/* Price */}
+          {product.price && (
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground-muted">Preço:</span>
+                <span className="font-semibold text-primary">
+                  R$ {product.price.toFixed(2).replace('.', ',')}
+                </span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground-muted">Atacado:</span>
-              <span className="font-semibold text-price-wholesale">
-                R$ {product.wholesalePrice.toFixed(2).replace('.', ',')}
-              </span>
-            </div>
+          )}
+
+          {/* Category */}
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary" className="text-xs">
+              {product.category}
+            </Badge>
           </div>
         </div>
       </CardContent>

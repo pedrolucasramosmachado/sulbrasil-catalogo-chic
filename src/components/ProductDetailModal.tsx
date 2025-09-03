@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MessageCircle, Heart, Share2, ShoppingBag } from "lucide-react";
-import { Product } from "@/components/ProductCard";
+import { Product } from "@/hooks/useProducts";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ export const ProductDetailModal = ({
           <div className="space-y-4">
             <div className="aspect-[3/4] bg-surface-elevated rounded-lg overflow-hidden">
               <img
-                src={product.image}
+                src={product.image_url || "/placeholder.svg"}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
@@ -67,7 +67,7 @@ export const ProductDetailModal = ({
                   className="w-20 h-20 bg-surface-elevated rounded-lg border border-card-border cursor-pointer hover:border-primary transition-colors"
                 >
                   <img
-                    src={product.image}
+                    src={product.image_url || "/placeholder.svg"}
                     alt={`${product.name} - ${i}`}
                     className="w-full h-full object-cover rounded-lg opacity-70 hover:opacity-100 transition-opacity"
                   />
@@ -88,9 +88,9 @@ export const ProductDetailModal = ({
                     <Badge className="bg-accent-soft text-accent-foreground">
                       {product.category}
                     </Badge>
-                    {product.isNew && (
+                    {product.is_featured && (
                       <Badge className="bg-accent text-accent-foreground">
-                        Novo
+                        Destaque
                       </Badge>
                     )}
                   </div>
@@ -102,10 +102,7 @@ export const ProductDetailModal = ({
                     size="icon"
                     onClick={() => onToggleFavorite?.(product.id)}
                   >
-                    <Heart className={cn(
-                      "w-5 h-5",
-                      product.isFavorite ? "fill-accent text-accent" : "text-foreground-muted"
-                    )} />
+                    <Heart className="w-5 h-5 text-foreground-muted" />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={handleShare}>
                     <Share2 className="w-5 h-5" />
@@ -115,57 +112,62 @@ export const ProductDetailModal = ({
             </DialogHeader>
 
             {/* Prices */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-4 bg-surface rounded-lg">
-                <div>
-                  <p className="text-sm text-foreground-muted">Preço de Varejo</p>
-                  <p className="text-2xl font-bold text-price-retail">
-                    R$ {product.retailPrice.toFixed(2).replace('.', ',')}
-                  </p>
+            {product.price ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm text-foreground-muted">Preço</p>
+                    <p className="text-2xl font-bold text-primary">
+                      R$ {product.price.toFixed(2).replace('.', ',')}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-foreground-muted">Preço de Atacado</p>
-                  <p className="text-2xl font-bold text-price-wholesale">
-                    R$ {product.wholesalePrice.toFixed(2).replace('.', ',')}
-                  </p>
+                
+                <p className="text-xs text-foreground-muted text-center">
+                  *Consulte condições especiais para compra
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm text-foreground-muted">Consulte o preço</p>
+                  </div>
                 </div>
               </div>
-              
-              <p className="text-xs text-foreground-muted text-center">
-                *Consulte condições para compra no atacado
-              </p>
-            </div>
+            )}
 
             <Separator />
 
-            {/* Colors */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Cores Disponíveis</h4>
-              <div className="grid grid-cols-3 gap-2">
-                {product.colors.map((color) => (
-                  <Button
-                    key={color}
-                    variant={selectedColor === color ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedColor(color)}
-                    className="text-sm"
-                  >
-                    {color}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <Separator />
+            {/* Tags/Colors */}
+            {product.tags && product.tags.length > 0 && (
+              <>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-foreground">Tags</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    {product.tags.map((tag) => (
+                      <Button
+                        key={tag}
+                        variant={selectedColor === tag ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setSelectedColor(tag)}
+                        className="text-sm"
+                      >
+                        {tag}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
 
             {/* Product Description */}
             <div className="space-y-3">
               <h4 className="font-semibold text-foreground">Descrição do Produto</h4>
               <div className="text-sm text-foreground-muted space-y-2">
                 <p>
-                  Peça confeccionada com tecidos de alta qualidade, seguindo os mais altos 
-                  padrões da indústria têxtil brasileira. Design moderno e elegante que 
-                  combina conforto e estilo.
+                  {product.description || "Peça confeccionada com tecidos de alta qualidade, seguindo os mais altos padrões da indústria têxtil brasileira. Design moderno e elegante que combina conforto e estilo."}
                 </p>
                 <p>
                   <strong>Características:</strong>
