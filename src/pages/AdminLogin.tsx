@@ -21,7 +21,7 @@ const AdminLogin = () => {
     if (user) {
       // Verificar se o email está na allowlist
       if (user.email === 'pedroramosmachado19@gmail.com') {
-        navigate('/admin');
+        navigate('/admin/import');
       } else {
         setError('Acesso restrito. Email não autorizado.');
         // Fazer logout do usuário não autorizado

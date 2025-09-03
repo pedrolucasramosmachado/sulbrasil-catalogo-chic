@@ -34,11 +34,7 @@ const AdminHome = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" 
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/admin/import'); } }}
-                onClick={() => navigate('/admin/import')}>
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Upload className="h-8 w-8 text-primary" />

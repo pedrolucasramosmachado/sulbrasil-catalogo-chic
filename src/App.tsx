@@ -22,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
+          <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/import" element={<RequireAuth><AdminImport /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

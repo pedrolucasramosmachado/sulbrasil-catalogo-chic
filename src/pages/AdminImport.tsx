@@ -32,11 +32,6 @@ const AdminImport = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/admin/login');
-    }
-  }, [user, navigate]);
 
   const handleLogout = async () => {
     await signOut();
