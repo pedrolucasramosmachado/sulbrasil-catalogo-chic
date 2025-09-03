@@ -2,41 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Sulbrasil Fashion Catalog Design System - Modern & Feminine */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Main Brand Colors - Elegant Rose & Deep Navy */
+    --primary: 320 65% 52%; /* Elegant rose pink */
+    --primary-foreground: 0 0% 98%;
+    --primary-hover: 320 70% 47%;
+    
+    /* Secondary - Soft Neutrals */
+    --secondary: 340 15% 95%; /* Soft blush */
+    --secondary-foreground: 340 25% 25%;
+    
+    /* Background & Surface */
+    --background: 0 0% 100%; /* Pure white */
+    --surface: 340 20% 98%; /* Very light blush */
+    --surface-elevated: 340 30% 96%;
+    
+    /* Text Colors */
+    --foreground: 340 25% 15%; /* Deep charcoal with pink undertone */
+    --foreground-muted: 340 15% 45%;
+    --foreground-subtle: 340 10% 65%;
+    
+    /* Accent Colors */
+    --accent: 280 85% 60%; /* Vibrant purple accent */
+    --accent-foreground: 0 0% 98%;
+    --accent-soft: 280 45% 92%;
+    
+    /* Functional Colors */
+    --success: 145 70% 45%;
+    --warning: 35 85% 55%;
+    --error: 0 72% 55%;
+    
+    /* Cards & Components */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 340 25% 15%;
+    --card-border: 340 20% 90%;
+    
+    /* Interactive Elements */
+    --border: 340 25% 88%;
+    --border-subtle: 340 15% 92%;
+    --input: 340 20% 95%;
+    --ring: 320 65% 52%;
+    
+    /* Pricing Colors */
+    --price-retail: 145 70% 45%; /* Green for retail */
+    --price-wholesale: 220 85% 55%; /* Blue for wholesale */
+    
+    /* Category Colors */
+    --category-blusas: 340 70% 60%;
+    --category-vestidos: 280 70% 60%;
+    --category-calcas: 200 70% 60%;
+    --category-shorts: 120 70% 60%;
+    --category-conjuntos: 60 70% 60%;
+    --category-listradas: 320 70% 60%;
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(320, 65%, 52%) 0%, hsl(280, 85%, 60%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0, 0%, 100%) 0%, hsl(340, 20%, 98%) 100%);
+    --gradient-button: linear-gradient(135deg, hsl(320, 65%, 52%) 0%, hsl(320, 70%, 47%) 100%);
+    
+    /* Shadows */
+    --shadow-soft: 0 2px 10px hsl(340, 25%, 15%, 0.08);
+    --shadow-medium: 0 4px 20px hsl(340, 25%, 15%, 0.12);
+    --shadow-strong: 0 8px 30px hsl(340, 25%, 15%, 0.16);
+    --shadow-glow: 0 0 30px hsl(320, 65%, 52%, 0.3);
+    
+    /* Animations */
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
