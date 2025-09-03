@@ -19,7 +19,7 @@ export const AdminHeader = ({ title, description }: AdminHeaderProps) => {
   };
 
   const handleGoHome = () => {
-    navigate('/admin');
+    navigate('/');
   };
 
   return (
