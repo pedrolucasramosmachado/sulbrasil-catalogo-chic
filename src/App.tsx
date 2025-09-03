@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminImport from "./pages/AdminImport";
 import AdminHome from "./pages/AdminHome";
+import AdminProducts from "./pages/AdminProducts";
 import { RequireAuth } from "./components/RequireAuth";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/import" element={<RequireAuth><AdminImport /></RequireAuth>} />
+          <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

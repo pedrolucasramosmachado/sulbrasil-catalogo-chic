@@ -56,12 +56,12 @@ const AdminHome = () => {
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow opacity-50">
+          <Card className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <Package className="h-8 w-8 text-muted-foreground" />
+                <Package className="h-8 w-8 text-primary" />
                 <div>
-                  <CardTitle className="text-muted-foreground">Gerenciar Produtos</CardTitle>
+                  <CardTitle>Gerenciar Produtos</CardTitle>
                   <CardDescription>
                     Visualizar e editar produtos cadastrados
                   </CardDescription>
@@ -70,10 +70,10 @@ const AdminHome = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Em breve: gerenciamento completo do catálogo de produtos.
+                Gerencie todos os produtos do catálogo de forma completa.
               </p>
-              <Button disabled className="mt-4 w-full">
-                Em Desenvolvimento
+              <Button className="mt-4 w-full" asChild>
+                <Link to="/admin/products">Gerenciar Produtos</Link>
               </Button>
             </CardContent>
           </Card>
