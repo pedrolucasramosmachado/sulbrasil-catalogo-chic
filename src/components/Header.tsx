@@ -22,7 +22,7 @@ export const Header = () => {
               <ShoppingBag className="w-5 h-5" />
             </Button>
             
-            <Link to="/admin/login">
+            <Link to="/admin/products">
               <Button variant="ghost" size="icon">
                 <User className="w-5 h-5" />
               </Button>

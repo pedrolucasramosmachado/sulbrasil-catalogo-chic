@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
-import AdminImport from "./pages/AdminImport";
 import AdminHome from "./pages/AdminHome";
 import AdminProducts from "./pages/AdminProducts";
 import { RequireAuth } from "./components/RequireAuth";
@@ -24,7 +23,6 @@ const App = () => (
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
-          <Route path="/admin/import" element={<RequireAuth><AdminImport /></RequireAuth>} />
           <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

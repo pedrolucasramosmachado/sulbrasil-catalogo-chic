@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { HeroSection } from "@/components/HeroSection";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { toast } from "@/hooks/use-toast";
@@ -38,19 +37,12 @@ const Index = () => {
     });
   };
 
-  const handleExploreProducts = () => {
-    const element = document.getElementById('products-section');
-    element?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
-      <HeroSection onExploreProducts={handleExploreProducts} />
-
       {/* Products Section */}
-      <section id="products-section" className="py-12">
+      <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="mb-8 text-center">
             <h2 className="text-3xl font-bold text-foreground mb-2">
