@@ -10,8 +10,9 @@ import { Product, useProducts } from "@/hooks/useProducts";
 const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('todos');
   
-  const { products, loading, error } = useProducts();
+  const { products, loading, error, getProductsByCategory, getCategories } = useProducts();
 
   const handleViewDetails = (product: Product) => {
     setSelectedProduct(product);
@@ -60,6 +61,27 @@ const Index = () => {
             </p>
           </div>
 
+          {/* Category Filter */}
+          {!loading && products.length > 0 && (
+            <div className="mb-8 flex justify-center">
+              <div className="flex gap-2 flex-wrap">
+                {getCategories().map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      selectedCategory === category
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground hover:bg-muted-hover'
+                    }`}
+                  >
+                    {category === 'todos' ? 'Todos' : category}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="text-center py-16">
               <div className="text-2xl mb-4">Carregando produtos...</div>
@@ -70,7 +92,7 @@ const Index = () => {
             </div>
           ) : products.length > 0 ? (
             <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
+              {getProductsByCategory(selectedCategory).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
