@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Upload, Package, LogOut } from 'lucide-react';
 
 const AdminHome = () => {
@@ -54,8 +54,8 @@ const AdminHome = () => {
               <p className="text-sm text-muted-foreground">
                 Adicione produtos ao catálogo através de imagens e arquivos CSV.
               </p>
-              <Button className="mt-4 w-full" onClick={() => navigate('/admin/import')}>
-                Acessar Importação
+              <Button className="mt-4 w-full" asChild>
+                <Link to="/admin/import">Acessar Importação</Link>
               </Button>
             </CardContent>
           </Card>
