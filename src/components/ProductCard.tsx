@@ -89,20 +89,20 @@ export const ProductCard = ({
             {product.name}
           </h3>
           
-          {/* Tags */}
-          {product.tags && product.tags.length > 0 && (
+          {/* Sizes */}
+          {product.sizes && product.sizes.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {product.tags.slice(0, 6).map((tag, index) => (
+              {product.sizes.slice(0, 6).map((size, index) => (
                 <div
                   key={index}
                   className="text-xs bg-accent-soft text-accent-foreground px-2 py-1 rounded-full font-medium"
                 >
-                  {tag}
+                  {size}
                 </div>
               ))}
-              {product.tags.length > 6 && (
+              {product.sizes.length > 6 && (
                 <div className="text-xs bg-surface-elevated text-foreground-muted px-2 py-1 rounded-full font-medium">
-                  +{product.tags.length - 6}
+                  +{product.sizes.length - 6}
                 </div>
               )}
             </div>

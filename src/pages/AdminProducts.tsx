@@ -20,6 +20,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AdminHeader } from '@/components/AdminHeader';
+import { AVAILABLE_SIZES } from '@/constants/sizes';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -27,8 +28,7 @@ const productSchema = z.object({
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
   description: z.string().optional(),
-  tags: z.string().optional(),
-  whatsapp_message: z.string().optional(),
+  sizes: z.array(z.string()).optional(),
   is_featured: z.boolean().default(false),
 });
 
@@ -56,8 +56,7 @@ const AdminProducts = () => {
       retail_price: '',
       wholesale_price: '',
       description: '',
-      tags: '',
-      whatsapp_message: '',
+      sizes: [],
       is_featured: false,
     },
   });
@@ -131,8 +130,7 @@ const AdminProducts = () => {
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
         description: data.description || null,
-        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
-        whatsapp_message: data.whatsapp_message || null,
+        sizes: data.sizes && data.sizes.length > 0 ? data.sizes : null,
         is_featured: data.is_featured,
         image_url: imageUrl || null,
       };
@@ -192,8 +190,7 @@ const AdminProducts = () => {
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
       description: product.description || '',
-      tags: product.tags ? product.tags.join(', ') : '',
-      whatsapp_message: product.whatsapp_message || '',
+      sizes: product.sizes || [],
       is_featured: product.is_featured || false,
     });
     setImagePreview(product.image_url || null);
@@ -208,8 +205,7 @@ const AdminProducts = () => {
       retail_price: '',
       wholesale_price: '',
       description: '',
-      tags: '',
-      whatsapp_message: '',
+      sizes: [],
       is_featured: false,
     });
     setIsDialogOpen(true);
@@ -394,30 +390,34 @@ const AdminProducts = () => {
                       
                       <FormField
                         control={form.control}
-                        name="tags"
+                        name="sizes"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Tags</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Ex: P, M, G, Azul, Vermelho"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="whatsapp_message"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mensagem WhatsApp</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} rows={2} />
-                            </FormControl>
+                            <FormLabel>Tamanhos Disponíveis</FormLabel>
+                            <div className="grid grid-cols-3 gap-2">
+                              {AVAILABLE_SIZES.map((size) => (
+                                <div key={size} className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id={`size-${size}`}
+                                    checked={field.value?.includes(size) || false}
+                                    onCheckedChange={(checked) => {
+                                      const currentSizes = field.value || [];
+                                      if (checked) {
+                                        field.onChange([...currentSizes, size]);
+                                      } else {
+                                        field.onChange(currentSizes.filter(s => s !== size));
+                                      }
+                                    }}
+                                  />
+                                  <label 
+                                    htmlFor={`size-${size}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {size}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -499,7 +499,7 @@ const AdminProducts = () => {
                     <TableHead>Categoria</TableHead>
                     <TableHead>Varejo</TableHead>
                     <TableHead>Atacado</TableHead>
-                    <TableHead>Tags</TableHead>
+                    <TableHead>Tamanhos</TableHead>
                     <TableHead>Destaque</TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead className="w-32">Ações</TableHead>
@@ -537,14 +537,14 @@ const AdminProducts = () => {
                         <TableCell>{formatPrice(product.wholesale_price)}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
-                            {product.tags?.slice(0, 3).map((tag, index) => (
+                            {product.sizes?.slice(0, 3).map((size, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
-                                {tag}
+                                {size}
                               </Badge>
                             ))}
-                            {product.tags && product.tags.length > 3 && (
+                            {product.sizes && product.sizes.length > 3 && (
                               <Badge variant="outline" className="text-xs">
-                                +{product.tags.length - 3}
+                                +{product.sizes.length - 3}
                               </Badge>
                             )}
                           </div>

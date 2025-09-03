@@ -9,8 +9,7 @@ export interface Product {
   retail_price?: number;
   category: string;
   image_url?: string;
-  whatsapp_message?: string;
-  tags?: string[];
+  sizes?: string[];
   is_featured?: boolean;
   created_at?: string;
   updated_at?: string;

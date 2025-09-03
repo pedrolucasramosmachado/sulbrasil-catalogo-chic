@@ -4,7 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { MessageCircle, Heart, Share2, ShoppingBag } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface ProductDetailModalProps {
@@ -22,8 +21,6 @@ export const ProductDetailModal = ({
   onConsult, 
   onToggleFavorite 
 }: ProductDetailModalProps) => {
-  const [selectedColor, setSelectedColor] = useState<string>("");
-
   if (!product) return null;
 
   const handleConsult = () => {
@@ -153,22 +150,16 @@ export const ProductDetailModal = ({
 
             <Separator />
 
-            {/* Tags/Colors */}
-            {product.tags && product.tags.length > 0 && (
+            {/* Sizes */}
+            {product.sizes && product.sizes.length > 0 && (
               <>
                 <div className="space-y-3">
-                  <h4 className="font-semibold text-foreground">Tags</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    {product.tags.map((tag) => (
-                      <Button
-                        key={tag}
-                        variant={selectedColor === tag ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setSelectedColor(tag)}
-                        className="text-sm"
-                      >
-                        {tag}
-                      </Button>
+                  <h4 className="font-semibold text-foreground">Tamanhos Disponíveis</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {product.sizes.map((size) => (
+                      <Badge key={size} variant="secondary" className="text-sm px-3 py-1">
+                        {size}
+                      </Badge>
                     ))}
                   </div>
                 </div>
@@ -192,23 +183,6 @@ export const ProductDetailModal = ({
                   <li>Fácil de lavar e manter</li>
                   <li>Disponível em diversos tamanhos</li>
                 </ul>
-              </div>
-            </div>
-
-            {/* Size Guide */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Tamanhos Disponíveis</h4>
-              <div className="flex flex-wrap gap-2">
-                {["PP", "P", "M", "G", "GG", "XG"].map((size) => (
-                  <Button
-                    key={size}
-                    variant="outline"
-                    size="sm"
-                    className="w-12 h-12 p-0"
-                  >
-                    {size}
-                  </Button>
-                ))}
               </div>
             </div>
 

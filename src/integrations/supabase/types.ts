@@ -24,9 +24,8 @@ export type Database = {
           is_featured: boolean | null
           name: string
           retail_price: number | null
-          tags: string[] | null
+          sizes: string[] | null
           updated_at: string
-          whatsapp_message: string | null
           wholesale_price: number | null
         }
         Insert: {
@@ -38,9 +37,8 @@ export type Database = {
           is_featured?: boolean | null
           name: string
           retail_price?: number | null
-          tags?: string[] | null
+          sizes?: string[] | null
           updated_at?: string
-          whatsapp_message?: string | null
           wholesale_price?: number | null
         }
         Update: {
@@ -52,9 +50,8 @@ export type Database = {
           is_featured?: boolean | null
           name?: string
           retail_price?: number | null
-          tags?: string[] | null
+          sizes?: string[] | null
           updated_at?: string
-          whatsapp_message?: string | null
           wholesale_price?: number | null
         }
         Relationships: []
