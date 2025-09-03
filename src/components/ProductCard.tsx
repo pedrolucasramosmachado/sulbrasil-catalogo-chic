@@ -115,15 +115,25 @@ export const ProductCard = ({
             </p>
           )}
 
-          {/* Price */}
-          {product.price && (
+          {/* Prices */}
+          {(product.retail_price || product.wholesale_price) && (
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground-muted">Preço:</span>
-                <span className="font-semibold text-primary">
-                  R$ {product.price.toFixed(2).replace('.', ',')}
-                </span>
-              </div>
+              {product.retail_price && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-foreground-muted">Varejo:</span>
+                  <span className="font-semibold text-primary">
+                    R$ {product.retail_price.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              )}
+              {product.wholesale_price && (
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-foreground-muted">Atacado:</span>
+                  <span className="font-semibold text-accent">
+                    R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 

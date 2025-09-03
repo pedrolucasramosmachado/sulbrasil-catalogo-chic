@@ -23,10 +23,11 @@ export type Database = {
           image_url: string | null
           is_featured: boolean | null
           name: string
-          price: number | null
+          retail_price: number | null
           tags: string[] | null
           updated_at: string
           whatsapp_message: string | null
+          wholesale_price: number | null
         }
         Insert: {
           category: string
@@ -36,10 +37,11 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           name: string
-          price?: number | null
+          retail_price?: number | null
           tags?: string[] | null
           updated_at?: string
           whatsapp_message?: string | null
+          wholesale_price?: number | null
         }
         Update: {
           category?: string
@@ -49,10 +51,11 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           name?: string
-          price?: number | null
+          retail_price?: number | null
           tags?: string[] | null
           updated_at?: string
           whatsapp_message?: string | null
+          wholesale_price?: number | null
         }
         Relationships: []
       }

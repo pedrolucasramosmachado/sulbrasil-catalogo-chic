@@ -24,7 +24,8 @@ import { AdminHeader } from '@/components/AdminHeader';
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   category: z.string().min(1, 'Categoria é obrigatória'),
-  price: z.string().optional(),
+  retail_price: z.string().optional(),
+  wholesale_price: z.string().optional(),
   description: z.string().optional(),
   tags: z.string().optional(),
   whatsapp_message: z.string().optional(),
@@ -52,7 +53,8 @@ const AdminProducts = () => {
     defaultValues: {
       name: '',
       category: '',
-      price: '',
+      retail_price: '',
+      wholesale_price: '',
       description: '',
       tags: '',
       whatsapp_message: '',
@@ -126,7 +128,8 @@ const AdminProducts = () => {
       const productData = {
         name: data.name,
         category: data.category,
-        price: data.price ? parseFloat(data.price.replace(',', '.')) : null,
+        retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
+        wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
         description: data.description || null,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : null,
         whatsapp_message: data.whatsapp_message || null,
@@ -186,7 +189,8 @@ const AdminProducts = () => {
     form.reset({
       name: product.name,
       category: product.category,
-      price: product.price ? product.price.toString() : '',
+      retail_price: product.retail_price ? product.retail_price.toString() : '',
+      wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
       description: product.description || '',
       tags: product.tags ? product.tags.join(', ') : '',
       whatsapp_message: product.whatsapp_message || '',
@@ -198,6 +202,16 @@ const AdminProducts = () => {
 
   const openCreateDialog = () => {
     resetForm();
+    form.reset({
+      name: '',
+      category: '',
+      retail_price: '',
+      wholesale_price: '',
+      description: '',
+      tags: '',
+      whatsapp_message: '',
+      is_featured: false,
+    });
     setIsDialogOpen(true);
   };
 
@@ -327,24 +341,42 @@ const AdminProducts = () => {
                           )}
                         />
                       </div>
-                      
-                      <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Preço</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Ex: 29.90"
-                                type="text"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="retail_price"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preço Varejo</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  placeholder="Ex: 29.90"
+                                  type="text"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="wholesale_price"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Preço Atacado</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  placeholder="Ex: 25.90"
+                                  type="text"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                       
                       <FormField
                         control={form.control}
@@ -465,7 +497,8 @@ const AdminProducts = () => {
                     <TableHead className="w-16">Imagem</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Categoria</TableHead>
-                    <TableHead>Preço</TableHead>
+                    <TableHead>Varejo</TableHead>
+                    <TableHead>Atacado</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Destaque</TableHead>
                     <TableHead>Criado em</TableHead>
@@ -475,7 +508,7 @@ const AdminProducts = () => {
                 <TableBody>
                   {filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         {searchTerm || selectedCategory !== 'todos' 
                           ? 'Nenhum produto encontrado com os filtros aplicados.'
                           : 'Nenhum produto cadastrado ainda.'
@@ -500,7 +533,8 @@ const AdminProducts = () => {
                         </TableCell>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.category}</TableCell>
-                        <TableCell>{formatPrice(product.price)}</TableCell>
+                        <TableCell>{formatPrice(product.retail_price)}</TableCell>
+                        <TableCell>{formatPrice(product.wholesale_price)}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {product.tags?.slice(0, 3).map((tag, index) => (

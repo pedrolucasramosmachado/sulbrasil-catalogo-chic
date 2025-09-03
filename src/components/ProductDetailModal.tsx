@@ -112,15 +112,29 @@ export const ProductDetailModal = ({
             </DialogHeader>
 
             {/* Prices */}
-            {product.price ? (
+            {(product.retail_price || product.wholesale_price) ? (
               <div className="space-y-3">
-                <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm text-foreground-muted">Preço</p>
-                    <p className="text-2xl font-bold text-primary">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </p>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {product.retail_price && (
+                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                      <div className="text-center">
+                        <p className="text-sm text-foreground-muted">Varejo</p>
+                        <p className="text-2xl font-bold text-primary">
+                          R$ {product.retail_price.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {product.wholesale_price && (
+                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                      <div className="text-center">
+                        <p className="text-sm text-foreground-muted">Atacado</p>
+                        <p className="text-2xl font-bold text-accent">
+                          R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <p className="text-xs text-foreground-muted text-center">

@@ -5,7 +5,8 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  price?: number;
+  wholesale_price?: number;
+  retail_price?: number;
   category: string;
   image_url?: string;
   whatsapp_message?: string;
