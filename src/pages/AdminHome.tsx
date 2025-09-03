@@ -35,6 +35,9 @@ const AdminHome = () => {
 
         <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" 
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/admin/import'); } }}
                 onClick={() => navigate('/admin/import')}>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -51,7 +54,7 @@ const AdminHome = () => {
               <p className="text-sm text-muted-foreground">
                 Adicione produtos ao catálogo através de imagens e arquivos CSV.
               </p>
-              <Button className="mt-4 w-full">
+              <Button className="mt-4 w-full" onClick={() => navigate('/admin/import')}>
                 Acessar Importação
               </Button>
             </CardContent>
