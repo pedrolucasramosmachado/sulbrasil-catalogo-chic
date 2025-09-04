@@ -8,11 +8,13 @@ import { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
   product: Product;
+  onViewDetails: (product: Product) => void;
   onConsult: (product: Product) => void;
 }
 
 export const ProductCard = ({ 
   product, 
+  onViewDetails,
   onConsult 
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -26,7 +28,7 @@ export const ProductCard = ({
             "aspect-[3/4] bg-surface-elevated relative overflow-hidden cursor-pointer",
             !imageLoaded && "animate-pulse"
           )}
-          onClick={() => onConsult(product)}
+          onClick={() => onViewDetails(product)}
         >
           <img
             src={product.image_url || "/placeholder.svg"}
