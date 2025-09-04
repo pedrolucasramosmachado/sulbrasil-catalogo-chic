@@ -23,14 +23,21 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
       const price = isWholesaleOrder && item.product.wholesale_price 
         ? item.product.wholesale_price 
         : item.product.retail_price || 0;
-      const priceType = isWholesaleOrder && item.product.wholesale_price ? '(Atacado)' : '';
+      const itemTotal = price * item.quantity;
       
-      return `• ${item.product.name}${item.selectedSize ? ` (Tamanho: ${item.selectedSize})` : ''} - Qtd: ${item.quantity} ${priceType} - R$ ${(price * item.quantity).toFixed(2).replace('.', ',')}`;
-    }).join('\n');
+      return `🧾 Pedido: ${item.product.name}
+• ${item.quantity} ${item.selectedSize || 'Sem tamanho especificado'}
+${item.quantity} peças
+R$${itemTotal.toFixed(2).replace('.', ',')}`;
+    }).join('\n\n');
 
     const totalFormatted = total.toFixed(2).replace('.', ',');
-    const totalItemsText = itemCount >= 10 ? `\n\n🎉 *Desconto de Atacado Aplicado!* (${itemCount} peças no total)` : '';
-    const message = `Olá! Gostaria de fazer um pedido:\n\n${orderDetails}\n\n*Total: R$ ${totalFormatted}*${totalItemsText}\n\nPoderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
+    const message = `${orderDetails}
+
+🧮 Total: ${itemCount} peças
+💸 Valor total: R$${totalFormatted}
+
+Poderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
     
     const phoneNumber = "5511961890347";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
