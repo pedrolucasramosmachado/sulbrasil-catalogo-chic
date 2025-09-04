@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
+import { FloatingCart } from "@/components/FloatingCart";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
 
@@ -110,6 +111,8 @@ const Index = () => {
       </section>
 
       <Footer />
+
+      <FloatingCart />
 
       {/* Product Detail Modal */}
       <ProductDetailModal
