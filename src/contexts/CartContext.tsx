@@ -74,9 +74,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
 
 const calculateTotals = (state: CartState): CartState => {
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // Se o total de itens no carrinho for >= 10, aplica preço de atacado para todos os produtos que têm
+  const isWholesaleOrder = itemCount >= 10;
+  
   const total = state.items.reduce((sum, item) => {
-    // Se a quantidade total do item for >= 10, usa preço de atacado
-    const price = item.quantity >= 10 && item.product.wholesale_price 
+    const price = isWholesaleOrder && item.product.wholesale_price 
       ? item.product.wholesale_price 
       : item.product.retail_price || 0;
     return sum + (price * item.quantity);

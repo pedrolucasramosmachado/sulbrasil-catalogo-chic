@@ -21,7 +21,7 @@ const Index = () => {
 
   const handleConsult = (product: Product) => {
     const message = `Olá! Tenho interesse no produto: ${product.name}. Gostaria de mais informações sobre disponibilidade, cores e condições de compra.`;
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/5511961890347?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     
     toast({

@@ -11,27 +11,28 @@ interface CartModalProps {
 }
 
 export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
-  const { items, total, updateQuantity, removeItem, clearCart } = useCart();
+  const { items, total, updateQuantity, removeItem, clearCart, itemCount } = useCart();
   
-  const hasWholesaleItems = items.some(item => 
-    item.quantity >= 10 && item.product.wholesale_price
-  );
+  const isWholesaleOrder = itemCount >= 10;
+  const hasWholesaleItems = isWholesaleOrder && items.some(item => item.product.wholesale_price);
 
   const handleWhatsAppOrder = () => {
     if (items.length === 0) return;
 
     const orderDetails = items.map(item => {
-      const isWholesale = item.quantity >= 10 && item.product.wholesale_price;
-      const price = isWholesale ? item.product.wholesale_price! : item.product.retail_price || 0;
-      const priceType = isWholesale ? '(Atacado)' : '';
+      const price = isWholesaleOrder && item.product.wholesale_price 
+        ? item.product.wholesale_price 
+        : item.product.retail_price || 0;
+      const priceType = isWholesaleOrder && item.product.wholesale_price ? '(Atacado)' : '';
       
       return `• ${item.product.name}${item.selectedSize ? ` (Tamanho: ${item.selectedSize})` : ''} - Qtd: ${item.quantity} ${priceType} - R$ ${(price * item.quantity).toFixed(2).replace('.', ',')}`;
     }).join('\n');
 
     const totalFormatted = total.toFixed(2).replace('.', ',');
-    const message = `Olá! Gostaria de fazer um pedido:\n\n${orderDetails}\n\n*Total: R$ ${totalFormatted}*\n\nPoderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
+    const totalItemsText = itemCount >= 10 ? `\n\n🎉 *Desconto de Atacado Aplicado!* (${itemCount} peças no total)` : '';
+    const message = `Olá! Gostaria de fazer um pedido:\n\n${orderDetails}\n\n*Total: R$ ${totalFormatted}*${totalItemsText}\n\nPoderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
     
-    const phoneNumber = "5511999999999"; // Substitua pelo número real
+    const phoneNumber = "5511961890347";
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     
     window.open(whatsappUrl, '_blank');
@@ -107,15 +108,15 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
                       
                       <div className="text-right flex-shrink-0">
                         <div className="font-semibold text-primary text-sm">
-                          R$ {((item.quantity >= 10 && item.product.wholesale_price 
+                          R$ {((isWholesaleOrder && item.product.wholesale_price 
                             ? item.product.wholesale_price 
                             : item.product.retail_price || 0) * item.quantity).toFixed(2).replace('.', ',')}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          R$ {(item.quantity >= 10 && item.product.wholesale_price 
+                          R$ {(isWholesaleOrder && item.product.wholesale_price 
                             ? item.product.wholesale_price 
                             : item.product.retail_price || 0).toFixed(2).replace('.', ',')} cada
-                          {item.quantity >= 10 && item.product.wholesale_price && (
+                          {isWholesaleOrder && item.product.wholesale_price && (
                             <span className="text-accent font-medium"> (Atacado)</span>
                           )}
                         </div>

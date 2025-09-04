@@ -15,7 +15,7 @@ export const WholesaleNotification = ({ hasWholesaleItems }: WholesaleNotificati
         <span className="text-sm font-medium">Preço de Atacado Aplicado!</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1">
-        Produtos com 10+ unidades recebem automaticamente o desconto de atacado.
+        Com 10+ peças variadas no carrinho, você recebe automaticamente o melhor preço.
       </p>
     </div>
   );
