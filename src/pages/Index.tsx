@@ -56,15 +56,15 @@ const Index = () => {
           {/* Category Filter */}
           {!loading && products.length > 0 && (
             <div className="mb-8 flex justify-center">
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-3 flex-wrap justify-center">
                 {getCategories().map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    className={`px-6 py-3 rounded-full text-base font-semibold transition-all duration-300 transform hover:scale-105 ${
                       selectedCategory === category
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground hover:bg-muted-hover'
+                        ? 'bg-primary text-primary-foreground shadow-lg'
+                        : 'bg-muted text-muted-foreground hover:bg-muted-hover border-2 border-transparent hover:border-primary/20'
                     }`}
                   >
                     {category === 'todos' ? 'Todos' : category}
@@ -83,7 +83,7 @@ const Index = () => {
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
             </div>
           ) : products.length > 0 ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr px-2 sm:px-0">
               {getProductsByCategory(selectedCategory).map((product) => (
                 <div key={product.id} className="flex">
                   <ProductCard

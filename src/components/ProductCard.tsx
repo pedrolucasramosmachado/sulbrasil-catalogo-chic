@@ -97,8 +97,8 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-4 flex-1 flex flex-col justify-between">
-        <div className="space-y-3">
+      <CardContent className="p-3 sm:p-4 flex-1 flex flex-col justify-between">
+        <div className="space-y-2 sm:space-y-3">
           <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
             {product.name}
           </h3>
@@ -160,7 +160,7 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex flex-col items-stretch gap-2">
+      <CardFooter className="p-3 sm:p-4 pt-0 flex flex-col items-stretch gap-2">
         <div className="flex gap-2 min-w-0">
           <Button
             variant="outline"
@@ -169,19 +169,21 @@ export const ProductCard = ({
               e.stopPropagation();
               onViewDetails(product);
             }}
-            className="flex-1 text-xs"
+            className="flex-1 text-xs h-9"
           >
             <Eye className="w-3 h-3 mr-1" />
-            Ver Detalhes
+            <span className="hidden sm:inline">Ver Detalhes</span>
+            <span className="sm:hidden">Ver</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={handleAddToCart}
-            className="flex-1 text-xs"
+            className="flex-1 text-xs h-9"
           >
             <ShoppingCart className="w-3 h-3 mr-1" />
-            Adicionar
+            <span className="hidden sm:inline">Adicionar</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
         <Button
@@ -190,7 +192,7 @@ export const ProductCard = ({
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-xs"
+          className="w-full text-xs h-9"
         >
           <MessageCircle className="w-3 h-3 mr-1" />
           Consultar
