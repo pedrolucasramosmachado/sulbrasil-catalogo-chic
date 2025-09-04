@@ -4,8 +4,6 @@ import { Badge } from "@/components/ui/badge";
 import { Eye, MessageCircle, Heart, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { useCart } from "@/contexts/CartContext";
-import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
@@ -13,17 +11,17 @@ interface ProductCardProps {
   onViewDetails: (product: Product) => void;
   onConsult: (product: Product) => void;
   onToggleFavorite?: (productId: string) => void;
+  onAddToCart: (product: Product) => void;
 }
 
 export const ProductCard = ({ 
   product, 
   onViewDetails, 
   onConsult, 
-  onToggleFavorite 
+  onToggleFavorite,
+  onAddToCart 
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const { addItem } = useCart();
-  const { toast } = useToast();
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -32,12 +30,7 @@ export const ProductCard = ({
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Se tem tamanhos, adiciona sem tamanho específico (usuário pode escolher depois)
-    addItem(product);
-    toast({
-      title: "Produto adicionado",
-      description: `${product.name} foi adicionado ao carrinho`,
-    });
+    onAddToCart(product);
   };
 
   return (

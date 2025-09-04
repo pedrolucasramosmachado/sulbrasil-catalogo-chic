@@ -16,7 +16,7 @@ interface CartState {
 type CartAction =
   | { type: 'ADD_ITEM'; payload: { product: Product; size?: string } }
   | { type: 'REMOVE_ITEM'; payload: string }
-  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; quantity: number } }
+  | { type: 'UPDATE_QUANTITY'; payload: { productId: string; size?: string; quantity: number } }
   | { type: 'CLEAR_CART' }
   | { type: 'LOAD_CART'; payload: CartItem[] };
 
@@ -24,8 +24,9 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     case 'ADD_ITEM': {
       const { product, size } = action.payload;
+      const itemKey = `${product.id}-${size || 'no-size'}`;
       const existingItemIndex = state.items.findIndex(
-        item => item.product.id === product.id && item.selectedSize === size
+        item => `${item.product.id}-${item.selectedSize || 'no-size'}` === itemKey
       );
 
       let newItems;
@@ -43,18 +44,21 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
     }
 
     case 'REMOVE_ITEM': {
+      const itemKey = action.payload;
       const newItems = state.items.filter(item => 
-        !(item.product.id === action.payload)
+        `${item.product.id}-${item.selectedSize || 'no-size'}` !== itemKey
       );
       return calculateTotals({ ...state, items: newItems });
     }
 
     case 'UPDATE_QUANTITY': {
-      const { productId, quantity } = action.payload;
+      const { productId, size, quantity } = action.payload;
+      const itemKey = `${productId}-${size || 'no-size'}`;
+      
       const newItems = quantity <= 0 
-        ? state.items.filter(item => item.product.id !== productId)
+        ? state.items.filter(item => `${item.product.id}-${item.selectedSize || 'no-size'}` !== itemKey)
         : state.items.map(item =>
-            item.product.id === productId
+            `${item.product.id}-${item.selectedSize || 'no-size'}` === itemKey
               ? { ...item, quantity }
               : item
           );
@@ -90,8 +94,8 @@ const calculateTotals = (state: CartState): CartState => {
 
 interface CartContextType extends CartState {
   addItem: (product: Product, size?: string) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (itemKey: string) => void;
+  updateQuantity: (productId: string, size: string | undefined, quantity: number) => void;
   clearCart: () => void;
 }
 
@@ -131,15 +135,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [state.items]);
 
   const addItem = (product: Product, size?: string) => {
+    // Sempre requer tamanho para produtos que têm tamanhos disponíveis
+    if (product.sizes && product.sizes.length > 0 && !size) {
+      throw new Error("Tamanho é obrigatório para este produto");
+    }
     dispatch({ type: 'ADD_ITEM', payload: { product, size } });
   };
 
-  const removeItem = (productId: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: productId });
+  const removeItem = (itemKey: string) => {
+    dispatch({ type: 'REMOVE_ITEM', payload: itemKey });
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, quantity } });
+  const updateQuantity = (productId: string, size: string | undefined, quantity: number) => {
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { productId, size, quantity } });
   };
 
   const clearCart = () => {

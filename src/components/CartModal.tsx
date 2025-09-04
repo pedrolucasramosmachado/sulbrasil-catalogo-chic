@@ -98,7 +98,7 @@ Poderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
                           variant="outline"
                           size="icon"
                           className="w-8 h-8 sm:w-7 sm:h-7 flex-shrink-0"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id, item.selectedSize, item.quantity - 1)}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
@@ -107,7 +107,7 @@ Poderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
                           variant="outline"
                           size="icon" 
                           className="w-8 h-8 sm:w-7 sm:h-7 flex-shrink-0"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.selectedSize, item.quantity + 1)}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -133,7 +133,7 @@ Poderia me dar mais informações sobre disponibilidade e formas de pagamento?`;
                         variant="ghost"
                         size="icon"
                         className="w-8 h-8 sm:w-7 sm:h-7 text-destructive flex-shrink-0"
-                        onClick={() => removeItem(item.product.id)}
+                        onClick={() => removeItem(`${item.product.id}-${item.selectedSize || 'no-size'}`)}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>

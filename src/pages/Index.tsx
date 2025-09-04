@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
+import { AddToCartModal } from "@/components/AddToCartModal";
 import { FloatingCart } from "@/components/FloatingCart";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
@@ -10,6 +11,8 @@ import { Product, useProducts } from "@/hooks/useProducts";
 const Index = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddToCartModalOpen, setIsAddToCartModalOpen] = useState(false);
+  const [productToAdd, setProductToAdd] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('todos');
   
   const { products, loading, error, getProductsByCategory, getCategories } = useProducts();
@@ -36,6 +39,11 @@ const Index = () => {
       title: "Favorito atualizado",
       description: "Produto adicionado/removido dos favoritos",
     });
+  };
+
+  const handleAddToCart = (product: Product) => {
+    setProductToAdd(product);
+    setIsAddToCartModalOpen(true);
   };
 
   return (
@@ -92,6 +100,7 @@ const Index = () => {
                     onViewDetails={handleViewDetails}
                     onConsult={handleConsult}
                     onToggleFavorite={handleToggleFavorite}
+                    onAddToCart={handleAddToCart}
                   />
                 </div>
               ))}
@@ -113,6 +122,16 @@ const Index = () => {
       <Footer />
 
       <FloatingCart />
+
+      {/* Add to Cart Modal */}
+      <AddToCartModal
+        product={productToAdd}
+        isOpen={isAddToCartModalOpen}
+        onClose={() => {
+          setIsAddToCartModalOpen(false);
+          setProductToAdd(null);
+        }}
+      />
 
       {/* Product Detail Modal */}
       <ProductDetailModal
