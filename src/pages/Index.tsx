@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { toast } from "@/hooks/use-toast";
@@ -118,8 +117,6 @@ const Index = () => {
           )}
         </div>
       </section>
-
-      <Footer />
 
       {/* Product Detail Modal */}
       <ProductDetailModal
