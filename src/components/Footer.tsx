@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Instagram, Facebook, MapPin, Phone, Mail, Clock } from "lucide-react";
-import sulbrasilLogo from "@/assets/sulbrasil-logo.png";
+// Logo from uploaded file
 
 export const Footer = () => {
   return (
@@ -12,7 +12,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <img 
-                src={sulbrasilLogo} 
+                src="/lovable-uploads/0ad125b9-ae20-4c6e-b70e-540405cec607.png" 
                 alt="Sulbrasil" 
                 className="h-8 w-auto"
               />

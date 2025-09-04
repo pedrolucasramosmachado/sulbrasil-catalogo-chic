@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import sulbrasilLogo from "@/assets/sulbrasil-logo.png";
+// Logo from uploaded file
 
 export const Header = () => {
   return (
@@ -11,7 +11,7 @@ export const Header = () => {
         <div className="flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2 sm:gap-4">
             <img 
-              src={sulbrasilLogo} 
+              src="/lovable-uploads/0ad125b9-ae20-4c6e-b70e-540405cec607.png" 
               alt="Sulbrasil" 
               className="h-8 sm:h-10 w-auto"
             />
