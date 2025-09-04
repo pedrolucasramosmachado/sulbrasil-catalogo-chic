@@ -30,13 +30,6 @@ export const FloatingCart = () => {
             Pedido
           </span>
         </Button>
-        
-        {/* Mostrar total em tela pequena */}
-        <div className="absolute -top-12 right-0 bg-card border border-border rounded-lg px-3 py-1 shadow-md">
-          <span className="text-sm font-semibold text-primary">
-            R$ {total.toFixed(2).replace('.', ',')}
-          </span>
-        </div>
       </div>
 
       <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
