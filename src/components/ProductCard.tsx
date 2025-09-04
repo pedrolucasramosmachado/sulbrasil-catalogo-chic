@@ -95,7 +95,7 @@ export const ProductCard = ({
               {product.sizes.slice(0, 6).map((size, index) => (
                 <div
                   key={index}
-                  className="text-xs bg-accent-soft text-accent-foreground px-2 py-1 rounded-full font-medium"
+                  className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full font-medium"
                 >
                   {size}
                 </div>
