@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MessageCircle, Heart } from "lucide-react";
+import { Eye, MessageCircle, Heart, ShoppingCart } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
+import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
@@ -20,10 +22,22 @@ export const ProductCard = ({
   onToggleFavorite 
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const { addItem } = useCart();
+  const { toast } = useToast();
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleFavorite?.(product.id);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Se tem tamanhos, adiciona sem tamanho específico (usuário pode escolher depois)
+    addItem(product);
+    toast({
+      title: "Produto adicionado",
+      description: `${product.name} foi adicionado ao carrinho`,
+    });
   };
 
   return (
@@ -158,6 +172,15 @@ export const ProductCard = ({
         >
           <Eye className="w-3 h-3 mr-1" />
           Ver Detalhes
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleAddToCart}
+          className="flex-1 text-xs"
+        >
+          <ShoppingCart className="w-3 h-3 mr-1" />
+          Adicionar
         </Button>
         <Button
           size="sm"
