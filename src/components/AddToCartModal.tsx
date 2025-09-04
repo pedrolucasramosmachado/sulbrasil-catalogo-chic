@@ -63,7 +63,7 @@ export const AddToCartModal = ({ product, isOpen, onClose }: AddToCartModalProps
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md w-[95vw] sm:max-w-[400px]">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="text-lg">Adicionar ao Carrinho</DialogTitle>
         </DialogHeader>
