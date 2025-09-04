@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MessageCircle, Heart, Share2, ShoppingBag } from "lucide-react";
+import { MessageCircle, Share2 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 
@@ -11,15 +11,13 @@ interface ProductDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConsult: (product: Product) => void;
-  onToggleFavorite?: (productId: string) => void;
 }
 
 export const ProductDetailModal = ({ 
   product, 
   isOpen, 
   onClose, 
-  onConsult, 
-  onToggleFavorite 
+  onConsult 
 }: ProductDetailModalProps) => {
   if (!product) return null;
 
@@ -29,12 +27,13 @@ export const ProductDetailModal = ({
   };
 
   const handleShare = async () => {
+    const productUrl = `${window.location.origin}/?produto=${product.id}`;
     if (navigator.share) {
       try {
         await navigator.share({
           title: product.name,
-          text: `Confira este produto da Sulbrasil: ${product.name}`,
-          url: window.location.href
+          text: `Confira este produto da Sulbrasil: ${product.name}. Link: ${productUrl}`,
+          url: productUrl
         });
       } catch (err) {
         console.log('Erro ao compartilhar:', err);
@@ -94,13 +93,6 @@ export const ProductDetailModal = ({
                 </div>
                 
                 <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onToggleFavorite?.(product.id)}
-                  >
-                    <Heart className="w-5 h-5 text-foreground-muted" />
-                  </Button>
                   <Button variant="ghost" size="icon" onClick={handleShare}>
                     <Share2 className="w-5 h-5" />
                   </Button>
