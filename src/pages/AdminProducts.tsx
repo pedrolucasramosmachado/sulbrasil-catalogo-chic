@@ -7,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
@@ -20,16 +18,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AdminHeader } from '@/components/AdminHeader';
-import { AVAILABLE_SIZES } from '@/constants/sizes';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   category: z.string().min(1, 'Categoria é obrigatória'),
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
-  description: z.string().optional(),
-  sizes: z.array(z.string()).optional(),
-  is_featured: z.boolean().default(false),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -55,9 +49,6 @@ const AdminProducts = () => {
       category: '',
       retail_price: '',
       wholesale_price: '',
-      description: '',
-      sizes: [],
-      is_featured: false,
     },
   });
 
@@ -129,9 +120,6 @@ const AdminProducts = () => {
         category: data.category,
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
-        description: data.description || null,
-        sizes: data.sizes && data.sizes.length > 0 ? data.sizes : null,
-        is_featured: data.is_featured,
         image_url: imageUrl || null,
       };
 
@@ -189,9 +177,6 @@ const AdminProducts = () => {
       category: product.category,
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
-      description: product.description || '',
-      sizes: product.sizes || [],
-      is_featured: product.is_featured || false,
     });
     setImagePreview(product.image_url || null);
     setIsDialogOpen(true);
@@ -204,9 +189,6 @@ const AdminProducts = () => {
       category: '',
       retail_price: '',
       wholesale_price: '',
-      description: '',
-      sizes: [],
-      is_featured: false,
     });
     setIsDialogOpen(true);
   };
@@ -374,75 +356,6 @@ const AdminProducts = () => {
                         />
                       </div>
                       
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Descrição</FormLabel>
-                            <FormControl>
-                              <Textarea {...field} rows={3} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="sizes"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Tamanhos Disponíveis</FormLabel>
-                            <div className="grid grid-cols-3 gap-2">
-                              {AVAILABLE_SIZES.map((size) => (
-                                <div key={size} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`size-${size}`}
-                                    checked={field.value?.includes(size) || false}
-                                    onCheckedChange={(checked) => {
-                                      const currentSizes = field.value || [];
-                                      if (checked) {
-                                        field.onChange([...currentSizes, size]);
-                                      } else {
-                                        field.onChange(currentSizes.filter(s => s !== size));
-                                      }
-                                    }}
-                                  />
-                                  <label 
-                                    htmlFor={`size-${size}`}
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                  >
-                                    {size}
-                                  </label>
-                                </div>
-                              ))}
-                            </div>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="is_featured"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>
-                                Produto em destaque
-                              </FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                      
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Imagem do Produto</label>
                         <div className="flex items-center gap-4">
@@ -499,8 +412,6 @@ const AdminProducts = () => {
                     <TableHead>Categoria</TableHead>
                     <TableHead>Varejo</TableHead>
                     <TableHead>Atacado</TableHead>
-                    <TableHead>Tamanhos</TableHead>
-                    <TableHead>Destaque</TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead className="w-32">Ações</TableHead>
                   </TableRow>
@@ -508,7 +419,7 @@ const AdminProducts = () => {
                 <TableBody>
                   {filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                         {searchTerm || selectedCategory !== 'todos' 
                           ? 'Nenhum produto encontrado com os filtros aplicados.'
                           : 'Nenhum produto cadastrado ainda.'
@@ -535,27 +446,6 @@ const AdminProducts = () => {
                         <TableCell>{product.category}</TableCell>
                         <TableCell>{formatPrice(product.retail_price)}</TableCell>
                         <TableCell>{formatPrice(product.wholesale_price)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {product.sizes?.slice(0, 3).map((size, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {size}
-                              </Badge>
-                            ))}
-                            {product.sizes && product.sizes.length > 3 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{product.sizes.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {product.is_featured && (
-                            <Badge variant="default" className="text-xs">
-                              Destaque
-                            </Badge>
-                          )}
-                        </TableCell>
                         <TableCell>{formatDate(product.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
