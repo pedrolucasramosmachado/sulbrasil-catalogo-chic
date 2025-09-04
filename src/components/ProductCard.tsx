@@ -61,13 +61,6 @@ export const ProductCard = ({
             {product.name}
           </h3>
           
-          {/* Description */}
-          {product.description && (
-            <p className="text-xs text-foreground-muted line-clamp-2">
-              {product.description}
-            </p>
-          )}
-
           {/* Prices */}
           {(product.retail_price || product.wholesale_price) && (
             <div className="space-y-1">

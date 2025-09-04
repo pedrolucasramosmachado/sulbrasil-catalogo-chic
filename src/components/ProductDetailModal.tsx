@@ -145,25 +145,6 @@ export const ProductDetailModal = ({
 
             <Separator />
 
-            {/* Product Description */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">Descrição do Produto</h4>
-              <div className="text-sm text-foreground-muted space-y-2">
-                <p>
-                  {product.description || "Peça confeccionada com tecidos de alta qualidade, seguindo os mais altos padrões da indústria têxtil brasileira. Design moderno e elegante que combina conforto e estilo."}
-                </p>
-                <p>
-                  <strong>Características:</strong>
-                </p>
-                <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Tecido premium com toque macio</li>
-                  <li>Modelagem que valoriza o corpo feminino</li>
-                  <li>Fácil de lavar e manter</li>
-                  <li>Disponível em diversos tamanhos</li>
-                </ul>
-              </div>
-            </div>
-
             {/* Action Buttons */}
             <div className="space-y-3 pt-4">
               <Button
