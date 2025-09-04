@@ -160,8 +160,8 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 space-y-2">
-        <div className="flex gap-2">
+      <CardFooter className="p-4 pt-0 flex flex-col items-stretch gap-2">
+        <div className="flex gap-2 min-w-0">
           <Button
             variant="outline"
             size="sm"
