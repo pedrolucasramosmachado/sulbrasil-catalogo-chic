@@ -30,8 +30,8 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5" />
             Carrinho ({items.length} {items.length === 1 ? 'item' : 'itens'})
@@ -39,7 +39,7 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
         </DialogHeader>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center py-12 text-center px-6">
             <ShoppingBag className="w-16 h-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Carrinho vazio</h3>
             <p className="text-muted-foreground mb-4">
@@ -49,11 +49,11 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-auto space-y-4 py-4">
+            <div className="flex-1 overflow-auto space-y-4 py-4 px-6">
               {items.map((item) => (
                 <div key={`${item.product.id}-${item.selectedSize || 'no-size'}`} 
                      className="flex gap-4 p-4 border border-border rounded-lg bg-card">
-                  <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
+                  <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
                     <img
                       src={item.product.image_url || "/placeholder.svg"}
                       alt={item.product.name}
@@ -61,9 +61,9 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
                     />
                   </div>
                   
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 min-w-0 space-y-2">
                     <div>
-                      <h4 className="font-semibold text-sm">{item.product.name}</h4>
+                      <h4 className="font-semibold text-sm truncate">{item.product.name}</h4>
                       {item.selectedSize && (
                         <Badge variant="secondary" className="text-xs mt-1">
                           {item.selectedSize}
@@ -71,29 +71,29 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
                       )}
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="w-8 h-8"
+                          className="w-7 h-7 flex-shrink-0"
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <span className="w-6 text-center font-medium text-sm">{item.quantity}</span>
                         <Button
                           variant="outline"
                           size="icon" 
-                          className="w-8 h-8"
+                          className="w-7 h-7 flex-shrink-0"
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
                       </div>
                       
-                      <div className="text-right">
-                        <div className="font-semibold text-primary">
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-semibold text-primary text-sm">
                           R$ {((item.product.retail_price || 0) * item.quantity).toFixed(2).replace('.', ',')}
                         </div>
                         <div className="text-xs text-muted-foreground">
@@ -104,10 +104,10 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 text-destructive"
+                        className="w-7 h-7 text-destructive flex-shrink-0"
                         onClick={() => removeItem(item.product.id)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   </div>
@@ -115,13 +115,13 @@ export const CartModal = ({ isOpen, onClose }: CartModalProps) => {
               ))}
             </div>
 
-            <div className="border-t pt-4 space-y-4">
+            <div className="border-t pt-4 space-y-4 px-6 pb-6">
               <div className="flex justify-between items-center text-lg font-semibold">
                 <span>Total:</span>
                 <span className="text-primary">R$ {total.toFixed(2).replace('.', ',')}</span>
               </div>
               
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button 
                   variant="outline" 
                   onClick={clearCart}

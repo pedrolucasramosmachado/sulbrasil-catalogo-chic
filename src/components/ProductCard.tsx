@@ -160,7 +160,7 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 gap-2">
+      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -168,7 +168,7 @@ export const ProductCard = ({
             e.stopPropagation();
             onViewDetails(product);
           }}
-          className="flex-1 text-xs"
+          className="w-full sm:flex-1 text-xs"
         >
           <Eye className="w-3 h-3 mr-1" />
           Ver Detalhes
@@ -177,7 +177,7 @@ export const ProductCard = ({
           variant="outline"
           size="sm"
           onClick={handleAddToCart}
-          className="flex-1 text-xs"
+          className="w-full sm:flex-1 text-xs"
         >
           <ShoppingCart className="w-3 h-3 mr-1" />
           Adicionar
@@ -188,7 +188,7 @@ export const ProductCard = ({
             e.stopPropagation();
             onConsult(product);
           }}
-          className="flex-1 text-xs"
+          className="w-full sm:flex-1 text-xs"
         >
           <MessageCircle className="w-3 h-3 mr-1" />
           Consultar
