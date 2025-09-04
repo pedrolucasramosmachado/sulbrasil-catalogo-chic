@@ -196,16 +196,10 @@ export const ProductDetailModal = ({
                 Consultar Produto
               </Button>
               
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-12">
-                  <ShoppingBag className="w-4 h-4 mr-2" />
-                  Adicionar à Lista
-                </Button>
-                <Button variant="outline" className="h-12" onClick={handleShare}>
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Compartilhar
-                </Button>
-              </div>
+              <Button variant="outline" className="w-full h-12" onClick={handleShare}>
+                <Share2 className="w-4 h-4 mr-2" />
+                Compartilhar
+              </Button>
             </div>
           </div>
         </div>
