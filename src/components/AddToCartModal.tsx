@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
@@ -18,6 +18,15 @@ export const AddToCartModal = ({ product, isOpen, onClose }: AddToCartModalProps
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const { toast } = useToast();
+
+  // Auto-selecionar tamanho se houver apenas uma opção
+  useEffect(() => {
+    if (product && product.sizes && product.sizes.length === 1) {
+      setSelectedSize(product.sizes[0]);
+    } else {
+      setSelectedSize("");
+    }
+  }, [product]);
 
   const handleClose = () => {
     setSelectedSize("");
