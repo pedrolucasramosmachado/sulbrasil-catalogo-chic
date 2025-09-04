@@ -41,8 +41,8 @@ export const ProductCard = ({
   };
 
   return (
-    <Card className="group cursor-pointer overflow-hidden bg-gradient-to-br from-card to-surface border-card-border hover:shadow-medium transition-all duration-300 hover:-translate-y-1">
-      <div className="relative overflow-hidden">
+    <Card className="group cursor-pointer overflow-hidden bg-gradient-to-br from-card to-surface border-card-border hover:shadow-medium transition-all duration-300 hover:-translate-y-1 w-full h-full flex flex-col">
+      <div className="relative overflow-hidden flex-shrink-0">
         <div 
           className={cn(
             "aspect-[3/4] bg-surface-elevated relative overflow-hidden",
@@ -97,9 +97,9 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-4">
+      <CardContent className="p-4 flex-1 flex flex-col justify-between">
         <div className="space-y-3">
-          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2">
+          <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
             {product.name}
           </h3>
           
@@ -160,35 +160,37 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0 flex flex-col sm:flex-row gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewDetails(product);
-          }}
-          className="w-full sm:flex-1 text-xs"
-        >
-          <Eye className="w-3 h-3 mr-1" />
-          Ver Detalhes
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleAddToCart}
-          className="w-full sm:flex-1 text-xs"
-        >
-          <ShoppingCart className="w-3 h-3 mr-1" />
-          Adicionar
-        </Button>
+      <CardFooter className="p-4 pt-0 space-y-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewDetails(product);
+            }}
+            className="flex-1 text-xs"
+          >
+            <Eye className="w-3 h-3 mr-1" />
+            Ver Detalhes
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAddToCart}
+            className="flex-1 text-xs"
+          >
+            <ShoppingCart className="w-3 h-3 mr-1" />
+            Adicionar
+          </Button>
+        </div>
         <Button
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full sm:flex-1 text-xs"
+          className="w-full text-xs"
         >
           <MessageCircle className="w-3 h-3 mr-1" />
           Consultar

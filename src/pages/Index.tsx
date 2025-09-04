@@ -83,15 +83,16 @@ const Index = () => {
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
             </div>
           ) : products.length > 0 ? (
-            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
               {getProductsByCategory(selectedCategory).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onViewDetails={handleViewDetails}
-                  onConsult={handleConsult}
-                  onToggleFavorite={handleToggleFavorite}
-                />
+                <div key={product.id} className="flex">
+                  <ProductCard
+                    product={product}
+                    onViewDetails={handleViewDetails}
+                    onConsult={handleConsult}
+                    onToggleFavorite={handleToggleFavorite}
+                  />
+                </div>
               ))}
             </div>
           ) : (
