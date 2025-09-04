@@ -2,21 +2,14 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
 
 const Index = () => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('todos');
   
   const { products, loading, error, getProductsByCategory, getCategories } = useProducts();
 
-  const handleViewDetails = (product: Product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
-  };
 
   const handleConsult = (product: Product) => {
     const productUrl = `${window.location.origin}/?produto=${product.id}`;
@@ -82,7 +75,6 @@ const Index = () => {
                 <div key={product.id} className="flex">
                   <ProductCard
                     product={product}
-                    onViewDetails={handleViewDetails}
                     onConsult={handleConsult}
                   />
                 </div>
@@ -103,17 +95,6 @@ const Index = () => {
       </section>
 
       <Footer />
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedProduct(null);
-        }}
-        onConsult={handleConsult}
-      />
     </div>
   );
 };

@@ -1,20 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Eye, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Product } from "@/hooks/useProducts";
 
 interface ProductCardProps {
   product: Product;
-  onViewDetails: (product: Product) => void;
   onConsult: (product: Product) => void;
 }
 
 export const ProductCard = ({ 
   product, 
-  onViewDetails, 
   onConsult 
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -25,10 +23,10 @@ export const ProductCard = ({
       <div className="relative overflow-hidden flex-shrink-0">
         <div 
           className={cn(
-            "aspect-[3/4] bg-surface-elevated relative overflow-hidden",
+            "aspect-[3/4] bg-surface-elevated relative overflow-hidden cursor-pointer",
             !imageLoaded && "animate-pulse"
           )}
-          onClick={() => onViewDetails(product)}
+          onClick={() => onConsult(product)}
         >
           <img
             src={product.image_url || "/placeholder.svg"}
@@ -61,25 +59,6 @@ export const ProductCard = ({
             {product.name}
           </h3>
           
-          {/* Sizes */}
-          {product.sizes && product.sizes.length > 0 && (
-            <div className="flex flex-wrap gap-1">
-              {product.sizes.slice(0, 6).map((size, index) => (
-                <div
-                  key={index}
-                  className="text-xs bg-primary text-primary-foreground px-2 py-1 rounded-full font-medium"
-                >
-                  {size}
-                </div>
-              ))}
-              {product.sizes.length > 6 && (
-                <div className="text-xs bg-surface-elevated text-foreground-muted px-2 py-1 rounded-full font-medium">
-                  +{product.sizes.length - 6}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Description */}
           {product.description && (
             <p className="text-xs text-foreground-muted line-clamp-2">
@@ -119,32 +98,17 @@ export const ProductCard = ({
       </CardContent>
 
       <CardFooter className="p-3 sm:p-4 pt-0 flex flex-col items-stretch gap-2">
-        <div className="flex gap-2 min-w-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewDetails(product);
-            }}
-            className="flex-1 text-xs h-9"
-          >
-            <Eye className="w-3 h-3 mr-1" />
-            <span className="hidden sm:inline">Ver Detalhes</span>
-            <span className="sm:hidden">Ver</span>
-          </Button>
-          <Button
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onConsult(product);
-            }}
-            className="flex-1 text-xs h-9"
-          >
-            <MessageCircle className="w-3 h-3 mr-1" />
-            Consultar
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onConsult(product);
+          }}
+          className="w-full text-xs h-9"
+        >
+          <MessageCircle className="w-3 h-3 mr-1" />
+          Consultar
+        </Button>
       </CardFooter>
     </Card>
   );
