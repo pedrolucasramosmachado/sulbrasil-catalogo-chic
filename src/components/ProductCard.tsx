@@ -71,16 +71,16 @@ export const ProductCard = ({
             <div className="space-y-2 p-3 bg-white/60 rounded-xl border border-border-subtle">
               {product.retail_price && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground-muted">💰 Varejo:</span>
-                  <span className="font-bold text-primary text-sm">
+                  <span className="text-sm font-semibold text-foreground-muted">💰 Varejo:</span>
+                  <span className="font-bold text-primary text-lg">
                     R$ {product.retail_price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               )}
               {product.wholesale_price && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-foreground-muted">📦 Atacado:</span>
-                  <span className="font-bold text-accent text-sm">
+                  <span className="text-sm font-semibold text-foreground-muted">📦 Atacado:</span>
+                  <span className="font-bold text-accent text-lg">
                     R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
