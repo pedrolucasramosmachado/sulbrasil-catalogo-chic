@@ -48,36 +48,44 @@ const Index = () => {
 
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-surface to-surface-elevated">
       <Header />
 
-      {/* Products Section */}
-      <section className="py-12">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold text-foreground mb-2">
-              Nossos Produtos
-            </h2>
-            <p className="text-foreground-muted">
-              {products.length} produtos disponíveis
+      {/* Hero Section */}
+      <section className="relative py-16 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6">
+              Sulbrasil Fashion
+            </h1>
+            <p className="text-xl text-foreground-muted mb-8 leading-relaxed">
+              Descubra nossa coleção exclusiva com {products.length} produtos únicos
             </p>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
           </div>
+        </div>
+      </section>
+
+      {/* Products Section */}
+      <section className="py-16 relative">
+        <div className="container mx-auto px-4">
 
           {/* Category Filter */}
           {!loading && products.length > 0 && (
-            <div className="mb-8 flex justify-center">
-              <div className="flex gap-3 flex-wrap justify-center">
+            <div className="mb-12 flex justify-center">
+              <div className="flex gap-4 flex-wrap justify-center p-2 bg-white/50 backdrop-blur-sm rounded-2xl border border-card-border shadow-soft">
                 {getCategories().map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-6 py-3 rounded-full text-base font-semibold transition-all duration-300 transform hover:scale-105 ${
+                    className={`px-8 py-4 rounded-xl text-sm font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-medium ${
                       selectedCategory === category
-                        ? 'bg-primary text-primary-foreground shadow-lg'
-                        : 'bg-muted text-muted-foreground hover:bg-muted-hover border-2 border-transparent hover:border-primary/20'
+                        ? 'bg-gradient-to-r from-primary to-primary-hover text-primary-foreground shadow-glow'
+                        : 'bg-white/80 text-foreground-muted hover:bg-white hover:text-foreground border border-border-subtle'
                     }`}
                   >
-                    {category === 'todos' ? 'Todos' : category}
+                    {category === 'todos' ? '✨ Todos' : `👗 ${category}`}
                   </button>
                 ))}
               </div>
@@ -93,9 +101,13 @@ const Index = () => {
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
             </div>
           ) : products.length > 0 ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr px-2 sm:px-0">
-              {getProductsByCategory(selectedCategory).map((product) => (
-                <div key={product.id} className="flex">
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+              {getProductsByCategory(selectedCategory).map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="flex animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
                   <ProductCard
                     product={product}
                     onViewDetails={handleViewDetails}
