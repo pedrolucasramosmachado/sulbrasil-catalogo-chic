@@ -33,20 +33,20 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
           
           {/* Prices */}
           {(minRetailPrice || minWholesalePrice) && (
-            <div className="flex flex-col gap-1 mb-2 sm:mb-3">
-              {minRetailPrice && (
-                <div className="flex items-center justify-center gap-2 text-white/90 text-xs sm:text-sm">
-                  <span className="font-medium">💰 A partir de</span>
-                  <span className="font-bold text-sm sm:text-base">
-                    R$ {minRetailPrice.toFixed(2).replace('.', ',')}
+            <div className="flex flex-col gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+              {minWholesalePrice && (
+                <div className="flex items-center justify-center gap-2 text-white text-base sm:text-lg md:text-xl">
+                  <span className="font-semibold">Atacado:</span>
+                  <span className="font-bold text-lg sm:text-xl md:text-2xl">
+                    R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               )}
-              {minWholesalePrice && (
-                <div className="flex items-center justify-center gap-2 text-white/90 text-xs sm:text-sm">
-                  <span className="font-medium">📦 Atacado</span>
-                  <span className="font-bold text-sm sm:text-base">
-                    R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
+              {minRetailPrice && (
+                <div className="flex items-center justify-center gap-2 text-white text-base sm:text-lg md:text-xl">
+                  <span className="font-semibold">Varejo:</span>
+                  <span className="font-bold text-lg sm:text-xl md:text-2xl">
+                    R$ {minRetailPrice.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               )}
