@@ -3,10 +3,12 @@ import { Card } from "@/components/ui/card";
 interface CategoryCardProps {
   category: string;
   imageUrl: string;
+  minWholesalePrice?: number | null;
+  minRetailPrice?: number | null;
   onSelect: () => void;
 }
 
-export const CategoryCard = ({ category, imageUrl, onSelect }: CategoryCardProps) => {
+export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailPrice, onSelect }: CategoryCardProps) => {
   return (
     <Card 
       onClick={onSelect}
@@ -23,11 +25,34 @@ export const CategoryCard = ({ category, imageUrl, onSelect }: CategoryCardProps
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         
-        {/* Category Name */}
+        {/* Category Name and Prices */}
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-center">
-          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1 sm:mb-2 drop-shadow-lg">
+          <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
             {category}
           </h3>
+          
+          {/* Prices */}
+          {(minRetailPrice || minWholesalePrice) && (
+            <div className="flex flex-col gap-1 mb-2 sm:mb-3">
+              {minRetailPrice && (
+                <div className="flex items-center justify-center gap-2 text-white/90 text-xs sm:text-sm">
+                  <span className="font-medium">💰 A partir de</span>
+                  <span className="font-bold text-sm sm:text-base">
+                    R$ {minRetailPrice.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              )}
+              {minWholesalePrice && (
+                <div className="flex items-center justify-center gap-2 text-white/90 text-xs sm:text-sm">
+                  <span className="font-medium">📦 Atacado</span>
+                  <span className="font-bold text-sm sm:text-base">
+                    R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="w-12 sm:w-16 h-0.5 sm:h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
         

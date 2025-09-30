@@ -98,6 +98,8 @@ const Index = () => {
                     <CategoryCard
                       category={item.category}
                       imageUrl={item.imageUrl}
+                      minWholesalePrice={item.minWholesalePrice}
+                      minRetailPrice={item.minRetailPrice}
                       onSelect={() => handleCategorySelect(item.category)}
                     />
                   </div>

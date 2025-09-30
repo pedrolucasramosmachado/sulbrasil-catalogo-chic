@@ -59,14 +59,34 @@ export const useProducts = () => {
   };
 
   const getCategoriesWithImages = () => {
-    const categories = [...new Set(products.map(p => p.category))];
-    return categories.map(category => {
-      const firstProduct = products.find(p => p.category === category);
-      return {
-        category,
-        imageUrl: firstProduct?.image_url || '',
-      };
+    const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
+    
+    products.forEach(product => {
+      if (!categoriesMap.has(product.category)) {
+        categoriesMap.set(product.category, {
+          imageUrl: product.image_url || '/placeholder.svg',
+          minWholesale: product.wholesale_price || null,
+          minRetail: product.retail_price || null
+        });
+      } else {
+        const current = categoriesMap.get(product.category)!;
+        // Atualizar com o menor preço de atacado
+        if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
+          current.minWholesale = product.wholesale_price;
+        }
+        // Atualizar com o menor preço de varejo
+        if (product.retail_price && (!current.minRetail || product.retail_price < current.minRetail)) {
+          current.minRetail = product.retail_price;
+        }
+      }
     });
+    
+    return Array.from(categoriesMap.entries()).map(([category, data]) => ({
+      category,
+      imageUrl: data.imageUrl,
+      minWholesalePrice: data.minWholesale,
+      minRetailPrice: data.minRetail
+    }));
   };
 
   return {
