@@ -60,27 +60,27 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-white/50 to-surface/30">
-        <div className="space-y-3 sm:space-y-4">
-          <h3 className="font-bold text-foreground text-base leading-tight line-clamp-2 min-h-[3rem] group-hover:text-primary transition-colors duration-300">
+      <CardContent className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-white/50 to-surface/30">
+        <div className="space-y-2 sm:space-y-3 md:space-y-4">
+          <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300">
             {product.name}
           </h3>
           
           {/* Prices */}
           {(product.retail_price || product.wholesale_price) && (
-            <div className="space-y-2 p-3 bg-white/60 rounded-xl border border-border-subtle">
+            <div className="space-y-1.5 sm:space-y-2 p-2 sm:p-3 bg-white/60 rounded-lg sm:rounded-xl border border-border-subtle">
               {product.retail_price && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground-muted">💰 Varejo:</span>
-                  <span className="font-bold text-primary text-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs sm:text-sm font-semibold text-foreground-muted">💰 Varejo:</span>
+                  <span className="font-bold text-primary text-sm sm:text-base md:text-lg">
                     R$ {product.retail_price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
               )}
               {product.wholesale_price && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground-muted">📦 Atacado:</span>
-                  <span className="font-bold text-accent text-lg">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs sm:text-sm font-semibold text-foreground-muted">📦 Atacado:</span>
+                  <span className="font-bold text-accent text-sm sm:text-base md:text-lg">
                     R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
                   </span>
                 </div>
@@ -90,24 +90,24 @@ export const ProductCard = ({
 
           {/* Category */}
           <div className="flex items-center justify-center">
-            <Badge className="bg-gradient-to-r from-surface-elevated to-surface text-foreground-muted border border-border-subtle text-xs font-medium px-3 py-1">
+            <Badge className="bg-gradient-to-r from-surface-elevated to-surface text-foreground-muted border border-border-subtle text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1">
               {product.category}
             </Badge>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 sm:p-5 pt-0 flex flex-col items-stretch gap-3">
+      <CardFooter className="p-3 sm:p-4 md:p-5 pt-0 flex flex-col items-stretch gap-2 sm:gap-3">
         <Button
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-sm h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 transform hover:scale-105"
+          className="w-full text-xs sm:text-sm h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-lg sm:rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 active:scale-95 sm:hover:scale-105"
         >
-          <MessageCircle className="w-4 h-4 mr-2" />
-          💬 Consultar Produto
+          <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+          💬 Consultar
         </Button>
       </CardFooter>
     </Card>

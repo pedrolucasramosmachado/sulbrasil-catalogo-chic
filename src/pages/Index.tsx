@@ -66,17 +66,17 @@ const Index = () => {
 
       {/* Quiz Section - Category Selection */}
       {showCategorySelection ? (
-        <section className="relative py-16 overflow-hidden">
+        <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center max-w-4xl mx-auto mb-16">
-              <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6">
+            <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-12 md:mb-16">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
                 Qual categoria deseja visualizar?
               </h1>
-              <p className="text-xl text-foreground-muted leading-relaxed">
+              <p className="text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed px-4">
                 Escolha uma categoria para ver todas as cores disponíveis
               </p>
-              <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mt-6"></div>
+              <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full mt-4 sm:mt-6"></div>
             </div>
 
             {loading ? (
@@ -88,7 +88,7 @@ const Index = () => {
                 <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
               </div>
             ) : (
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+              <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
                 {getCategoriesWithImages().map((item, index) => (
                   <div 
                     key={item.category}
@@ -109,31 +109,32 @@ const Index = () => {
       ) : (
         <>
           {/* Hero Section - Products View */}
-          <section className="relative py-16 overflow-hidden">
+          <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="text-center max-w-3xl mx-auto">
                 <Button
                   onClick={handleBackToCategories}
                   variant="outline"
-                  className="mb-8 gap-2"
+                  className="mb-6 sm:mb-8 gap-2 text-sm sm:text-base"
+                  size="sm"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Voltar às categorias
                 </Button>
-                <h1 className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
                   {selectedCategory}
                 </h1>
-                <p className="text-xl text-foreground-muted mb-8 leading-relaxed">
+                <p className="text-base sm:text-lg md:text-xl text-foreground-muted mb-6 sm:mb-8 leading-relaxed px-4">
                   Descubra as cores disponíveis nesta categoria
                 </p>
-                <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
+                <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
               </div>
             </div>
           </section>
 
           {/* Products Section */}
-          <section className="py-16 relative">
+          <section className="py-8 sm:py-12 md:py-16 relative">
             <div className="container mx-auto px-4">
               {loading ? (
                 <div className="text-center py-16">
@@ -144,7 +145,7 @@ const Index = () => {
                   <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
                 </div>
               ) : products.length > 0 ? (
-                <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+                <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
                   {getProductsByCategory(selectedCategory).map((product, index) => (
                     <div 
                       key={product.id} 
