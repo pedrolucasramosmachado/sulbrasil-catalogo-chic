@@ -33,21 +33,25 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
           
           {/* Prices */}
           {(minRetailPrice || minWholesalePrice) && (
-            <div className="flex flex-col gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+            <div className="flex flex-col gap-2 sm:gap-2.5 mb-2 sm:mb-3">
               {minWholesalePrice && (
-                <div className="flex items-center justify-center gap-2 text-white text-base sm:text-lg md:text-xl">
-                  <span className="font-semibold">Atacado:</span>
-                  <span className="font-bold text-lg sm:text-xl md:text-2xl">
-                    R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
-                  </span>
+                <div className="bg-primary/90 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 shadow-lg">
+                  <div className="flex items-center justify-center gap-2 text-white">
+                    <span className="font-semibold text-sm sm:text-base">Atacado:</span>
+                    <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+                      R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
                 </div>
               )}
               {minRetailPrice && (
-                <div className="flex items-center justify-center gap-2 text-white text-base sm:text-lg md:text-xl">
-                  <span className="font-semibold">Varejo:</span>
-                  <span className="font-bold text-lg sm:text-xl md:text-2xl">
-                    R$ {minRetailPrice.toFixed(2).replace('.', ',')}
-                  </span>
+                <div className="bg-accent/90 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 shadow-lg">
+                  <div className="flex items-center justify-center gap-2 text-white">
+                    <span className="font-semibold text-sm sm:text-base">Varejo:</span>
+                    <span className="font-bold text-xl sm:text-2xl md:text-3xl">
+                      R$ {minRetailPrice.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
