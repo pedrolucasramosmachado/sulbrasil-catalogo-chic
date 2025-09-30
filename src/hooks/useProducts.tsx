@@ -58,6 +58,17 @@ export const useProducts = () => {
     return products.filter(product => product.is_featured);
   };
 
+  const getCategoriesWithImages = () => {
+    const categories = [...new Set(products.map(p => p.category))];
+    return categories.map(category => {
+      const firstProduct = products.find(p => p.category === category);
+      return {
+        category,
+        imageUrl: firstProduct?.image_url || '',
+      };
+    });
+  };
+
   return {
     products,
     loading,
@@ -66,5 +77,6 @@ export const useProducts = () => {
     getProductsByCategory,
     getCategories,
     getFeaturedProducts,
+    getCategoriesWithImages,
   };
 };
