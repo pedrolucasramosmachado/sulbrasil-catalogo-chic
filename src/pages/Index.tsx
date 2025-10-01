@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
-import { ProductDetailModal } from "@/components/ProductDetailModal";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -9,33 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
 
 const Index = () => {
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [showCategorySelection, setShowCategorySelection] = useState(true);
   
   const { products, loading, error, getProductsByCategory, getCategoriesWithImages } = useProducts();
-
-  // Deep linking - abrir produto específico via URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const productId = urlParams.get('produto');
-    
-    if (productId && products.length > 0) {
-      const product = products.find(p => p.id === productId);
-      if (product) {
-        setSelectedProduct(product);
-        setIsModalOpen(true);
-        // Limpar URL sem recarregar a página
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    }
-  }, [products]);
-
-  const handleViewDetails = (product: Product) => {
-    setSelectedProduct(product);
-    setIsModalOpen(true);
-  };
 
 
   const handleConsult = (product: Product) => {
@@ -162,7 +138,6 @@ const Index = () => {
                     >
                       <ProductCard
                         product={product}
-                        onViewDetails={handleViewDetails}
                         onConsult={handleConsult}
                       />
                     </div>
@@ -183,17 +158,6 @@ const Index = () => {
           </section>
         </>
       )}
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedProduct(null);
-        }}
-        onConsult={handleConsult}
-      />
     </div>
   );
 };
