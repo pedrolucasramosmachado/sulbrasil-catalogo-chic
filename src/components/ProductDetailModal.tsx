@@ -190,10 +190,13 @@ export const ProductDetailModal = ({
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
-          onClick={() => setIsZoomed(false)}
+          className="absolute top-4 right-4 w-14 h-14 text-white hover:bg-white/20 z-10 rounded-full bg-black/50 backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsZoomed(false);
+          }}
         >
-          <X className="w-6 h-6" />
+          <X className="w-8 h-8" strokeWidth={2.5} />
         </Button>
         
         <div className="relative w-full h-full flex items-center justify-center">
@@ -204,7 +207,7 @@ export const ProductDetailModal = ({
             onClick={(e) => e.stopPropagation()}
           />
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm">
-            Toque para fechar
+            Toque fora da imagem para fechar
           </div>
         </div>
       </div>
