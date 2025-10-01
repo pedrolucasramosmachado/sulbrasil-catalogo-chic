@@ -41,6 +41,7 @@ const AdminProducts = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isNewCategory, setIsNewCategory] = useState(false);
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -168,6 +169,7 @@ const AdminProducts = () => {
     setEditingProduct(null);
     setImageFile(null);
     setImagePreview(null);
+    setIsNewCategory(false);
   };
 
   const openEditDialog = (product: Product) => {
@@ -312,7 +314,57 @@ const AdminProducts = () => {
                             <FormItem>
                               <FormLabel>Categoria *</FormLabel>
                               <FormControl>
-                                <Input {...field} />
+                                {isNewCategory ? (
+                                  <div className="space-y-2">
+                                    <Input 
+                                      {...field} 
+                                      placeholder="Digite a nova categoria"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setIsNewCategory(false);
+                                        form.setValue('category', '');
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      Selecionar categoria existente
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <Select 
+                                      value={field.value} 
+                                      onValueChange={(value) => {
+                                        if (value === '__new__') {
+                                          setIsNewCategory(true);
+                                          form.setValue('category', '');
+                                        } else {
+                                          field.onChange(value);
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Selecione uma categoria" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__new__">
+                                          + Nova Categoria
+                                        </SelectItem>
+                                        {categories
+                                          .filter(cat => cat !== 'todos')
+                                          .map(category => (
+                                            <SelectItem key={category} value={category}>
+                                              {category}
+                                            </SelectItem>
+                                          ))
+                                        }
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
                               </FormControl>
                               <FormMessage />
                             </FormItem>
