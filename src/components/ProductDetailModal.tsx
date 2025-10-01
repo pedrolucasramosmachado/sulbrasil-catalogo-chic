@@ -2,9 +2,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { MessageCircle, Share2 } from "lucide-react";
+import { MessageCircle, Share2, ZoomIn, X } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -19,6 +20,8 @@ export const ProductDetailModal = ({
   onClose, 
   onConsult 
 }: ProductDetailModalProps) => {
+  const [isZoomed, setIsZoomed] = useState(false);
+  
   if (!product) return null;
 
   const handleConsult = () => {
@@ -45,35 +48,48 @@ export const ProductDetailModal = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Product Image */}
-          <div className="space-y-4">
-            <div className="aspect-[3/4] bg-surface-elevated rounded-lg overflow-hidden">
-              <img
-                src={product.image_url || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            
-            {/* Additional Images Placeholder */}
-            <div className="flex gap-2">
-              {[1, 2, 3].map((i) => (
-                <div 
-                  key={i}
-                  className="w-20 h-20 bg-surface-elevated rounded-lg border border-card-border cursor-pointer hover:border-primary transition-colors"
-                >
-                  <img
-                    src={product.image_url || "/placeholder.svg"}
-                    alt={`${product.name} - ${i}`}
-                    className="w-full h-full object-cover rounded-lg opacity-70 hover:opacity-100 transition-opacity"
-                  />
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Product Image */}
+            <div className="space-y-4">
+              <div 
+                className="relative aspect-[3/4] bg-surface-elevated rounded-lg overflow-hidden cursor-zoom-in group"
+                onClick={() => setIsZoomed(true)}
+              >
+                <img
+                  src={product.image_url || "/placeholder.svg"}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-full p-3">
+                    <ZoomIn className="w-6 h-6 text-foreground" />
+                  </div>
                 </div>
-              ))}
+                <div className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium">
+                  Clique para ampliar
+                </div>
+              </div>
+              
+              {/* Additional Images Placeholder */}
+              <div className="flex gap-2">
+                {[1, 2, 3].map((i) => (
+                  <div 
+                    key={i}
+                    className="w-20 h-20 bg-surface-elevated rounded-lg border border-card-border cursor-pointer hover:border-primary transition-colors"
+                    onClick={() => setIsZoomed(true)}
+                  >
+                    <img
+                      src={product.image_url || "/placeholder.svg"}
+                      alt={`${product.name} - ${i}`}
+                      className="w-full h-full object-cover rounded-lg opacity-70 hover:opacity-100 transition-opacity"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
 
           {/* Product Details */}
           <div className="space-y-6">
@@ -164,5 +180,35 @@ export const ProductDetailModal = ({
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Zoom Modal */}
+    {isZoomed && (
+      <div 
+        className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 animate-in fade-in duration-200"
+        onClick={() => setIsZoomed(false)}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute top-4 right-4 text-white hover:bg-white/20 z-10"
+          onClick={() => setIsZoomed(false)}
+        >
+          <X className="w-6 h-6" />
+        </Button>
+        
+        <div className="relative w-full h-full flex items-center justify-center">
+          <img
+            src={product.image_url || "/placeholder.svg"}
+            alt={product.name}
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm">
+            Toque para fechar
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
