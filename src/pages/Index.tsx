@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
+import { ProductImageZoom } from "@/components/ProductImageZoom";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -10,9 +11,16 @@ import { Product, useProducts } from "@/hooks/useProducts";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [showCategorySelection, setShowCategorySelection] = useState(true);
+  const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
   
   const { products, loading, error, getProductsByCategory, getCategoriesWithImages } = useProducts();
 
+
+  const handleImageClick = (product: Product) => {
+    setZoomProduct(product);
+    setIsZoomOpen(true);
+  };
 
   const handleConsult = (product: Product) => {
     const productUrl = `${window.location.origin}/?produto=${product.id}`;
@@ -139,6 +147,7 @@ const Index = () => {
                       <ProductCard
                         product={product}
                         onConsult={handleConsult}
+                        onImageClick={handleImageClick}
                       />
                     </div>
                   ))}
@@ -158,6 +167,16 @@ const Index = () => {
           </section>
         </>
       )}
+
+      {/* Image Zoom Modal */}
+      <ProductImageZoom
+        product={zoomProduct}
+        isOpen={isZoomOpen}
+        onClose={() => {
+          setIsZoomOpen(false);
+          setZoomProduct(null);
+        }}
+      />
     </div>
   );
 };

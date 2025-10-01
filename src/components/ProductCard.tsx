@@ -9,11 +9,13 @@ import { Product } from "@/hooks/useProducts";
 interface ProductCardProps {
   product: Product;
   onConsult: (product: Product) => void;
+  onImageClick: (product: Product) => void;
 }
 
 export const ProductCard = ({ 
   product, 
-  onConsult 
+  onConsult,
+  onImageClick
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -23,9 +25,10 @@ export const ProductCard = ({
       <div className="relative overflow-hidden flex-shrink-0">
         <div 
           className={cn(
-            "aspect-[3/4] bg-gradient-to-br from-surface-elevated to-surface relative overflow-hidden",
+            "aspect-[3/4] bg-gradient-to-br from-surface-elevated to-surface relative overflow-hidden cursor-pointer",
             !imageLoaded && "animate-pulse"
           )}
+          onClick={() => onImageClick(product)}
         >
           <img
             src={product.image_url || "/placeholder.svg"}
