@@ -320,6 +320,27 @@ const AdminProducts = () => {
                   </DialogHeader>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">Imagem do Produto *</label>
+                        <div className="flex flex-col gap-4">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className="flex-1"
+                          />
+                          {imagePreview && (
+                            <div className="relative w-32 h-32 mx-auto">
+                              <img
+                                src={imagePreview}
+                                alt="Preview"
+                                className="w-full h-full object-cover rounded-lg border-2 border-border shadow-md"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
                       <FormField
                         control={form.control}
                         name="category"
@@ -472,27 +493,6 @@ const AdminProducts = () => {
                             </FormItem>
                           )}
                         />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Imagem do Produto</label>
-                        <div className="flex items-center gap-4">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="flex-1"
-                          />
-                          {imagePreview && (
-                            <div className="relative w-16 h-16">
-                              <img
-                                src={imagePreview}
-                                alt="Preview"
-                                className="w-full h-full object-cover rounded border"
-                              />
-                            </div>
-                          )}
-                        </div>
                       </div>
                       
                       <div className="flex justify-end gap-2 pt-4">
