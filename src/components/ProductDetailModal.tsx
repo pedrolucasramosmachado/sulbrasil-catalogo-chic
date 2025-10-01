@@ -199,14 +199,14 @@ export const ProductDetailModal = ({
           <X className="w-8 h-8" strokeWidth={2.5} />
         </Button>
         
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
           <img
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full object-contain pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
           />
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm pointer-events-none">
             Toque fora da imagem para fechar
           </div>
         </div>
