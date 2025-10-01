@@ -110,20 +110,26 @@ const Index = () => {
         </section>
       ) : (
         <>
+          {/* Fixed Back Button */}
+          <div className="sticky top-[56px] sm:top-[64px] z-40 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">
+            <div className="container mx-auto px-4 py-3">
+              <Button
+                onClick={handleBackToCategories}
+                variant="default"
+                className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
+                size="default"
+              >
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                Voltar às categorias
+              </Button>
+            </div>
+          </div>
+
           {/* Hero Section - Products View */}
           <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
             <div className="container mx-auto px-4 relative z-10">
               <div className="text-center max-w-3xl mx-auto">
-                <Button
-                  onClick={handleBackToCategories}
-                  variant="outline"
-                  className="mb-6 sm:mb-8 gap-2 text-sm sm:text-base"
-                  size="sm"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Voltar às categorias
-                </Button>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
                   {selectedCategory}
                 </h1>
