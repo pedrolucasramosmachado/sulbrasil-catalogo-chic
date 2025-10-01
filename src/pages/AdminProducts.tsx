@@ -22,6 +22,7 @@ import { AdminHeader } from '@/components/AdminHeader';
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   category: z.string().min(1, 'Categoria é obrigatória'),
+  color: z.string().optional(),
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
 });
@@ -48,10 +49,28 @@ const AdminProducts = () => {
     defaultValues: {
       name: '',
       category: '',
+      color: '',
       retail_price: '',
       wholesale_price: '',
     },
   });
+
+  // Função para encontrar preços padrão de uma categoria
+  const getDefaultPricesForCategory = (category: string) => {
+    const productInCategory = products.find(p => p.category === category);
+    return {
+      retail_price: productInCategory?.retail_price?.toString() || '',
+      wholesale_price: productInCategory?.wholesale_price?.toString() || '',
+    };
+  };
+
+  // Atualizar nome quando categoria ou cor mudam
+  const updateProductName = (category: string, color: string) => {
+    if (category && !editingProduct) {
+      const fullName = color ? `${category} ${color}` : category;
+      form.setValue('name', fullName);
+    }
+  };
 
   const categories = getCategories();
 
@@ -174,9 +193,16 @@ const AdminProducts = () => {
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
+    
+    // Tentar extrair a cor do nome do produto
+    const categoryRegex = new RegExp(`^${product.category}\\s*(.*)$`, 'i');
+    const match = product.name.match(categoryRegex);
+    const extractedColor = match ? match[1].trim() : '';
+    
     form.reset({
       name: product.name,
       category: product.category,
+      color: extractedColor,
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
     });
@@ -189,6 +215,7 @@ const AdminProducts = () => {
     form.reset({
       name: '',
       category: '',
+      color: '',
       retail_price: '',
       wholesale_price: '',
     });
@@ -293,15 +320,100 @@ const AdminProducts = () => {
                   </DialogHeader>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Categoria *</FormLabel>
+                            <FormControl>
+                              {isNewCategory ? (
+                                <div className="space-y-2">
+                                  <Input 
+                                    {...field} 
+                                    placeholder="Digite a nova categoria"
+                                    onChange={(e) => {
+                                      field.onChange(e);
+                                      updateProductName(e.target.value, form.getValues('color') || '');
+                                    }}
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setIsNewCategory(false);
+                                      form.setValue('category', '');
+                                      form.setValue('name', '');
+                                    }}
+                                    className="text-xs"
+                                  >
+                                    Selecionar categoria existente
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <Select 
+                                    value={field.value} 
+                                    onValueChange={(value) => {
+                                      if (value === '__new__') {
+                                        setIsNewCategory(true);
+                                        form.setValue('category', '');
+                                        form.setValue('name', '');
+                                      } else {
+                                        field.onChange(value);
+                                        // Pré-preencher preços da categoria
+                                        if (!editingProduct) {
+                                          const defaultPrices = getDefaultPricesForCategory(value);
+                                          form.setValue('retail_price', defaultPrices.retail_price);
+                                          form.setValue('wholesale_price', defaultPrices.wholesale_price);
+                                        }
+                                        // Atualizar nome
+                                        updateProductName(value, form.getValues('color') || '');
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione uma categoria" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__new__">
+                                        + Nova Categoria
+                                      </SelectItem>
+                                      {categories
+                                        .filter(cat => cat !== 'todos')
+                                        .map(category => (
+                                          <SelectItem key={category} value={category}>
+                                            {category}
+                                          </SelectItem>
+                                        ))
+                                      }
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
-                          name="name"
+                          name="color"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Nome *</FormLabel>
+                              <FormLabel>Cor</FormLabel>
                               <FormControl>
-                                <Input {...field} />
+                                <Input 
+                                  {...field} 
+                                  placeholder="Ex: Argila, Preto, Azul"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    updateProductName(form.getValues('category'), e.target.value);
+                                  }}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -309,62 +421,16 @@ const AdminProducts = () => {
                         />
                         <FormField
                           control={form.control}
-                          name="category"
+                          name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Categoria *</FormLabel>
+                              <FormLabel>Nome Final *</FormLabel>
                               <FormControl>
-                                {isNewCategory ? (
-                                  <div className="space-y-2">
-                                    <Input 
-                                      {...field} 
-                                      placeholder="Digite a nova categoria"
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setIsNewCategory(false);
-                                        form.setValue('category', '');
-                                      }}
-                                      className="text-xs"
-                                    >
-                                      Selecionar categoria existente
-                                    </Button>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-2">
-                                    <Select 
-                                      value={field.value} 
-                                      onValueChange={(value) => {
-                                        if (value === '__new__') {
-                                          setIsNewCategory(true);
-                                          form.setValue('category', '');
-                                        } else {
-                                          field.onChange(value);
-                                        }
-                                      }}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Selecione uma categoria" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__new__">
-                                          + Nova Categoria
-                                        </SelectItem>
-                                        {categories
-                                          .filter(cat => cat !== 'todos')
-                                          .map(category => (
-                                            <SelectItem key={category} value={category}>
-                                              {category}
-                                            </SelectItem>
-                                          ))
-                                        }
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                )}
+                                <Input 
+                                  {...field} 
+                                  disabled={!editingProduct}
+                                  className="bg-muted"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
