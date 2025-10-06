@@ -8,6 +8,7 @@ export interface Product {
   wholesale_price?: number;
   retail_price?: number;
   category: string;
+  subcategory?: string | null;
   image_url?: string;
   sizes?: string[];
   is_featured?: boolean;

@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,6 +22,7 @@ import { AdminHeader } from '@/components/AdminHeader';
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   category: z.string().min(1, 'Categoria é obrigatória'),
+  subcategory: z.string().optional(),
   color: z.string().optional(),
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
@@ -43,12 +44,21 @@ const AdminProducts = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isNewCategory, setIsNewCategory] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
+  const [bulkEditData, setBulkEditData] = useState({
+    retail_price: '',
+    wholesale_price: '',
+    category: '',
+    subcategory: '',
+  });
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
       category: '',
+      subcategory: '',
       color: '',
       retail_price: '',
       wholesale_price: '',
@@ -138,6 +148,7 @@ const AdminProducts = () => {
       const productData = {
         name: data.name,
         category: data.category,
+        subcategory: data.subcategory || null,
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
         image_url: imageUrl || null,
@@ -202,6 +213,7 @@ const AdminProducts = () => {
     form.reset({
       name: product.name,
       category: product.category,
+      subcategory: product.subcategory || '',
       color: extractedColor,
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
@@ -215,11 +227,90 @@ const AdminProducts = () => {
     form.reset({
       name: '',
       category: '',
+      subcategory: '',
       color: '',
       retail_price: '',
       wholesale_price: '',
     });
     setIsDialogOpen(true);
+  };
+
+  const toggleProductSelection = (productId: string) => {
+    const newSelection = new Set(selectedProducts);
+    if (newSelection.has(productId)) {
+      newSelection.delete(productId);
+    } else {
+      newSelection.add(productId);
+    }
+    setSelectedProducts(newSelection);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.size === filteredProducts.length) {
+      setSelectedProducts(new Set());
+    } else {
+      setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (selectedProducts.size === 0) return;
+
+    try {
+      const updates: any = {};
+      if (bulkEditData.retail_price) {
+        updates.retail_price = parseFloat(bulkEditData.retail_price.replace(',', '.'));
+      }
+      if (bulkEditData.wholesale_price) {
+        updates.wholesale_price = parseFloat(bulkEditData.wholesale_price.replace(',', '.'));
+      }
+      if (bulkEditData.category) {
+        updates.category = bulkEditData.category;
+      }
+      if (bulkEditData.subcategory) {
+        updates.subcategory = bulkEditData.subcategory;
+      }
+
+      if (Object.keys(updates).length === 0) {
+        toast({
+          title: 'Atenção',
+          description: 'Nenhum campo foi preenchido para edição',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      for (const productId of Array.from(selectedProducts)) {
+        const { error } = await supabase
+          .from('products')
+          .update(updates)
+          .eq('id', productId);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: `${selectedProducts.size} produto(s) atualizado(s) com sucesso!`,
+      });
+
+      setIsBulkEditOpen(false);
+      setSelectedProducts(new Set());
+      setBulkEditData({
+        retail_price: '',
+        wholesale_price: '',
+        category: '',
+        subcategory: '',
+      });
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao atualizar produtos:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar produtos em massa',
+        variant: 'destructive',
+      });
+    }
   };
 
   const deleteProduct = async (productId: string) => {
@@ -305,13 +396,24 @@ const AdminProducts = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button onClick={openCreateDialog} className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    Novo Produto
+              <div className="flex gap-2">
+                {selectedProducts.size > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsBulkEditOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    Editar {selectedProducts.size} selecionado(s)
                   </Button>
-                </DialogTrigger>
+                )}
+                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button onClick={openCreateDialog} className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Novo Produto
+                    </Button>
+                  </DialogTrigger>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
@@ -419,6 +521,20 @@ const AdminProducts = () => {
                         )}
                       />
 
+                      <FormField
+                        control={form.control}
+                        name="subcategory"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Subcategoria</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Ex: Blusas, Calças, Vestidos" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -512,6 +628,80 @@ const AdminProducts = () => {
                   </Form>
                 </DialogContent>
               </Dialog>
+
+              {/* Dialog de Edição em Massa */}
+              <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Editar {selectedProducts.size} produto(s) selecionado(s)</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Categoria (deixe vazio para não alterar)</label>
+                      <Select 
+                        value={bulkEditData.category} 
+                        onValueChange={(value) => setBulkEditData({...bulkEditData, category: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione uma categoria" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Não alterar</SelectItem>
+                          {categories
+                            .filter(cat => cat !== 'todos')
+                            .map(category => (
+                              <SelectItem key={category} value={category}>
+                                {category}
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Subcategoria</label>
+                      <Input
+                        value={bulkEditData.subcategory}
+                        onChange={(e) => setBulkEditData({...bulkEditData, subcategory: e.target.value})}
+                        placeholder="Ex: Blusas (deixe vazio para não alterar)"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Preço Varejo</label>
+                        <Input
+                          value={bulkEditData.retail_price}
+                          onChange={(e) => setBulkEditData({...bulkEditData, retail_price: e.target.value})}
+                          placeholder="Ex: 29.90"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Preço Atacado</label>
+                        <Input
+                          value={bulkEditData.wholesale_price}
+                          onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
+                          placeholder="Ex: 25.90"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsBulkEditOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleBulkEdit}>
+                        Aplicar Alterações
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -525,9 +715,24 @@ const AdminProducts = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleSelectAll}
+                        className="h-8 w-8 p-0"
+                      >
+                        {selectedProducts.size === filteredProducts.length && filteredProducts.length > 0 ? (
+                          <CheckSquare className="h-4 w-4" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TableHead>
                     <TableHead className="w-16">Imagem</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Categoria</TableHead>
+                    <TableHead>Subcategoria</TableHead>
                     <TableHead>Varejo</TableHead>
                     <TableHead>Atacado</TableHead>
                     <TableHead>Criado em</TableHead>
@@ -537,7 +742,7 @@ const AdminProducts = () => {
                 <TableBody>
                   {filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         {searchTerm || selectedCategory !== 'todos' 
                           ? 'Nenhum produto encontrado com os filtros aplicados.'
                           : 'Nenhum produto cadastrado ainda.'
@@ -547,6 +752,20 @@ const AdminProducts = () => {
                   ) : (
                     filteredProducts.map((product) => (
                       <TableRow key={product.id}>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleProductSelection(product.id)}
+                            className="h-8 w-8 p-0"
+                          >
+                            {selectedProducts.has(product.id) ? (
+                              <CheckSquare className="h-4 w-4" />
+                            ) : (
+                              <Square className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
                         <TableCell>
                           {product.image_url ? (
                             <img
@@ -562,6 +781,13 @@ const AdminProducts = () => {
                         </TableCell>
                         <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.category}</TableCell>
+                        <TableCell>
+                          {product.subcategory ? (
+                            <Badge variant="secondary">{product.subcategory}</Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>{formatPrice(product.retail_price)}</TableCell>
                         <TableCell>{formatPrice(product.wholesale_price)}</TableCell>
                         <TableCell>{formatDate(product.created_at)}</TableCell>

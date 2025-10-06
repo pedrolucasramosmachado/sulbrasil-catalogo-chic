@@ -89,10 +89,15 @@ export const ProductCard = ({
           )}
 
           {/* Category */}
-          <div className="flex items-center justify-center">
+          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
             <Badge className="bg-gradient-to-r from-surface-elevated to-surface text-foreground-muted border border-border-subtle text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1">
               {product.category}
             </Badge>
+            {product.subcategory && (
+              <Badge variant="secondary" className="text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1">
+                {product.subcategory}
+              </Badge>
+            )}
           </div>
         </div>
       </CardContent>

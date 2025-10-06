@@ -25,6 +25,7 @@ export type Database = {
           name: string
           retail_price: number | null
           sizes: string[] | null
+          subcategory: string | null
           updated_at: string
           wholesale_price: number | null
         }
@@ -38,6 +39,7 @@ export type Database = {
           name: string
           retail_price?: number | null
           sizes?: string[] | null
+          subcategory?: string | null
           updated_at?: string
           wholesale_price?: number | null
         }
@@ -51,6 +53,7 @@ export type Database = {
           name?: string
           retail_price?: number | null
           sizes?: string[] | null
+          subcategory?: string | null
           updated_at?: string
           wholesale_price?: number | null
         }
