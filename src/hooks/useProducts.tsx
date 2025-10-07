@@ -95,13 +95,23 @@ export const useProducts = () => {
     const subcategoryMap = new Map<string, Product>();
     
     categoryProducts.forEach(product => {
-      const subcat = product.subcategory || 'Sem subcategoria';
-      if (!subcategoryMap.has(subcat)) {
-        subcategoryMap.set(subcat, product);
+      // Apenas adiciona produtos que têm subcategoria definida
+      if (product.subcategory && product.subcategory !== '') {
+        const subcat = product.subcategory;
+        if (!subcategoryMap.has(subcat)) {
+          subcategoryMap.set(subcat, product);
+        }
       }
     });
     
     return Array.from(subcategoryMap.values());
+  };
+
+  const getProductsBySubcategory = (category: string, subcategory: string) => {
+    return products.filter(product => 
+      product.category.toLowerCase() === category.toLowerCase() && 
+      product.subcategory === subcategory
+    );
   };
 
   return {
@@ -114,5 +124,6 @@ export const useProducts = () => {
     getFeaturedProducts,
     getCategoriesWithImages,
     getOneProductPerSubcategory,
+    getProductsBySubcategory,
   };
 };

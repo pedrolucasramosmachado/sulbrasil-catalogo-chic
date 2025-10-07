@@ -15,7 +15,7 @@ const Index = () => {
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getOneProductPerSubcategory } = useProducts();
+  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getOneProductPerSubcategory, getProductsBySubcategory } = useProducts();
 
 
   const handleImageClick = (product: Product) => {
@@ -47,14 +47,8 @@ const Index = () => {
     setSelectedSubcategory(null);
   };
 
-  const handleProductClick = (product: Product) => {
-    if (!selectedSubcategory && product.subcategory) {
-      // Seleciona a subcategoria para ver todas as cores
-      setSelectedSubcategory(product.subcategory);
-    } else {
-      // Abre a consulta no WhatsApp
-      handleConsult(product);
-    }
+  const handleSubcategorySelect = (subcategory: string) => {
+    setSelectedSubcategory(subcategory);
   };
 
   const handleBackToSubcategories = () => {
@@ -135,7 +129,7 @@ const Index = () => {
                   {selectedSubcategory || selectedCategory}
                 </h1>
                 <p className="text-base sm:text-lg md:text-xl text-foreground-muted mb-6 sm:mb-8 leading-relaxed px-4">
-                  {selectedSubcategory ? 'Todas as cores disponíveis' : 'Escolha uma subcategoria para ver as cores'}
+                  {selectedSubcategory ? 'Todas as cores disponíveis' : 'Escolha uma peça para ver as cores'}
                 </p>
                 <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
               </div>
@@ -157,7 +151,7 @@ const Index = () => {
                 <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
                   {(() => {
                     const productsToShow = selectedSubcategory
-                      ? getProductsByCategory(selectedCategory).filter(p => p.subcategory === selectedSubcategory)
+                      ? getProductsBySubcategory(selectedCategory, selectedSubcategory)
                       : getOneProductPerSubcategory(selectedCategory);
                     
                     return productsToShow.map((product, index) => (
@@ -168,7 +162,7 @@ const Index = () => {
                       >
                         <ProductCard
                           product={product}
-                          onConsult={selectedSubcategory ? handleConsult : handleProductClick}
+                          onConsult={selectedSubcategory ? handleConsult : () => product.subcategory && handleSubcategorySelect(product.subcategory)}
                           onImageClick={handleImageClick}
                         />
                       </div>
