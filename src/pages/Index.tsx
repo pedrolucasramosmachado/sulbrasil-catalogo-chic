@@ -164,6 +164,7 @@ const Index = () => {
                           product={product}
                           onConsult={selectedSubcategory ? handleConsult : () => product.subcategory && handleSubcategorySelect(product.subcategory)}
                           onImageClick={handleImageClick}
+                          isSubcategoryView={!selectedSubcategory}
                         />
                       </div>
                     ));

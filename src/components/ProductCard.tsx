@@ -10,12 +10,14 @@ interface ProductCardProps {
   product: Product;
   onConsult: (product: Product) => void;
   onImageClick: (product: Product) => void;
+  isSubcategoryView?: boolean;
 }
 
 export const ProductCard = ({ 
   product, 
   onConsult,
-  onImageClick
+  onImageClick,
+  isSubcategoryView = false
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -112,7 +114,7 @@ export const ProductCard = ({
           className="w-full text-xs sm:text-sm h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-lg sm:rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 active:scale-95 sm:hover:scale-105"
         >
           <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          💬 Consultar
+          {isSubcategoryView ? '🎨 Ver Cores' : '💬 Consultar'}
         </Button>
       </CardFooter>
     </Card>
