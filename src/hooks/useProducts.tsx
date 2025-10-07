@@ -90,6 +90,20 @@ export const useProducts = () => {
     }));
   };
 
+  const getOneProductPerSubcategory = (category: string) => {
+    const categoryProducts = getProductsByCategory(category);
+    const subcategoryMap = new Map<string, Product>();
+    
+    categoryProducts.forEach(product => {
+      const subcat = product.subcategory || 'Sem subcategoria';
+      if (!subcategoryMap.has(subcat)) {
+        subcategoryMap.set(subcat, product);
+      }
+    });
+    
+    return Array.from(subcategoryMap.values());
+  };
+
   return {
     products,
     loading,
@@ -99,5 +113,6 @@ export const useProducts = () => {
     getCategories,
     getFeaturedProducts,
     getCategoriesWithImages,
+    getOneProductPerSubcategory,
   };
 };

@@ -11,10 +11,11 @@ import { Product, useProducts } from "@/hooks/useProducts";
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('todos');
   const [showCategorySelection, setShowCategorySelection] = useState(true);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getCategoriesWithImages } = useProducts();
+  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getOneProductPerSubcategory } = useProducts();
 
 
   const handleImageClick = (product: Product) => {
@@ -36,12 +37,28 @@ const Index = () => {
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
+    setSelectedSubcategory(null);
     setShowCategorySelection(false);
   };
 
   const handleBackToCategories = () => {
     setShowCategorySelection(true);
     setSelectedCategory('todos');
+    setSelectedSubcategory(null);
+  };
+
+  const handleProductClick = (product: Product) => {
+    if (!selectedSubcategory && product.subcategory) {
+      // Seleciona a subcategoria para ver todas as cores
+      setSelectedSubcategory(product.subcategory);
+    } else {
+      // Abre a consulta no WhatsApp
+      handleConsult(product);
+    }
+  };
+
+  const handleBackToSubcategories = () => {
+    setSelectedSubcategory(null);
   };
 
   return (
@@ -98,13 +115,13 @@ const Index = () => {
           <div className="sticky top-[56px] sm:top-[64px] z-40 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">
             <div className="container mx-auto px-4 py-3">
               <Button
-                onClick={handleBackToCategories}
+                onClick={selectedSubcategory ? handleBackToSubcategories : handleBackToCategories}
                 variant="default"
                 className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
                 size="default"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                Voltar às categorias
+                {selectedSubcategory ? 'Voltar às subcategorias' : 'Voltar às categorias'}
               </Button>
             </div>
           </div>
@@ -115,10 +132,10 @@ const Index = () => {
             <div className="container mx-auto px-4 relative z-10">
               <div className="text-center max-w-3xl mx-auto">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
-                  {selectedCategory}
+                  {selectedSubcategory || selectedCategory}
                 </h1>
                 <p className="text-base sm:text-lg md:text-xl text-foreground-muted mb-6 sm:mb-8 leading-relaxed px-4">
-                  Descubra as cores disponíveis nesta categoria
+                  {selectedSubcategory ? 'Todas as cores disponíveis' : 'Escolha uma subcategoria para ver as cores'}
                 </p>
                 <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
               </div>
@@ -138,19 +155,25 @@ const Index = () => {
                 </div>
               ) : products.length > 0 ? (
                 <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
-                  {getProductsByCategory(selectedCategory).map((product, index) => (
-                    <div 
-                      key={product.id} 
-                      className="flex animate-fade-in"
-                      style={{ animationDelay: `${index * 0.1}s` }}
-                    >
-                      <ProductCard
-                        product={product}
-                        onConsult={handleConsult}
-                        onImageClick={handleImageClick}
-                      />
-                    </div>
-                  ))}
+                  {(() => {
+                    const productsToShow = selectedSubcategory
+                      ? getProductsByCategory(selectedCategory).filter(p => p.subcategory === selectedSubcategory)
+                      : getOneProductPerSubcategory(selectedCategory);
+                    
+                    return productsToShow.map((product, index) => (
+                      <div 
+                        key={product.id} 
+                        className="flex animate-fade-in"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <ProductCard
+                          product={product}
+                          onConsult={selectedSubcategory ? handleConsult : handleProductClick}
+                          onImageClick={handleImageClick}
+                        />
+                      </div>
+                    ));
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-16">
