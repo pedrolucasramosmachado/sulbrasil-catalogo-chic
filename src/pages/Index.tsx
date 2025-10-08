@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImageZoom } from "@/components/ProductImageZoom";
 import { CategoryCard } from "@/components/CategoryCard";
+import { SubcategoryCard } from "@/components/SubcategoryCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -15,7 +16,7 @@ const Index = () => {
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getOneProductPerSubcategory, getProductsBySubcategory } = useProducts();
+  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getSubcategoriesWithData, getProductsBySubcategory } = useProducts();
 
 
   const handleImageClick = (product: Product) => {
@@ -149,12 +150,8 @@ const Index = () => {
                 </div>
               ) : products.length > 0 ? (
                 <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
-                  {(() => {
-                    const productsToShow = selectedSubcategory
-                      ? getProductsBySubcategory(selectedCategory, selectedSubcategory)
-                      : getOneProductPerSubcategory(selectedCategory);
-                    
-                    return productsToShow.map((product, index) => (
+                  {selectedSubcategory ? (
+                    getProductsBySubcategory(selectedCategory, selectedSubcategory).map((product, index) => (
                       <div 
                         key={product.id} 
                         className="flex animate-fade-in"
@@ -162,13 +159,29 @@ const Index = () => {
                       >
                         <ProductCard
                           product={product}
-                          onConsult={selectedSubcategory ? handleConsult : () => product.subcategory && handleSubcategorySelect(product.subcategory)}
+                          onConsult={handleConsult}
                           onImageClick={handleImageClick}
-                          isSubcategoryView={!selectedSubcategory}
+                          isSubcategoryView={false}
                         />
                       </div>
-                    ));
-                  })()}
+                    ))
+                  ) : (
+                    getSubcategoriesWithData(selectedCategory).map((subcat, index) => (
+                      <div 
+                        key={subcat.subcategory} 
+                        className="flex animate-fade-in"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <SubcategoryCard
+                          subcategory={subcat.subcategory}
+                          imageUrl={subcat.imageUrl}
+                          minWholesalePrice={subcat.minWholesale}
+                          minRetailPrice={subcat.minRetail}
+                          onSelect={() => handleSubcategorySelect(subcat.subcategory)}
+                        />
+                      </div>
+                    ))
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-16">

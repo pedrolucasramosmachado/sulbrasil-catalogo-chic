@@ -90,16 +90,35 @@ export const useProducts = () => {
     }));
   };
 
-  const getOneProductPerSubcategory = (category: string) => {
+  const getSubcategoriesWithData = (category: string) => {
     const categoryProducts = getProductsByCategory(category);
-    const subcategoryMap = new Map<string, Product>();
+    const subcategoryMap = new Map<string, { 
+      subcategory: string;
+      imageUrl: string;
+      minWholesale: number | null;
+      minRetail: number | null;
+    }>();
     
     categoryProducts.forEach(product => {
-      // Apenas adiciona produtos que têm subcategoria definida
       if (product.subcategory && product.subcategory !== '') {
         const subcat = product.subcategory;
         if (!subcategoryMap.has(subcat)) {
-          subcategoryMap.set(subcat, product);
+          subcategoryMap.set(subcat, {
+            subcategory: subcat,
+            imageUrl: product.image_url || '/placeholder.svg',
+            minWholesale: product.wholesale_price || null,
+            minRetail: product.retail_price || null
+          });
+        } else {
+          const current = subcategoryMap.get(subcat)!;
+          // Atualizar com o menor preço de atacado
+          if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
+            current.minWholesale = product.wholesale_price;
+          }
+          // Atualizar com o menor preço de varejo
+          if (product.retail_price && (!current.minRetail || product.retail_price < current.minRetail)) {
+            current.minRetail = product.retail_price;
+          }
         }
       }
     });
@@ -123,7 +142,7 @@ export const useProducts = () => {
     getCategories,
     getFeaturedProducts,
     getCategoriesWithImages,
-    getOneProductPerSubcategory,
+    getSubcategoriesWithData,
     getProductsBySubcategory,
   };
 };
