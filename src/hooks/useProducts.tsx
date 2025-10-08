@@ -133,6 +133,11 @@ export const useProducts = () => {
     );
   };
 
+  const categoryHasSubcategories = (category: string) => {
+    const categoryProducts = getProductsByCategory(category);
+    return categoryProducts.some(product => product.subcategory && product.subcategory !== '');
+  };
+
   return {
     products,
     loading,
@@ -144,5 +149,6 @@ export const useProducts = () => {
     getCategoriesWithImages,
     getSubcategoriesWithData,
     getProductsBySubcategory,
+    categoryHasSubcategories,
   };
 };

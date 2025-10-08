@@ -3,7 +3,6 @@ import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImageZoom } from "@/components/ProductImageZoom";
 import { CategoryCard } from "@/components/CategoryCard";
-import { SubcategoryCard } from "@/components/SubcategoryCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -16,7 +15,7 @@ const Index = () => {
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getSubcategoriesWithData, getProductsBySubcategory } = useProducts();
+  const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories } = useProducts();
 
 
   const handleImageClick = (product: Product) => {
@@ -40,6 +39,12 @@ const Index = () => {
     setSelectedCategory(category);
     setSelectedSubcategory(null);
     setShowCategorySelection(false);
+    
+    // Se a categoria não tem subcategorias, podemos pré-carregar os produtos
+    if (!categoryHasSubcategories(category)) {
+      // Marca que não há subcategorias para mostrar produtos diretamente
+      setSelectedSubcategory('__NO_SUBCATEGORY__');
+    }
   };
 
   const handleBackToCategories = () => {
@@ -110,13 +115,13 @@ const Index = () => {
           <div className="sticky top-[56px] sm:top-[64px] z-40 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">
             <div className="container mx-auto px-4 py-3">
               <Button
-                onClick={selectedSubcategory ? handleBackToSubcategories : handleBackToCategories}
+                onClick={selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' ? handleBackToSubcategories : handleBackToCategories}
                 variant="default"
                 className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
                 size="default"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                {selectedSubcategory ? 'Voltar às subcategorias' : 'Voltar às categorias'}
+                {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' ? 'Voltar às subcategorias' : 'Voltar às categorias'}
               </Button>
             </div>
           </div>
@@ -127,10 +132,16 @@ const Index = () => {
             <div className="container mx-auto px-4 relative z-10">
               <div className="text-center max-w-3xl mx-auto">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
-                  {selectedSubcategory || selectedCategory}
+                  {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' 
+                    ? selectedSubcategory 
+                    : selectedCategory}
                 </h1>
                 <p className="text-base sm:text-lg md:text-xl text-foreground-muted mb-6 sm:mb-8 leading-relaxed px-4">
-                  {selectedSubcategory ? 'Todas as cores disponíveis' : 'Escolha uma peça para ver as cores'}
+                  {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' 
+                    ? 'Todas as cores disponíveis' 
+                    : selectedSubcategory === '__NO_SUBCATEGORY__'
+                    ? 'Todos os produtos disponíveis'
+                    : 'Escolha uma peça para ver as cores'}
                 </p>
                 <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
               </div>
@@ -150,7 +161,8 @@ const Index = () => {
                 </div>
               ) : products.length > 0 ? (
                 <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
-                  {selectedSubcategory ? (
+                  {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' ? (
+                    // Mostrar produtos de uma subcategoria específica
                     getProductsBySubcategory(selectedCategory, selectedSubcategory).map((product, index) => (
                       <div 
                         key={product.id} 
@@ -165,15 +177,32 @@ const Index = () => {
                         />
                       </div>
                     ))
+                  ) : selectedSubcategory === '__NO_SUBCATEGORY__' ? (
+                    // Categoria sem subcategorias - mostrar produtos diretamente
+                    getProductsByCategory(selectedCategory).map((product, index) => (
+                      <div 
+                        key={product.id} 
+                        className="flex animate-fade-in"
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        <ProductCard
+                          product={product}
+                          onConsult={handleConsult}
+                          onImageClick={handleImageClick}
+                          isSubcategoryView={false}
+                        />
+                      </div>
+                    ))
                   ) : (
+                    // Mostrar subcategorias (usando CategoryCard)
                     getSubcategoriesWithData(selectedCategory).map((subcat, index) => (
                       <div 
                         key={subcat.subcategory} 
                         className="flex animate-fade-in"
                         style={{ animationDelay: `${index * 0.1}s` }}
                       >
-                        <SubcategoryCard
-                          subcategory={subcat.subcategory}
+                        <CategoryCard
+                          category={subcat.subcategory}
                           imageUrl={subcat.imageUrl}
                           minWholesalePrice={subcat.minWholesale}
                           minRetailPrice={subcat.minRetail}
