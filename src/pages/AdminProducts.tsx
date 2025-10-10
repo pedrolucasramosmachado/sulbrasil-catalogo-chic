@@ -74,10 +74,12 @@ const AdminProducts = () => {
     };
   };
 
-  // Atualizar nome quando categoria ou cor mudam
-  const updateProductName = (category: string, color: string) => {
-    if (category && !editingProduct) {
-      const fullName = color ? `${category} ${color}` : category;
+  // Atualizar nome quando categoria, subcategoria ou cor mudam
+  const updateProductName = (category: string, subcategory: string, color: string) => {
+    if ((category || subcategory) && !editingProduct) {
+      // Prioriza subcategoria se existir, senão usa categoria
+      const baseName = subcategory || category;
+      const fullName = color ? `${baseName} ${color}` : baseName;
       form.setValue('name', fullName);
     }
   };
@@ -457,7 +459,7 @@ const AdminProducts = () => {
                                     placeholder="Digite a nova categoria"
                                     onChange={(e) => {
                                       field.onChange(e);
-                                      updateProductName(e.target.value, form.getValues('color') || '');
+                                      updateProductName(e.target.value, form.getValues('subcategory') || '', form.getValues('color') || '');
                                     }}
                                   />
                                   <Button
@@ -492,7 +494,7 @@ const AdminProducts = () => {
                                           form.setValue('wholesale_price', defaultPrices.wholesale_price);
                                         }
                                         // Atualizar nome
-                                        updateProductName(value, form.getValues('color') || '');
+                                        updateProductName(value, form.getValues('subcategory') || '', form.getValues('color') || '');
                                       }
                                     }}
                                   >
@@ -528,7 +530,14 @@ const AdminProducts = () => {
                           <FormItem>
                             <FormLabel>Subcategoria</FormLabel>
                             <FormControl>
-                              <Input {...field} placeholder="Ex: Blusas, Calças, Vestidos" />
+                              <Input 
+                                {...field} 
+                                placeholder="Ex: Blusas, Calças, Vestidos"
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  updateProductName(form.getValues('category'), e.target.value, form.getValues('color') || '');
+                                }}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -548,7 +557,7 @@ const AdminProducts = () => {
                                   placeholder="Ex: Argila, Preto, Azul"
                                   onChange={(e) => {
                                     field.onChange(e);
-                                    updateProductName(form.getValues('category'), e.target.value);
+                                    updateProductName(form.getValues('category'), form.getValues('subcategory'), e.target.value);
                                   }}
                                 />
                               </FormControl>
