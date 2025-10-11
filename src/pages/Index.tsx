@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImageZoom } from "@/components/ProductImageZoom";
@@ -17,6 +17,10 @@ const Index = () => {
   
   const { products, loading, error, getProductsByCategory, getCategoriesWithImages, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories } = useProducts();
 
+  // Scroll to top whenever category, subcategory or view changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedCategory, selectedSubcategory, showCategorySelection]);
 
   const handleImageClick = (product: Product) => {
     setZoomProduct(product);
