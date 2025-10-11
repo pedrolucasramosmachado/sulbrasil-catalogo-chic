@@ -171,53 +171,65 @@ const Index = () => {
                 }`}>
                   {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' ? (
                     // Mostrar produtos de uma subcategoria específica
-                    getProductsBySubcategory(selectedCategory, selectedSubcategory).map((product, index) => (
-                      <div 
-                        key={product.id} 
-                        className="flex animate-fade-in"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <ProductCard
-                          product={product}
-                          onConsult={handleConsult}
-                          onImageClick={handleImageClick}
-                          isSubcategoryView={false}
-                        />
-                      </div>
-                    ))
+                    (() => {
+                      const subcatProducts = getProductsBySubcategory(selectedCategory, selectedSubcategory);
+                      console.log(`Showing ${subcatProducts.length} products for subcategory "${selectedSubcategory}"`);
+                      return subcatProducts.map((product, index) => (
+                        <div 
+                          key={product.id} 
+                          className="flex animate-fade-in"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <ProductCard
+                            product={product}
+                            onConsult={handleConsult}
+                            onImageClick={handleImageClick}
+                            isSubcategoryView={false}
+                          />
+                        </div>
+                      ));
+                    })()
                   ) : selectedSubcategory === '__NO_SUBCATEGORY__' ? (
                     // Categoria sem subcategorias - mostrar produtos diretamente
-                    getProductsByCategory(selectedCategory).map((product, index) => (
-                      <div 
-                        key={product.id} 
-                        className="flex animate-fade-in"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <ProductCard
-                          product={product}
-                          onConsult={handleConsult}
-                          onImageClick={handleImageClick}
-                          isSubcategoryView={false}
-                        />
-                      </div>
-                    ))
+                    (() => {
+                      const categoryProducts = getProductsByCategory(selectedCategory);
+                      console.log(`Showing ${categoryProducts.length} products for category "${selectedCategory}" (no subcategories)`);
+                      return categoryProducts.map((product, index) => (
+                        <div 
+                          key={product.id} 
+                          className="flex animate-fade-in"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <ProductCard
+                            product={product}
+                            onConsult={handleConsult}
+                            onImageClick={handleImageClick}
+                            isSubcategoryView={false}
+                          />
+                        </div>
+                      ));
+                    })()
                   ) : (
                     // Mostrar subcategorias (usando CategoryCard)
-                    getSubcategoriesWithData(selectedCategory).map((subcat, index) => (
-                      <div 
-                        key={subcat.subcategory} 
-                        className="flex animate-fade-in"
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        <CategoryCard
-                          category={subcat.subcategory}
-                          imageUrl={subcat.imageUrl}
-                          minWholesalePrice={subcat.minWholesale}
-                          minRetailPrice={subcat.minRetail}
-                          onSelect={() => handleSubcategorySelect(subcat.subcategory)}
-                        />
-                      </div>
-                    ))
+                    (() => {
+                      const subcats = getSubcategoriesWithData(selectedCategory);
+                      console.log(`Showing ${subcats.length} subcategories for category "${selectedCategory}"`);
+                      return subcats.map((subcat, index) => (
+                        <div 
+                          key={subcat.subcategory} 
+                          className="flex animate-fade-in"
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <CategoryCard
+                            category={subcat.subcategory}
+                            imageUrl={subcat.imageUrl}
+                            minWholesalePrice={subcat.minWholesale}
+                            minRetailPrice={subcat.minRetail}
+                            onSelect={() => handleSubcategorySelect(subcat.subcategory)}
+                          />
+                        </div>
+                      ));
+                    })()
                   )}
                 </div>
               ) : (

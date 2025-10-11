@@ -127,15 +127,22 @@ export const useProducts = () => {
   };
 
   const getProductsBySubcategory = (category: string, subcategory: string) => {
-    return products.filter(product => 
-      product.category.toLowerCase() === category.toLowerCase() && 
-      product.subcategory === subcategory
-    );
+    return products.filter(product => {
+      const categoryMatch = product.category.toLowerCase() === category.toLowerCase();
+      const subcategoryMatch = product.subcategory?.toLowerCase() === subcategory.toLowerCase();
+      return categoryMatch && subcategoryMatch;
+    });
   };
 
   const categoryHasSubcategories = (category: string) => {
     const categoryProducts = getProductsByCategory(category);
-    return categoryProducts.some(product => product.subcategory && product.subcategory !== '');
+    const hasSubcats = categoryProducts.some(product => 
+      product.subcategory && 
+      product.subcategory.trim() !== '' && 
+      product.subcategory !== null
+    );
+    console.log(`Category "${category}" has subcategories:`, hasSubcats, categoryProducts.length, 'products');
+    return hasSubcats;
   };
 
   return {
