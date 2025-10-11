@@ -160,7 +160,11 @@ const Index = () => {
                   <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
                 </div>
               ) : products.length > 0 ? (
-                <div className="grid gap-4 sm:gap-5 md:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+                <div className={`grid gap-4 sm:gap-6 md:gap-8 auto-rows-fr ${
+                  selectedSubcategory === null 
+                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto' 
+                    : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+                }`}>
                   {selectedSubcategory && selectedSubcategory !== '__NO_SUBCATEGORY__' ? (
                     // Mostrar produtos de uma subcategoria específica
                     getProductsBySubcategory(selectedCategory, selectedSubcategory).map((product, index) => (
