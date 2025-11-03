@@ -67,28 +67,6 @@ export const ProductCard = ({
           <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300">
             {product.name}
           </h3>
-          
-          {/* Prices */}
-          {(product.retail_price || product.wholesale_price) && (
-            <div className="space-y-1.5 sm:space-y-2 p-2 sm:p-3 bg-white/60 rounded-lg sm:rounded-xl border border-border-subtle">
-              {product.retail_price && (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs sm:text-sm font-semibold text-foreground-muted">💰 Varejo:</span>
-                  <span className="font-bold text-primary text-sm sm:text-base md:text-lg">
-                    R$ {product.retail_price.toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-              )}
-              {product.wholesale_price && (
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs sm:text-sm font-semibold text-foreground-muted">📦 Atacado:</span>
-                  <span className="font-bold text-accent text-sm sm:text-base md:text-lg">
-                    R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Category */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
@@ -111,10 +89,10 @@ export const ProductCard = ({
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-xs sm:text-sm h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-lg sm:rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 active:scale-95 sm:hover:scale-105"
+          className="w-full text-xs sm:text-sm h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-lg sm:rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 active:scale-95 sm:hover:scale-105 animate-pulse hover:animate-none"
         >
           <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          {isSubcategoryView ? '🎨 Ver Cores' : '💬 Consultar'}
+          💬 Consultar
         </Button>
       </CardFooter>
     </Card>

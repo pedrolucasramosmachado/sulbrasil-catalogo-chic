@@ -7,11 +7,13 @@ export interface Product {
   description?: string;
   wholesale_price?: number;
   retail_price?: number;
+  promotion_price?: number | null;
   category: string;
   subcategory?: string | null;
   image_url?: string;
   sizes?: string[];
   is_featured?: boolean;
+  is_promotion?: boolean | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -59,8 +61,25 @@ export const useProducts = () => {
     return products.filter(product => product.is_featured);
   };
 
+  const getPromotionProducts = () => {
+    return products.filter(product => product.is_promotion === true);
+  };
+
   const getCategoriesWithImages = () => {
     const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
+    
+    // Add "Promoções da Semana" if there are promotion products
+    const promoProducts = getPromotionProducts();
+    if (promoProducts.length > 0 && promoProducts[0].image_url) {
+      const minPromoWholesale = Math.min(...promoProducts.map(p => p.promotion_price || p.wholesale_price || Infinity).filter(p => p !== Infinity));
+      const minPromoRetail = Math.min(...promoProducts.map(p => p.promotion_price || p.retail_price || Infinity).filter(p => p !== Infinity));
+      
+      categoriesMap.set('Promoções da Semana 🔥', {
+        imageUrl: promoProducts[0].image_url,
+        minWholesale: minPromoWholesale === Infinity ? null : minPromoWholesale,
+        minRetail: minPromoRetail === Infinity ? null : minPromoRetail,
+      });
+    }
     
     products.forEach(product => {
       if (!categoriesMap.has(product.category)) {
@@ -157,5 +176,6 @@ export const useProducts = () => {
     getSubcategoriesWithData,
     getProductsBySubcategory,
     categoryHasSubcategories,
+    getPromotionProducts,
   };
 };

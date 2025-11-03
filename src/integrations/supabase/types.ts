@@ -22,7 +22,9 @@ export type Database = {
           id: string
           image_url: string | null
           is_featured: boolean | null
+          is_promotion: boolean | null
           name: string
+          promotion_price: number | null
           retail_price: number | null
           sizes: string[] | null
           subcategory: string | null
@@ -36,7 +38,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
+          is_promotion?: boolean | null
           name: string
+          promotion_price?: number | null
           retail_price?: number | null
           sizes?: string[] | null
           subcategory?: string | null
@@ -50,7 +54,9 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
+          is_promotion?: boolean | null
           name?: string
+          promotion_price?: number | null
           retail_price?: number | null
           sizes?: string[] | null
           subcategory?: string | null

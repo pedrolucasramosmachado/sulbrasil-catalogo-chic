@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
+import CategoryPage from "./pages/CategoryPage";
+import ProductPage from "./pages/ProductPage";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminHome from "./pages/AdminHome";
@@ -21,7 +23,11 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Navigate to="/catalogo" replace />} />
+          <Route path="/catalogo" element={<Index />} />
+          <Route path="/catalogo/:category" element={<CategoryPage />} />
+          <Route path="/catalogo/:category/:subcategory" element={<CategoryPage />} />
+          <Route path="/produto/:id" element={<ProductPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />

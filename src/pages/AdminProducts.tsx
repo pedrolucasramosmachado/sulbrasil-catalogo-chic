@@ -52,6 +52,8 @@ const AdminProducts = () => {
     category: '',
     subcategory: '',
   });
+  const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
+  const [promoPrice, setPromoPrice] = useState('');
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -315,6 +317,50 @@ const AdminProducts = () => {
     }
   };
 
+  const handleQuickPromotion = async () => {
+    if (selectedProducts.size === 0 || !promoPrice) {
+      toast({
+        title: 'Atenção',
+        description: 'Selecione produtos e informe o preço promocional',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const priceValue = parseFloat(promoPrice.replace(',', '.'));
+      
+      for (const productId of Array.from(selectedProducts)) {
+        const { error } = await supabase
+          .from('products')
+          .update({
+            is_promotion: true,
+            promotion_price: priceValue,
+          })
+          .eq('id', productId);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: `${selectedProducts.size} produto(s) marcado(s) como promoção!`,
+      });
+
+      setIsQuickPromoOpen(false);
+      setSelectedProducts(new Set());
+      setPromoPrice('');
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao criar promoção:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao criar promoção rápida',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const deleteProduct = async (productId: string) => {
     try {
       const { error } = await supabase
@@ -400,14 +446,23 @@ const AdminProducts = () => {
               </div>
               <div className="flex gap-2">
                 {selectedProducts.size > 0 && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsBulkEditOpen(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Edit2 className="h-4 w-4" />
-                    Editar {selectedProducts.size} selecionado(s)
-                  </Button>
+                  <>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsBulkEditOpen(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Editar {selectedProducts.size}
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      onClick={() => setIsQuickPromoOpen(true)}
+                      className="flex items-center gap-2 bg-gradient-to-r from-accent to-primary"
+                    >
+                      🔥 Promoção Rápida
+                    </Button>
+                  </>
                 )}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
@@ -843,6 +898,36 @@ const AdminProducts = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Quick Promotion Dialog */}
+        <Dialog open={isQuickPromoOpen} onOpenChange={setIsQuickPromoOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>🔥 Promoção Rápida</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {selectedProducts.size} produto(s) selecionado(s)
+              </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preço Promocional *</label>
+                <Input
+                  placeholder="Ex: 29.90"
+                  value={promoPrice}
+                  onChange={(e) => setPromoPrice(e.target.value)}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsQuickPromoOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleQuickPromotion} className="bg-gradient-to-r from-accent to-primary">
+                  Aplicar Promoção
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
