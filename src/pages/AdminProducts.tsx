@@ -53,7 +53,8 @@ const AdminProducts = () => {
     subcategory: '',
   });
   const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
-  const [promoPrice, setPromoPrice] = useState('');
+  const [promoWholesalePrice, setPromoWholesalePrice] = useState('');
+  const [promoRetailPrice, setPromoRetailPrice] = useState('');
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -318,25 +319,29 @@ const AdminProducts = () => {
   };
 
   const handleQuickPromotion = async () => {
-    if (selectedProducts.size === 0 || !promoPrice) {
+    if (selectedProducts.size === 0 || (!promoWholesalePrice && !promoRetailPrice)) {
       toast({
         title: 'Atenção',
-        description: 'Selecione produtos e informe o preço promocional',
+        description: 'Selecione produtos e informe pelo menos um preço promocional',
         variant: 'destructive',
       });
       return;
     }
 
     try {
-      const priceValue = parseFloat(promoPrice.replace(',', '.'));
+      const updates: any = { is_promotion: true };
+      
+      if (promoWholesalePrice) {
+        updates.promotion_wholesale_price = parseFloat(promoWholesalePrice.replace(',', '.'));
+      }
+      if (promoRetailPrice) {
+        updates.promotion_retail_price = parseFloat(promoRetailPrice.replace(',', '.'));
+      }
       
       for (const productId of Array.from(selectedProducts)) {
         const { error } = await supabase
           .from('products')
-          .update({
-            is_promotion: true,
-            promotion_price: priceValue,
-          })
+          .update(updates)
           .eq('id', productId);
         
         if (error) throw error;
@@ -349,7 +354,8 @@ const AdminProducts = () => {
 
       setIsQuickPromoOpen(false);
       setSelectedProducts(new Set());
-      setPromoPrice('');
+      setPromoWholesalePrice('');
+      setPromoRetailPrice('');
       fetchProducts();
     } catch (error) {
       console.error('Erro ao criar promoção:', error);
@@ -910,13 +916,24 @@ const AdminProducts = () => {
                 {selectedProducts.size} produto(s) selecionado(s)
               </p>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Preço Promocional *</label>
+                <label className="text-sm font-medium">Preço Promocional Atacado</label>
                 <Input
-                  placeholder="Ex: 29.90"
-                  value={promoPrice}
-                  onChange={(e) => setPromoPrice(e.target.value)}
+                  placeholder="Ex: 19.90"
+                  value={promoWholesalePrice}
+                  onChange={(e) => setPromoWholesalePrice(e.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preço Promocional Varejo</label>
+                <Input
+                  placeholder="Ex: 29.90"
+                  value={promoRetailPrice}
+                  onChange={(e) => setPromoRetailPrice(e.target.value)}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                * Preencha pelo menos um dos campos acima
+              </p>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => setIsQuickPromoOpen(false)}>
                   Cancelar

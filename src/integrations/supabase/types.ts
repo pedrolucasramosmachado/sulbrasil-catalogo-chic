@@ -24,7 +24,8 @@ export type Database = {
           is_featured: boolean | null
           is_promotion: boolean | null
           name: string
-          promotion_price: number | null
+          promotion_retail_price: number | null
+          promotion_wholesale_price: number | null
           retail_price: number | null
           sizes: string[] | null
           subcategory: string | null
@@ -40,7 +41,8 @@ export type Database = {
           is_featured?: boolean | null
           is_promotion?: boolean | null
           name: string
-          promotion_price?: number | null
+          promotion_retail_price?: number | null
+          promotion_wholesale_price?: number | null
           retail_price?: number | null
           sizes?: string[] | null
           subcategory?: string | null
@@ -56,7 +58,8 @@ export type Database = {
           is_featured?: boolean | null
           is_promotion?: boolean | null
           name?: string
-          promotion_price?: number | null
+          promotion_retail_price?: number | null
+          promotion_wholesale_price?: number | null
           retail_price?: number | null
           sizes?: string[] | null
           subcategory?: string | null

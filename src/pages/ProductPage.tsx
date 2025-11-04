@@ -81,8 +81,8 @@ const ProductPage = () => {
     );
   }
 
-  const displayPrice = product.is_promotion && product.promotion_price 
-    ? product.promotion_price 
+  const displayPrice = product.is_promotion && (product.promotion_wholesale_price || product.promotion_retail_price)
+    ? (product.promotion_retail_price || product.promotion_wholesale_price) 
     : product.retail_price || product.wholesale_price;
 
   return (
@@ -171,12 +171,24 @@ const ProductPage = () => {
                         </span>
                       </div>
                     )}
-                    {product.is_promotion && product.promotion_price && (
-                      <div className="flex items-center justify-between pt-4 border-t border-border-subtle">
-                        <span className="text-lg font-semibold text-foreground-muted">🔥 Promoção:</span>
-                        <span className="font-bold text-primary text-3xl">
-                          R$ {product.promotion_price.toFixed(2).replace('.', ',')}
-                        </span>
+                    {product.is_promotion && (product.promotion_wholesale_price || product.promotion_retail_price) && (
+                      <div className="pt-4 border-t border-border-subtle space-y-3">
+                        {product.promotion_wholesale_price && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-semibold text-foreground-muted">🔥 Promoção Atacado:</span>
+                            <span className="font-bold text-primary text-3xl">
+                              R$ {product.promotion_wholesale_price.toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                        )}
+                        {product.promotion_retail_price && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-semibold text-foreground-muted">🔥 Promoção Varejo:</span>
+                            <span className="font-bold text-accent text-3xl">
+                              R$ {product.promotion_retail_price.toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

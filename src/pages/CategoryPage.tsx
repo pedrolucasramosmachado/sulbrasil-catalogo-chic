@@ -127,7 +127,7 @@ const CategoryPage = () => {
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
             </div>
           ) : showSubcategories ? (
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
               {currentSubcategories.map((subcat, index) => (
                 <div 
                   key={subcat.subcategory} 

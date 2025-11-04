@@ -7,7 +7,8 @@ export interface Product {
   description?: string;
   wholesale_price?: number;
   retail_price?: number;
-  promotion_price?: number | null;
+  promotion_wholesale_price?: number | null;
+  promotion_retail_price?: number | null;
   category: string;
   subcategory?: string | null;
   image_url?: string;
@@ -71,8 +72,8 @@ export const useProducts = () => {
     // Add "Promoções da Semana" if there are promotion products
     const promoProducts = getPromotionProducts();
     if (promoProducts.length > 0 && promoProducts[0].image_url) {
-      const minPromoWholesale = Math.min(...promoProducts.map(p => p.promotion_price || p.wholesale_price || Infinity).filter(p => p !== Infinity));
-      const minPromoRetail = Math.min(...promoProducts.map(p => p.promotion_price || p.retail_price || Infinity).filter(p => p !== Infinity));
+      const minPromoWholesale = Math.min(...promoProducts.map(p => p.promotion_wholesale_price || p.wholesale_price || Infinity).filter(p => p !== Infinity));
+      const minPromoRetail = Math.min(...promoProducts.map(p => p.promotion_retail_price || p.retail_price || Infinity).filter(p => p !== Infinity));
       
       categoriesMap.set('Promoções da Semana 🔥', {
         imageUrl: promoProducts[0].image_url,

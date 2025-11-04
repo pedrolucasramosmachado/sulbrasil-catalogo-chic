@@ -53,6 +53,11 @@ export const ProductCard = ({
 
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {product.is_promotion && (
+              <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs font-bold shadow-glow border-0 animate-pulse">
+                🔥 PROMOÇÃO
+              </Badge>
+            )}
             {product.is_featured && (
               <Badge className="bg-gradient-to-r from-accent to-primary text-white text-xs font-medium shadow-medium border-0">
                 ⭐ Destaque
