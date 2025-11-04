@@ -25,37 +25,11 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         
-        {/* Category Name and Prices */}
+        {/* Category Name */}
         <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-center">
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
             {category}
           </h3>
-          
-          {/* Prices */}
-          {(minRetailPrice || minWholesalePrice) && (
-            <div className="flex flex-col gap-2 sm:gap-2.5 mb-2 sm:mb-3">
-              {minWholesalePrice && (
-                <div className="bg-primary/90 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 shadow-lg">
-                  <div className="flex items-center justify-center gap-2 text-white">
-                    <span className="font-semibold text-sm sm:text-base">Atacado:</span>
-                    <span className="font-bold text-xl sm:text-2xl md:text-3xl">
-                      R$ {minWholesalePrice.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {minRetailPrice && (
-                <div className="bg-accent/90 backdrop-blur-sm rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 shadow-lg">
-                  <div className="flex items-center justify-center gap-2 text-white">
-                    <span className="font-semibold text-sm sm:text-base">Varejo:</span>
-                    <span className="font-bold text-xl sm:text-2xl md:text-3xl">
-                      R$ {minRetailPrice.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
           
           <div className="w-12 sm:w-16 h-0.5 sm:h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
