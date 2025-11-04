@@ -43,8 +43,11 @@ const CategoryPage = () => {
   };
 
   const displayProducts = () => {
+    console.log('CategoryPage - category:', category, 'subcategory:', subcategory);
     if (category === 'promocoes') {
-      return getPromotionProducts();
+      const promoProducts = getPromotionProducts();
+      console.log('Produtos em promoção encontrados:', promoProducts.length);
+      return promoProducts;
     }
     if (subcategory) {
       return getProductsBySubcategory(category || '', decodeURIComponent(subcategory));

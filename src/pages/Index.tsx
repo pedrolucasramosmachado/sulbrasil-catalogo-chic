@@ -14,7 +14,8 @@ const Index = () => {
   }, []);
 
   const handleCategorySelect = (category: string) => {
-    if (category === 'promoções da semana 🔥') {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes('promoções') || lowerCategory.includes('promoção')) {
       navigate('/catalogo/promocoes');
     } else {
       navigate(`/catalogo/${encodeURIComponent(category)}`);
