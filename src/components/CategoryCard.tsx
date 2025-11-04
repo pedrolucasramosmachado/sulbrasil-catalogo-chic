@@ -30,6 +30,9 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
           <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 drop-shadow-lg">
             {category}
           </h3>
+          <p className="text-sm sm:text-base text-white/90 mb-2 sm:mb-3 drop-shadow">
+            Clique para ver mais opções
+          </p>
           
           <div className="w-12 sm:w-16 h-0.5 sm:h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         </div>
