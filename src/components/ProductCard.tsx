@@ -23,7 +23,7 @@ export const ProductCard = ({
 
 
   return (
-    <Card className="group cursor-pointer overflow-hidden bg-white/80 backdrop-blur-xl border-2 border-border/50 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 w-full h-full flex flex-col rounded-2xl">
+    <Card className="group cursor-pointer overflow-hidden bg-white border border-border/30 hover:shadow-xl transition-all duration-300 w-full h-full flex flex-col rounded-xl">
       <div className="relative overflow-hidden flex-shrink-0">
         <div 
           className={cn(
@@ -67,90 +67,83 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-3 sm:p-5 md:p-6 flex-1 flex flex-col justify-between bg-gradient-to-b from-white via-surface/5 to-surface/20">
-        <div className="space-y-2 sm:space-y-3">
-          <h3 className="font-bold text-foreground text-sm sm:text-lg leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300 text-center">
+      <CardContent className="p-4 sm:p-5 flex-1 flex flex-col bg-white">
+        <div className="space-y-4">
+          {/* Product Name */}
+          <h3 className="font-semibold text-foreground text-base sm:text-lg leading-tight text-center">
             {product.name}
           </h3>
 
-          {/* Category Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
-            <Badge className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border border-primary/20 text-[10px] sm:text-xs font-semibold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
-              {product.category}
-            </Badge>
-            {product.subcategory && (
-              <Badge className="bg-gradient-to-r from-accent/10 to-accent/5 text-accent border border-accent/20 text-[10px] sm:text-xs font-semibold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
-                {product.subcategory}
-              </Badge>
+          {/* Prices Side by Side */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* Retail Price */}
+            {product.retail_price && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-xs text-foreground-muted">
+                  <span>🔥</span>
+                  <span>Varejo:</span>
+                </div>
+                <div className="text-lg sm:text-xl font-bold text-[#E91E63]">
+                  {product.is_promotion && product.promotion_retail_price ? (
+                    <>
+                      R$ {Number(product.promotion_retail_price).toFixed(2)}
+                    </>
+                  ) : (
+                    <>
+                      R$ {Number(product.retail_price).toFixed(2)}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Wholesale Price */}
+            {product.wholesale_price && (
+              <div className="space-y-1">
+                <div className="flex items-center gap-1 text-xs text-foreground-muted">
+                  <span>💎</span>
+                  <span>Atacado:</span>
+                </div>
+                <div className="text-lg sm:text-xl font-bold text-[#E91E63]">
+                  {product.is_promotion && product.promotion_wholesale_price ? (
+                    <>
+                      R$ {Number(product.promotion_wholesale_price).toFixed(2)}
+                    </>
+                  ) : (
+                    <>
+                      R$ {Number(product.wholesale_price).toFixed(2)}
+                    </>
+                  )}
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Enhanced Prices Section */}
-          <div className="space-y-2 mt-2">
-            {/* Wholesale Price */}
-            {product.wholesale_price && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-2.5 sm:p-3 border border-blue-200/50 dark:border-blue-800/50">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">💼 Atacado</span>
-                  <div className="flex items-center gap-1.5">
-                    {product.is_promotion && product.promotion_wholesale_price ? (
-                      <>
-                        <span className="text-xs text-foreground-muted/60 line-through font-medium">
-                          R$ {Number(product.wholesale_price).toFixed(2)}
-                        </span>
-                        <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
-                          R$ {Number(product.promotion_wholesale_price).toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300">
-                        R$ {Number(product.wholesale_price).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Retail Price */}
-            {product.retail_price && (
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-lg p-2.5 sm:p-3 border border-purple-200/50 dark:border-purple-800/50">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] sm:text-xs text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wide">🛍️ Varejo</span>
-                  <div className="flex items-center gap-1.5">
-                    {product.is_promotion && product.promotion_retail_price ? (
-                      <>
-                        <span className="text-xs text-foreground-muted/60 line-through font-medium">
-                          R$ {Number(product.retail_price).toFixed(2)}
-                        </span>
-                        <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
-                          R$ {Number(product.promotion_retail_price).toFixed(2)}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300">
-                        R$ {Number(product.retail_price).toFixed(2)}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
+          {/* Category Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <Badge variant="outline" className="text-xs px-3 py-1 rounded-full border-border/50 text-foreground-muted">
+              {product.category}
+            </Badge>
+            {product.subcategory && (
+              <Badge variant="outline" className="text-xs px-3 py-1 rounded-full border-border/50 text-foreground-muted">
+                {product.subcategory}
+              </Badge>
             )}
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-3 sm:p-5 md:p-6 pt-0">
+      <CardFooter className="p-4 sm:p-5 pt-0">
         <Button
           size="lg"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-xs sm:text-base h-10 sm:h-13 bg-gradient-to-r from-primary via-primary-hover to-primary hover:from-primary-hover hover:via-primary hover:to-primary-hover text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 sm:hover:scale-[1.02] border-2 border-white/20"
+          className="w-full text-sm sm:text-base h-12 bg-[#E91E63] hover:bg-[#D81B60] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
         >
-          <MessageCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
-          Consultar WhatsApp
+          <MessageCircle className="w-4 h-4 mr-2" />
+          Consultar
         </Button>
       </CardFooter>
     </Card>
