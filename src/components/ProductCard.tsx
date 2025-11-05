@@ -23,7 +23,7 @@ export const ProductCard = ({
 
 
   return (
-    <Card className="group cursor-pointer overflow-hidden bg-gradient-to-br from-white via-surface to-surface-elevated border border-card-border hover:border-primary/20 hover:shadow-strong transition-all duration-500 hover:-translate-y-2 w-full h-full flex flex-col backdrop-blur-sm">
+    <Card className="group cursor-pointer overflow-hidden bg-white/80 backdrop-blur-xl border-2 border-border/50 hover:border-primary/40 hover:shadow-2xl transition-all duration-500 hover:-translate-y-3 w-full h-full flex flex-col rounded-2xl">
       <div className="relative overflow-hidden flex-shrink-0">
         <div 
           className={cn(
@@ -36,30 +36,30 @@ export const ProductCard = ({
             src={product.image_url || "/placeholder.svg"}
             alt={product.name}
             className={cn(
-              "w-full h-full object-cover transition-all duration-700 group-hover:scale-125",
+              "w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1",
               imageLoaded ? "opacity-100" : "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
           />
           
-          {/* Magical Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/10 via-transparent to-accent/5 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-white/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-700" />
+          {/* Enhanced Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-all duration-700" />
 
           {/* Sparkle Effect */}
-          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 text-white">
+          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-500 text-white text-xl drop-shadow-lg">
             ✨
           </div>
 
           {/* Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
+          <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
             {product.is_promotion && (
-              <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs font-bold shadow-glow border-0 animate-pulse">
+              <Badge className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-600 text-white text-xs font-bold shadow-xl border-0 px-3 py-1.5 animate-pulse">
                 🔥 PROMOÇÃO
               </Badge>
             )}
             {product.is_featured && (
-              <Badge className="bg-gradient-to-r from-accent to-primary text-white text-xs font-medium shadow-medium border-0">
+              <Badge className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-white text-xs font-bold shadow-xl border-0 px-3 py-1.5">
                 ⭐ Destaque
               </Badge>
             )}
@@ -67,42 +67,42 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-3 sm:p-4 md:p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-white/50 to-surface/30">
-        <div className="space-y-2 sm:space-y-3 md:space-y-4">
-          <h3 className="font-bold text-foreground text-sm sm:text-base leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300">
+      <CardContent className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col justify-between bg-gradient-to-b from-white via-surface/5 to-surface/20">
+        <div className="space-y-3 sm:space-y-4">
+          <h3 className="font-bold text-foreground text-base sm:text-lg leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300 text-center">
             {product.name}
           </h3>
 
-          {/* Category */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-            <Badge className="bg-gradient-to-r from-surface-elevated to-surface text-foreground-muted border border-border-subtle text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1">
+          {/* Category Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Badge className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border border-primary/20 text-xs font-semibold px-3 py-1.5 rounded-full">
               {product.category}
             </Badge>
             {product.subcategory && (
-              <Badge variant="secondary" className="text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-0.5 sm:py-1">
+              <Badge className="bg-gradient-to-r from-accent/10 to-accent/5 text-accent border border-accent/20 text-xs font-semibold px-3 py-1.5 rounded-full">
                 {product.subcategory}
               </Badge>
             )}
           </div>
 
-          {/* Prices */}
-          <div className="space-y-2">
+          {/* Enhanced Prices Section */}
+          <div className="space-y-3 mt-4 bg-gradient-to-br from-surface/30 to-surface-elevated/40 rounded-xl p-4 border border-border/30 shadow-inner">
             {/* Wholesale Price */}
             {product.wholesale_price && (
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] text-foreground-muted font-medium">Atacado</span>
+              <div className="flex flex-col items-center space-y-1 pb-3 border-b border-border/30">
+                <span className="text-xs text-foreground-muted font-semibold uppercase tracking-wide">💼 Atacado</span>
                 <div className="flex items-center gap-2">
                   {product.is_promotion && product.promotion_wholesale_price ? (
                     <>
-                      <span className="text-xs text-foreground-muted line-through">
+                      <span className="text-sm text-foreground-muted/60 line-through font-medium">
                         R$ {Number(product.wholesale_price).toFixed(2)}
                       </span>
-                      <span className="text-base font-bold text-primary">
+                      <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 drop-shadow-sm">
                         R$ {Number(product.promotion_wholesale_price).toFixed(2)}
                       </span>
                     </>
                   ) : (
-                    <span className="text-base font-bold text-foreground">
+                    <span className="text-xl font-black text-foreground">
                       R$ {Number(product.wholesale_price).toFixed(2)}
                     </span>
                   )}
@@ -112,20 +112,20 @@ export const ProductCard = ({
 
             {/* Retail Price */}
             {product.retail_price && (
-              <div className="flex flex-col items-center">
-                <span className="text-[10px] text-foreground-muted font-medium">Varejo</span>
+              <div className="flex flex-col items-center space-y-1 pt-2">
+                <span className="text-xs text-foreground-muted font-semibold uppercase tracking-wide">🛍️ Varejo</span>
                 <div className="flex items-center gap-2">
                   {product.is_promotion && product.promotion_retail_price ? (
                     <>
-                      <span className="text-xs text-foreground-muted line-through">
+                      <span className="text-sm text-foreground-muted/60 line-through font-medium">
                         R$ {Number(product.retail_price).toFixed(2)}
                       </span>
-                      <span className="text-base font-bold text-primary">
+                      <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 drop-shadow-sm">
                         R$ {Number(product.promotion_retail_price).toFixed(2)}
                       </span>
                     </>
                   ) : (
-                    <span className="text-base font-bold text-foreground">
+                    <span className="text-xl font-black text-foreground">
                       R$ {Number(product.retail_price).toFixed(2)}
                     </span>
                   )}
@@ -136,17 +136,17 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-3 sm:p-4 md:p-5 pt-0 flex flex-col items-stretch gap-2 sm:gap-3">
+      <CardFooter className="p-4 sm:p-5 md:p-6 pt-0">
         <Button
-          size="sm"
+          size="lg"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-xs sm:text-sm h-9 sm:h-10 md:h-11 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-lg sm:rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 active:scale-95 sm:hover:scale-105"
+          className="w-full text-sm sm:text-base h-12 sm:h-13 bg-gradient-to-r from-primary via-primary-hover to-primary hover:from-primary-hover hover:via-primary hover:to-primary-hover text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 sm:hover:scale-[1.02] border-2 border-white/20"
         >
-          <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-          💬 Consultar
+          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+          💬 Consultar no WhatsApp
         </Button>
       </CardFooter>
     </Card>
