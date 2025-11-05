@@ -84,6 +84,55 @@ export const ProductCard = ({
               </Badge>
             )}
           </div>
+
+          {/* Prices */}
+          <div className="space-y-2">
+            {/* Wholesale Price */}
+            {product.wholesale_price && (
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-foreground-muted font-medium">Atacado</span>
+                <div className="flex items-center gap-2">
+                  {product.is_promotion && product.promotion_wholesale_price ? (
+                    <>
+                      <span className="text-xs text-foreground-muted line-through">
+                        R$ {Number(product.wholesale_price).toFixed(2)}
+                      </span>
+                      <span className="text-base font-bold text-primary">
+                        R$ {Number(product.promotion_wholesale_price).toFixed(2)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-base font-bold text-foreground">
+                      R$ {Number(product.wholesale_price).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Retail Price */}
+            {product.retail_price && (
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] text-foreground-muted font-medium">Varejo</span>
+                <div className="flex items-center gap-2">
+                  {product.is_promotion && product.promotion_retail_price ? (
+                    <>
+                      <span className="text-xs text-foreground-muted line-through">
+                        R$ {Number(product.retail_price).toFixed(2)}
+                      </span>
+                      <span className="text-base font-bold text-primary">
+                        R$ {Number(product.promotion_retail_price).toFixed(2)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-base font-bold text-foreground">
+                      R$ {Number(product.retail_price).toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
 
