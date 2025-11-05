@@ -67,68 +67,72 @@ export const ProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-4 sm:p-5 md:p-6 flex-1 flex flex-col justify-between bg-gradient-to-b from-white via-surface/5 to-surface/20">
-        <div className="space-y-3 sm:space-y-4">
-          <h3 className="font-bold text-foreground text-base sm:text-lg leading-tight line-clamp-2 min-h-[2.5rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300 text-center">
+      <CardContent className="p-3 sm:p-5 md:p-6 flex-1 flex flex-col justify-between bg-gradient-to-b from-white via-surface/5 to-surface/20">
+        <div className="space-y-2 sm:space-y-3">
+          <h3 className="font-bold text-foreground text-sm sm:text-lg leading-tight line-clamp-2 min-h-[2rem] sm:min-h-[3rem] group-hover:text-primary transition-colors duration-300 text-center">
             {product.name}
           </h3>
 
           {/* Category Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <Badge className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border border-primary/20 text-xs font-semibold px-3 py-1.5 rounded-full">
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <Badge className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary border border-primary/20 text-[10px] sm:text-xs font-semibold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
               {product.category}
             </Badge>
             {product.subcategory && (
-              <Badge className="bg-gradient-to-r from-accent/10 to-accent/5 text-accent border border-accent/20 text-xs font-semibold px-3 py-1.5 rounded-full">
+              <Badge className="bg-gradient-to-r from-accent/10 to-accent/5 text-accent border border-accent/20 text-[10px] sm:text-xs font-semibold px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
                 {product.subcategory}
               </Badge>
             )}
           </div>
 
           {/* Enhanced Prices Section */}
-          <div className="space-y-3 mt-4 bg-gradient-to-br from-surface/30 to-surface-elevated/40 rounded-xl p-4 border border-border/30 shadow-inner">
+          <div className="space-y-2 mt-2">
             {/* Wholesale Price */}
             {product.wholesale_price && (
-              <div className="flex flex-col items-center space-y-1 pb-3 border-b border-border/30">
-                <span className="text-xs text-foreground-muted font-semibold uppercase tracking-wide">💼 Atacado</span>
-                <div className="flex items-center gap-2">
-                  {product.is_promotion && product.promotion_wholesale_price ? (
-                    <>
-                      <span className="text-sm text-foreground-muted/60 line-through font-medium">
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg p-2.5 sm:p-3 border border-blue-200/50 dark:border-blue-800/50">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] sm:text-xs text-blue-700 dark:text-blue-300 font-bold uppercase tracking-wide">💼 Atacado</span>
+                  <div className="flex items-center gap-1.5">
+                    {product.is_promotion && product.promotion_wholesale_price ? (
+                      <>
+                        <span className="text-xs text-foreground-muted/60 line-through font-medium">
+                          R$ {Number(product.wholesale_price).toFixed(2)}
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
+                          R$ {Number(product.promotion_wholesale_price).toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-lg sm:text-xl font-black text-blue-700 dark:text-blue-300">
                         R$ {Number(product.wholesale_price).toFixed(2)}
                       </span>
-                      <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 drop-shadow-sm">
-                        R$ {Number(product.promotion_wholesale_price).toFixed(2)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xl font-black text-foreground">
-                      R$ {Number(product.wholesale_price).toFixed(2)}
-                    </span>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Retail Price */}
             {product.retail_price && (
-              <div className="flex flex-col items-center space-y-1 pt-2">
-                <span className="text-xs text-foreground-muted font-semibold uppercase tracking-wide">🛍️ Varejo</span>
-                <div className="flex items-center gap-2">
-                  {product.is_promotion && product.promotion_retail_price ? (
-                    <>
-                      <span className="text-sm text-foreground-muted/60 line-through font-medium">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 rounded-lg p-2.5 sm:p-3 border border-purple-200/50 dark:border-purple-800/50">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] sm:text-xs text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wide">🛍️ Varejo</span>
+                  <div className="flex items-center gap-1.5">
+                    {product.is_promotion && product.promotion_retail_price ? (
+                      <>
+                        <span className="text-xs text-foreground-muted/60 line-through font-medium">
+                          R$ {Number(product.retail_price).toFixed(2)}
+                        </span>
+                        <span className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600">
+                          R$ {Number(product.promotion_retail_price).toFixed(2)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-lg sm:text-xl font-black text-purple-700 dark:text-purple-300">
                         R$ {Number(product.retail_price).toFixed(2)}
                       </span>
-                      <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-red-600 drop-shadow-sm">
-                        R$ {Number(product.promotion_retail_price).toFixed(2)}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xl font-black text-foreground">
-                      R$ {Number(product.retail_price).toFixed(2)}
-                    </span>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -136,17 +140,17 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 sm:p-5 md:p-6 pt-0">
+      <CardFooter className="p-3 sm:p-5 md:p-6 pt-0">
         <Button
           size="lg"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-sm sm:text-base h-12 sm:h-13 bg-gradient-to-r from-primary via-primary-hover to-primary hover:from-primary-hover hover:via-primary hover:to-primary-hover text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 sm:hover:scale-[1.02] border-2 border-white/20"
+          className="w-full text-xs sm:text-base h-10 sm:h-13 bg-gradient-to-r from-primary via-primary-hover to-primary hover:from-primary-hover hover:via-primary hover:to-primary-hover text-white font-bold rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 active:scale-95 sm:hover:scale-[1.02] border-2 border-white/20"
         >
-          <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-          💬 Consultar no WhatsApp
+          <MessageCircle className="w-3.5 h-3.5 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
+          Consultar WhatsApp
         </Button>
       </CardFooter>
     </Card>
