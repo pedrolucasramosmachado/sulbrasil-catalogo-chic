@@ -709,14 +709,13 @@ const AdminProducts = () => {
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Categoria (deixe vazio para não alterar)</label>
                       <Select 
-                        value={bulkEditData.category} 
+                        value={bulkEditData.category || undefined} 
                         onValueChange={(value) => setBulkEditData({...bulkEditData, category: value})}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
+                          <SelectValue placeholder="Não alterar" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Não alterar</SelectItem>
                           {categories
                             .filter(cat => cat !== 'todos')
                             .map(category => (
