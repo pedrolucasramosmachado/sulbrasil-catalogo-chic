@@ -83,13 +83,10 @@ export const ProductCard = ({
                   <span>🔥</span>
                   <span>Varejo:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#E91E63] flex items-baseline gap-1">
-                  <span className="text-base sm:text-lg">R$</span>
-                  <span>
-                    {product.is_promotion && product.promotion_retail_price
-                      ? Number(product.promotion_retail_price).toFixed(2)
-                      : Number(product.retail_price).toFixed(2)}
-                  </span>
+                <div className="text-lg sm:text-xl font-bold text-[#E91E63] whitespace-nowrap">
+                  R$ {product.is_promotion && product.promotion_retail_price
+                    ? Number(product.promotion_retail_price).toFixed(2)
+                    : Number(product.retail_price).toFixed(2)}
                 </div>
               </div>
             )}
@@ -101,13 +98,10 @@ export const ProductCard = ({
                   <span>💎</span>
                   <span>Atacado:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#2196F3] flex items-baseline gap-1">
-                  <span className="text-base sm:text-lg">R$</span>
-                  <span>
-                    {product.is_promotion && product.promotion_wholesale_price
-                      ? Number(product.promotion_wholesale_price).toFixed(2)
-                      : Number(product.wholesale_price).toFixed(2)}
-                  </span>
+                <div className="text-lg sm:text-xl font-bold text-[#9C27B0] whitespace-nowrap">
+                  R$ {product.is_promotion && product.promotion_wholesale_price
+                    ? Number(product.promotion_wholesale_price).toFixed(2)
+                    : Number(product.wholesale_price).toFixed(2)}
                 </div>
               </div>
             )}
