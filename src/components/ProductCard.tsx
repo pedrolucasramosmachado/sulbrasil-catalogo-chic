@@ -79,20 +79,17 @@ export const ProductCard = ({
             {/* Retail Price */}
             {product.retail_price && (
               <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs text-foreground-muted">
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
                   <span>🔥</span>
                   <span>Varejo:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#E91E63]">
-                  {product.is_promotion && product.promotion_retail_price ? (
-                    <>
-                      R$ {Number(product.promotion_retail_price).toFixed(2)}
-                    </>
-                  ) : (
-                    <>
-                      R$ {Number(product.retail_price).toFixed(2)}
-                    </>
-                  )}
+                <div className="text-lg sm:text-xl font-bold text-[#E91E63] flex items-baseline gap-1">
+                  <span className="text-base sm:text-lg">R$</span>
+                  <span>
+                    {product.is_promotion && product.promotion_retail_price
+                      ? Number(product.promotion_retail_price).toFixed(2)
+                      : Number(product.retail_price).toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}
@@ -100,20 +97,17 @@ export const ProductCard = ({
             {/* Wholesale Price */}
             {product.wholesale_price && (
               <div className="space-y-1">
-                <div className="flex items-center gap-1 text-xs text-foreground-muted">
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
                   <span>💎</span>
                   <span>Atacado:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#E91E63]">
-                  {product.is_promotion && product.promotion_wholesale_price ? (
-                    <>
-                      R$ {Number(product.promotion_wholesale_price).toFixed(2)}
-                    </>
-                  ) : (
-                    <>
-                      R$ {Number(product.wholesale_price).toFixed(2)}
-                    </>
-                  )}
+                <div className="text-lg sm:text-xl font-bold text-[#2196F3] flex items-baseline gap-1">
+                  <span className="text-base sm:text-lg">R$</span>
+                  <span>
+                    {product.is_promotion && product.promotion_wholesale_price
+                      ? Number(product.promotion_wholesale_price).toFixed(2)
+                      : Number(product.wholesale_price).toFixed(2)}
+                  </span>
                 </div>
               </div>
             )}
