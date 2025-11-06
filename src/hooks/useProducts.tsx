@@ -15,6 +15,7 @@ export interface Product {
   sizes?: string[];
   is_featured?: boolean;
   is_promotion?: boolean | null;
+  is_launch?: boolean | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -66,6 +67,10 @@ export const useProducts = () => {
     return products.filter(product => product.is_promotion === true);
   };
 
+  const getLaunchProducts = () => {
+    return products.filter(product => product.is_launch === true);
+  };
+
   const getCategoriesWithImages = () => {
     const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
     
@@ -79,6 +84,19 @@ export const useProducts = () => {
         imageUrl: promoProducts[0].image_url,
         minWholesale: minPromoWholesale === Infinity ? null : minPromoWholesale,
         minRetail: minPromoRetail === Infinity ? null : minPromoRetail,
+      });
+    }
+    
+    // Add "Lançamentos" if there are launch products
+    const launchProducts = getLaunchProducts();
+    if (launchProducts.length > 0 && launchProducts[0].image_url) {
+      const minLaunchWholesale = Math.min(...launchProducts.map(p => p.wholesale_price || Infinity).filter(p => p !== Infinity));
+      const minLaunchRetail = Math.min(...launchProducts.map(p => p.retail_price || Infinity).filter(p => p !== Infinity));
+      
+      categoriesMap.set('Lançamentos ✨', {
+        imageUrl: launchProducts[0].image_url,
+        minWholesale: minLaunchWholesale === Infinity ? null : minLaunchWholesale,
+        minRetail: minLaunchRetail === Infinity ? null : minLaunchRetail,
       });
     }
     
@@ -178,5 +196,6 @@ export const useProducts = () => {
     getProductsBySubcategory,
     categoryHasSubcategories,
     getPromotionProducts,
+    getLaunchProducts,
   };
 };

@@ -58,6 +58,11 @@ export const ProductCard = ({
                 🔥 PROMOÇÃO
               </Badge>
             )}
+            {product.is_launch && (
+              <Badge className="bg-gradient-to-r from-green-400 via-emerald-500 to-teal-600 text-white text-xs font-bold shadow-xl border-0 px-3 py-1.5">
+                ✨ LANÇAMENTO
+              </Badge>
+            )}
             {product.is_featured && (
               <Badge className="bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-white text-xs font-bold shadow-xl border-0 px-3 py-1.5">
                 ⭐ Destaque
