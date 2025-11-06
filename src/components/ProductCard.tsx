@@ -74,16 +74,16 @@ export const ProductCard = ({
             {product.name}
           </h3>
 
-          {/* Prices Side by Side */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Prices Stacked */}
+          <div className="space-y-2">
             {/* Retail Price */}
             {product.retail_price && (
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
                   <span>🔥</span>
                   <span>Varejo:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#E91E63] whitespace-nowrap">
+                <div className="text-lg sm:text-xl font-bold text-[#E91E63]">
                   R$ {product.is_promotion && product.promotion_retail_price
                     ? Number(product.promotion_retail_price).toFixed(2)
                     : Number(product.retail_price).toFixed(2)}
@@ -93,12 +93,12 @@ export const ProductCard = ({
 
             {/* Wholesale Price */}
             {product.wholesale_price && (
-              <div className="space-y-1">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 text-xs font-medium text-gray-600">
                   <span>💎</span>
                   <span>Atacado:</span>
                 </div>
-                <div className="text-lg sm:text-xl font-bold text-[#9C27B0] whitespace-nowrap">
+                <div className="text-lg sm:text-xl font-bold text-[#9C27B0]">
                   R$ {product.is_promotion && product.promotion_wholesale_price
                     ? Number(product.promotion_wholesale_price).toFixed(2)
                     : Number(product.wholesale_price).toFixed(2)}
