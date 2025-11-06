@@ -83,7 +83,7 @@ export const ProductCard = ({
                   <span>🔥</span>
                   <span>Varejo:</span>
                 </div>
-                <div className="text-base sm:text-lg font-bold text-[#E91E63]">
+                <div className="text-sm font-bold text-[#E91E63]">
                   R$ {product.is_promotion && product.promotion_retail_price
                     ? Number(product.promotion_retail_price).toFixed(2)
                     : Number(product.retail_price).toFixed(2)}
@@ -98,7 +98,7 @@ export const ProductCard = ({
                   <span>💎</span>
                   <span>Atacado:</span>
                 </div>
-                <div className="text-base sm:text-lg font-bold text-[#9C27B0]">
+                <div className="text-sm font-bold text-[#9C27B0]">
                   R$ {product.is_promotion && product.promotion_wholesale_price
                     ? Number(product.promotion_wholesale_price).toFixed(2)
                     : Number(product.wholesale_price).toFixed(2)}
