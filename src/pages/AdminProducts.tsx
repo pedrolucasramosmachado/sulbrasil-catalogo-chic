@@ -51,6 +51,11 @@ const AdminProducts = () => {
     wholesale_price: '',
     category: '',
     subcategory: '',
+    is_featured: '' as '' | 'true' | 'false',
+    is_promotion: '' as '' | 'true' | 'false',
+    is_launch: '' as '' | 'true' | 'false',
+    promotion_retail_price: '',
+    promotion_wholesale_price: '',
   });
   const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
   const [promoWholesalePrice, setPromoWholesalePrice] = useState('');
@@ -275,6 +280,25 @@ const AdminProducts = () => {
       if (bulkEditData.subcategory) {
         updates.subcategory = bulkEditData.subcategory;
       }
+      if (bulkEditData.is_featured !== '') {
+        updates.is_featured = bulkEditData.is_featured === 'true';
+      }
+      if (bulkEditData.is_promotion !== '') {
+        updates.is_promotion = bulkEditData.is_promotion === 'true';
+        if (bulkEditData.is_promotion === 'false') {
+          updates.promotion_retail_price = null;
+          updates.promotion_wholesale_price = null;
+        }
+      }
+      if (bulkEditData.is_launch !== '') {
+        updates.is_launch = bulkEditData.is_launch === 'true';
+      }
+      if (bulkEditData.promotion_retail_price) {
+        updates.promotion_retail_price = parseFloat(bulkEditData.promotion_retail_price.replace(',', '.'));
+      }
+      if (bulkEditData.promotion_wholesale_price) {
+        updates.promotion_wholesale_price = parseFloat(bulkEditData.promotion_wholesale_price.replace(',', '.'));
+      }
 
       if (Object.keys(updates).length === 0) {
         toast({
@@ -306,6 +330,11 @@ const AdminProducts = () => {
         wholesale_price: '',
         category: '',
         subcategory: '',
+        is_featured: '',
+        is_promotion: '',
+        is_launch: '',
+        promotion_retail_price: '',
+        promotion_wholesale_price: '',
       });
       fetchProducts();
     } catch (error) {
@@ -313,6 +342,72 @@ const AdminProducts = () => {
       toast({
         title: 'Erro',
         description: 'Erro ao atualizar produtos em massa',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRemovePromotion = async () => {
+    if (selectedProducts.size === 0) return;
+
+    try {
+      for (const productId of Array.from(selectedProducts)) {
+        const { error } = await supabase
+          .from('products')
+          .update({
+            is_promotion: false,
+            promotion_retail_price: null,
+            promotion_wholesale_price: null,
+          })
+          .eq('id', productId);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: `Promoção removida de ${selectedProducts.size} produto(s)!`,
+      });
+
+      setSelectedProducts(new Set());
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao remover promoção:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao remover promoção',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleToggleLaunch = async (setAsLaunch: boolean) => {
+    if (selectedProducts.size === 0) return;
+
+    try {
+      for (const productId of Array.from(selectedProducts)) {
+        const { error } = await supabase
+          .from('products')
+          .update({ is_launch: setAsLaunch })
+          .eq('id', productId);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: setAsLaunch 
+          ? `${selectedProducts.size} produto(s) marcado(s) como lançamento!`
+          : `Lançamento removido de ${selectedProducts.size} produto(s)!`,
+      });
+
+      setSelectedProducts(new Set());
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao alterar lançamento:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar lançamento',
         variant: 'destructive',
       });
     }
@@ -450,7 +545,7 @@ const AdminProducts = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {selectedProducts.size > 0 && (
                   <>
                     <Button 
@@ -466,7 +561,28 @@ const AdminProducts = () => {
                       onClick={() => setIsQuickPromoOpen(true)}
                       className="flex items-center gap-2 bg-gradient-to-r from-accent to-primary"
                     >
-                      🔥 Promoção Rápida
+                      🔥 Promoção
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleRemovePromotion}
+                      className="flex items-center gap-2 text-orange-600 border-orange-300 hover:bg-orange-50"
+                    >
+                      ❌ Tirar Promo
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleToggleLaunch(true)}
+                      className="flex items-center gap-2 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
+                    >
+                      ✨ Lançamento
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleToggleLaunch(false)}
+                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
+                    >
+                      ❌ Tirar Lanç.
                     </Button>
                   </>
                 )}
@@ -701,7 +817,7 @@ const AdminProducts = () => {
 
               {/* Dialog de Edição em Massa */}
               <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
-                <DialogContent>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Editar {selectedProducts.size} produto(s) selecionado(s)</DialogTitle>
                   </DialogHeader>
@@ -752,6 +868,75 @@ const AdminProducts = () => {
                           value={bulkEditData.wholesale_price}
                           onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
                           placeholder="Ex: 25.90"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Status Badges */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">⭐ Destaque</label>
+                        <Select 
+                          value={bulkEditData.is_featured || undefined} 
+                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_featured: value as '' | 'true' | 'false'})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Não alterar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Sim</SelectItem>
+                            <SelectItem value="false">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">🔥 Promoção</label>
+                        <Select 
+                          value={bulkEditData.is_promotion || undefined} 
+                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_promotion: value as '' | 'true' | 'false'})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Não alterar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Sim</SelectItem>
+                            <SelectItem value="false">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">✨ Lançamento</label>
+                        <Select 
+                          value={bulkEditData.is_launch || undefined} 
+                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_launch: value as '' | 'true' | 'false'})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Não alterar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Sim</SelectItem>
+                            <SelectItem value="false">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Preços Promocionais */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">💸 Preço Promo Varejo</label>
+                        <Input
+                          value={bulkEditData.promotion_retail_price}
+                          onChange={(e) => setBulkEditData({...bulkEditData, promotion_retail_price: e.target.value})}
+                          placeholder="Ex: 19.90"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">💸 Preço Promo Atacado</label>
+                        <Input
+                          value={bulkEditData.promotion_wholesale_price}
+                          onChange={(e) => setBulkEditData({...bulkEditData, promotion_wholesale_price: e.target.value})}
+                          placeholder="Ex: 15.90"
                         />
                       </div>
                     </div>
