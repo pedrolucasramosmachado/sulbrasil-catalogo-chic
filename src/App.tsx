@@ -10,6 +10,8 @@ import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/AdminLogin";
 import AdminHome from "./pages/AdminHome";
 import AdminProducts from "./pages/AdminProducts";
+import Vitrine from "./pages/Vitrine";
+import VitrineCategory from "./pages/VitrineCategory";
 import { RequireAuth } from "./components/RequireAuth";
 import { ScrollToTop } from "./components/ScrollToTop";
 
@@ -28,6 +30,12 @@ const App = () => (
           <Route path="/catalogo/:category" element={<CategoryPage />} />
           <Route path="/catalogo/:category/:subcategory" element={<CategoryPage />} />
           <Route path="/produto/:id" element={<ProductPage />} />
+          
+          {/* Vitrine Routes - Without Prices */}
+          <Route path="/vitrine" element={<Vitrine />} />
+          <Route path="/vitrine/:category" element={<VitrineCategory />} />
+          <Route path="/vitrine/:category/:subcategory" element={<VitrineCategory />} />
+          
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
           <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
