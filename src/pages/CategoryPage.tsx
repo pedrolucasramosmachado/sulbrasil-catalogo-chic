@@ -15,7 +15,7 @@ const CategoryPage = () => {
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories, getPromotionProducts } = useProducts();
+  const { products, loading, error, getProductsByCategory, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories, getPromotionProducts, getLaunchProducts } = useProducts();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -49,6 +49,11 @@ const CategoryPage = () => {
       console.log('Produtos em promoção encontrados:', promoProducts.length);
       return promoProducts;
     }
+    if (category === 'lancamentos') {
+      const launchProducts = getLaunchProducts();
+      console.log('Produtos em lançamento encontrados:', launchProducts.length);
+      return launchProducts;
+    }
     if (subcategory) {
       return getProductsBySubcategory(category || '', decodeURIComponent(subcategory));
     }
@@ -72,6 +77,8 @@ const CategoryPage = () => {
 
   const pageTitle = category === 'promocoes' 
     ? 'Promoções da Semana 🔥'
+    : category === 'lancamentos'
+    ? 'Lançamentos ✨'
     : subcategory 
     ? decodeURIComponent(subcategory)
     : category || '';
