@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ArrowUp, ArrowDown } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -155,7 +155,7 @@ const AdminProducts = () => {
         }
       }
 
-      const productData: any = {
+      const productData = {
         name: data.name,
         category: data.category,
         subcategory: data.subcategory || null,
@@ -177,16 +177,6 @@ const AdminProducts = () => {
           description: 'Produto atualizado com sucesso!',
         });
       } else {
-        // Get max display_order and add 1 for new product
-        const { data: maxOrderData } = await supabase
-          .from('products')
-          .select('display_order')
-          .order('display_order', { ascending: false })
-          .limit(1);
-        
-        const maxOrder = maxOrderData && maxOrderData.length > 0 ? maxOrderData[0].display_order : 0;
-        productData.display_order = maxOrder + 1;
-
         const { error } = await supabase
           .from('products')
           .insert(productData);
@@ -508,46 +498,6 @@ const AdminProducts = () => {
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
-  const moveProduct = async (productId: string, direction: 'up' | 'down') => {
-    const currentIndex = filteredProducts.findIndex(p => p.id === productId);
-    if (currentIndex === -1) return;
-    
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    if (targetIndex < 0 || targetIndex >= filteredProducts.length) return;
-
-    const currentProduct = filteredProducts[currentIndex];
-    const targetProduct = filteredProducts[targetIndex];
-
-    try {
-      // Swap display_order between the two products
-      const { error: error1 } = await supabase
-        .from('products')
-        .update({ display_order: targetProduct.display_order })
-        .eq('id', currentProduct.id);
-
-      const { error: error2 } = await supabase
-        .from('products')
-        .update({ display_order: currentProduct.display_order })
-        .eq('id', targetProduct.id);
-
-      if (error1 || error2) throw error1 || error2;
-
-      await fetchProducts();
-      
-      toast({
-        title: 'Sucesso',
-        description: `Produto movido para ${direction === 'up' ? 'cima' : 'baixo'}`,
-      });
-    } catch (error) {
-      console.error('Erro ao mover produto:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao reordenar produto',
-        variant: 'destructive',
-      });
-    }
   };
 
   if (loading) {
@@ -1033,7 +983,6 @@ const AdminProducts = () => {
                         )}
                       </Button>
                     </TableHead>
-                    <TableHead className="w-20">Ordem</TableHead>
                     <TableHead className="w-16">Imagem</TableHead>
                     <TableHead>Nome</TableHead>
                     <TableHead>Categoria</TableHead>
@@ -1055,7 +1004,7 @@ const AdminProducts = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredProducts.map((product, index) => (
+                    filteredProducts.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <Button
@@ -1070,30 +1019,6 @@ const AdminProducts = () => {
                               <Square className="h-4 w-4" />
                             )}
                           </Button>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveProduct(product.id, 'up')}
-                              disabled={index === 0}
-                              className="h-6 w-6 p-0"
-                              title="Mover para cima"
-                            >
-                              <ArrowUp className="h-3 w-3" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => moveProduct(product.id, 'down')}
-                              disabled={index === filteredProducts.length - 1}
-                              className="h-6 w-6 p-0"
-                              title="Mover para baixo"
-                            >
-                              <ArrowDown className="h-3 w-3" />
-                            </Button>
-                          </div>
                         </TableCell>
                         <TableCell>
                           {product.image_url ? (
