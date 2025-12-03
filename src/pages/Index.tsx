@@ -17,6 +17,8 @@ const Index = () => {
     const lowerCategory = category.toLowerCase();
     if (lowerCategory.includes('promoções') || lowerCategory.includes('promoção')) {
       navigate('/catalogo/promocoes');
+    } else if (lowerCategory.includes('lançamentos') || lowerCategory.includes('lançamento')) {
+      navigate('/catalogo/lancamentos');
     } else {
       navigate(`/catalogo/${encodeURIComponent(category)}`);
     }

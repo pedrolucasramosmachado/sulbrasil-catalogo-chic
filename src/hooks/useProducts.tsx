@@ -20,22 +20,38 @@ export interface Product {
   updated_at?: string;
 }
 
+interface CategoryOrder {
+  name: string;
+  display_order: number;
+}
+
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryOrders, setCategoryOrders] = useState<CategoryOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      
+      // Fetch products and category orders in parallel
+      const [productsRes, categoriesRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('categories')
+          .select('name, display_order')
+          .order('display_order', { ascending: true })
+      ]);
 
-      if (error) throw error;
+      if (productsRes.error) throw productsRes.error;
+      if (categoriesRes.error) throw categoriesRes.error;
 
-      setProducts(data || []);
+      setProducts(productsRes.data || []);
+      setCategoryOrders(categoriesRes.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar produtos');
     } finally {
@@ -120,12 +136,39 @@ export const useProducts = () => {
       }
     });
     
-    return Array.from(categoriesMap.entries()).map(([category, data]) => ({
+    // Build result with special categories first, then sorted by display_order
+    const result: Array<{ category: string; imageUrl: string; minWholesalePrice: number | null; minRetailPrice: number | null }> = [];
+    
+    // Add special categories first (Promoções, Lançamentos)
+    const specialCategories = ['Promoções da Semana 🔥', 'Lançamentos ✨'];
+    specialCategories.forEach(cat => {
+      if (categoriesMap.has(cat)) {
+        const data = categoriesMap.get(cat)!;
+        result.push({
+          category: cat,
+          imageUrl: data.imageUrl,
+          minWholesalePrice: data.minWholesale,
+          minRetailPrice: data.minRetail
+        });
+        categoriesMap.delete(cat);
+      }
+    });
+    
+    // Sort remaining categories by display_order from the categories table
+    const remainingCategories = Array.from(categoriesMap.entries()).map(([category, data]) => ({
       category,
       imageUrl: data.imageUrl,
       minWholesalePrice: data.minWholesale,
       minRetailPrice: data.minRetail
     }));
+    
+    remainingCategories.sort((a, b) => {
+      const orderA = categoryOrders.find(c => c.name === a.category)?.display_order ?? 9999;
+      const orderB = categoryOrders.find(c => c.name === b.category)?.display_order ?? 9999;
+      return orderA - orderB;
+    });
+    
+    return [...result, ...remainingCategories];
   };
 
   const getSubcategoriesWithData = (category: string) => {
