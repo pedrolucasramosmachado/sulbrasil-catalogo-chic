@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -162,6 +162,7 @@ const AdminProducts = () => {
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
         image_url: imageUrl || null,
+        display_order: 0,
       };
 
       if (editingProduct) {
@@ -593,6 +594,12 @@ const AdminProducts = () => {
                       Novo Produto
                     </Button>
                   </DialogTrigger>
+                <Link to="/admin/categories">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <ListOrdered className="h-4 w-4" />
+                    Ordenar Categorias
+                  </Button>
+                </Link>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
