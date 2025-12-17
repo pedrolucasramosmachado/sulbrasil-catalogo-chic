@@ -37,10 +37,20 @@ export const ProductCard = ({
             alt={product.name}
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1",
-              imageLoaded ? "opacity-100" : "opacity-0"
+              imageLoaded ? "opacity-100" : "opacity-0",
+              product.is_out_of_stock && "grayscale"
             )}
             onLoad={() => setImageLoaded(true)}
           />
+          
+          {/* Out of Stock Overlay */}
+          {product.is_out_of_stock && (
+            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
+              <span className="text-white text-xl sm:text-2xl font-bold tracking-wider uppercase px-4 py-2 border-2 border-white rounded-lg bg-black/40">
+                Esgotado
+              </span>
+            </div>
+          )}
           
           {/* Enhanced Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
