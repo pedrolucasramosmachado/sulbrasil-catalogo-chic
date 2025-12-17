@@ -31,15 +31,15 @@ export const ProductCardVitrine = ({
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1",
               imageLoaded ? "opacity-100" : "opacity-0",
-              product.is_out_of_stock && "grayscale"
+              product.is_out_of_stock && "grayscale opacity-70"
             )}
             onLoad={() => setImageLoaded(true)}
           />
           
-          {/* Out of Stock Overlay */}
+          {/* Subtle Out of Stock Badge */}
           {product.is_out_of_stock && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-20">
-              <span className="text-white text-xl sm:text-2xl font-bold tracking-wider uppercase px-4 py-2 border-2 border-white rounded-lg bg-black/40">
+            <div className="absolute bottom-3 right-3 z-20">
+              <span className="text-xs font-medium text-gray-600 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-gray-200">
                 Esgotado
               </span>
             </div>
