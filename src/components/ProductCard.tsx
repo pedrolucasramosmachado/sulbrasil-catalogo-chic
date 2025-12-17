@@ -38,15 +38,15 @@ export const ProductCard = ({
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1",
               imageLoaded ? "opacity-100" : "opacity-0",
-              product.is_out_of_stock && "grayscale opacity-70"
+              product.is_out_of_stock && "opacity-50"
             )}
             onLoad={() => setImageLoaded(true)}
           />
           
-          {/* Subtle Out of Stock Badge */}
+          {/* Out of Stock Badge */}
           {product.is_out_of_stock && (
             <div className="absolute bottom-3 right-3 z-20">
-              <span className="text-xs font-medium text-gray-600 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm border border-gray-200">
+              <span className="text-sm font-semibold text-white bg-black/80 px-4 py-2 rounded-full shadow-lg">
                 Esgotado
               </span>
             </div>
