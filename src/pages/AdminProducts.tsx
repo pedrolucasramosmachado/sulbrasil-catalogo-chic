@@ -54,6 +54,7 @@ const AdminProducts = () => {
     is_featured: '' as '' | 'true' | 'false',
     is_promotion: '' as '' | 'true' | 'false',
     is_launch: '' as '' | 'true' | 'false',
+    is_out_of_stock: '' as '' | 'true' | 'false',
     promotion_retail_price: '',
     promotion_wholesale_price: '',
   });
@@ -294,6 +295,9 @@ const AdminProducts = () => {
       if (bulkEditData.is_launch !== '') {
         updates.is_launch = bulkEditData.is_launch === 'true';
       }
+      if (bulkEditData.is_out_of_stock !== '') {
+        updates.is_out_of_stock = bulkEditData.is_out_of_stock === 'true';
+      }
       if (bulkEditData.promotion_retail_price) {
         updates.promotion_retail_price = parseFloat(bulkEditData.promotion_retail_price.replace(',', '.'));
       }
@@ -334,6 +338,7 @@ const AdminProducts = () => {
         is_featured: '',
         is_promotion: '',
         is_launch: '',
+        is_out_of_stock: '',
         promotion_retail_price: '',
         promotion_wholesale_price: '',
       });
@@ -409,6 +414,38 @@ const AdminProducts = () => {
       toast({
         title: 'Erro',
         description: 'Erro ao alterar lançamento',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleToggleOutOfStock = async (setAsOutOfStock: boolean) => {
+    if (selectedProducts.size === 0) return;
+
+    try {
+      for (const productId of Array.from(selectedProducts)) {
+        const { error } = await supabase
+          .from('products')
+          .update({ is_out_of_stock: setAsOutOfStock })
+          .eq('id', productId);
+        
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: setAsOutOfStock 
+          ? `${selectedProducts.size} produto(s) marcado(s) como esgotado!`
+          : `Estoque restaurado para ${selectedProducts.size} produto(s)!`,
+      });
+
+      setSelectedProducts(new Set());
+      fetchProducts();
+    } catch (error) {
+      console.error('Erro ao alterar estoque:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao alterar estoque',
         variant: 'destructive',
       });
     }
@@ -584,6 +621,20 @@ const AdminProducts = () => {
                       className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
                     >
                       ❌ Tirar Lanç.
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleToggleOutOfStock(true)}
+                      className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
+                    >
+                      🚫 Esgotado
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleToggleOutOfStock(false)}
+                      className="flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50"
+                    >
+                      ✅ Em Estoque
                     </Button>
                   </>
                 )}
@@ -916,6 +967,21 @@ const AdminProducts = () => {
                         <Select 
                           value={bulkEditData.is_launch || undefined} 
                           onValueChange={(value) => setBulkEditData({...bulkEditData, is_launch: value as '' | 'true' | 'false'})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Não alterar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Sim</SelectItem>
+                            <SelectItem value="false">Não</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">🚫 Esgotado</label>
+                        <Select 
+                          value={bulkEditData.is_out_of_stock || undefined} 
+                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_out_of_stock: value as '' | 'true' | 'false'})}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Não alterar" />

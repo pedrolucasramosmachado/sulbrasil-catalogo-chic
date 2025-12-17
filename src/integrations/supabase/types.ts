@@ -48,6 +48,7 @@ export type Database = {
           image_url: string | null
           is_featured: boolean | null
           is_launch: boolean | null
+          is_out_of_stock: boolean | null
           is_promotion: boolean | null
           name: string
           promotion_retail_price: number | null
@@ -67,6 +68,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           is_launch?: boolean | null
+          is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
           name: string
           promotion_retail_price?: number | null
@@ -86,6 +88,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean | null
           is_launch?: boolean | null
+          is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
           name?: string
           promotion_retail_price?: number | null

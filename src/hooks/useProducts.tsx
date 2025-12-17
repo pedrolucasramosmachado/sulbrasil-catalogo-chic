@@ -16,6 +16,7 @@ export interface Product {
   is_featured?: boolean;
   is_promotion?: boolean | null;
   is_launch?: boolean | null;
+  is_out_of_stock?: boolean | null;
   created_at?: string;
   updated_at?: string;
 }
