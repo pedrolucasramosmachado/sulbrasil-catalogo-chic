@@ -93,7 +93,7 @@ const ProductPage = () => {
       <div className="sticky top-[56px] sm:top-[64px] z-40 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">
         <div className="container mx-auto px-4 py-3">
           <Button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(`/catalogo/${encodeURIComponent(product.category)}`)}
             variant="default"
             className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
             size="default"
