@@ -25,7 +25,7 @@ export const SearchBar = () => {
   const handleSelectProduct = (product: typeof products[0]) => {
     setQuery("");
     setIsOpen(false);
-    navigate(`/catalogo/${encodeURIComponent(product.category)}`);
+    navigate(`/produto/${product.id}`);
   };
 
   const handleClear = () => {
