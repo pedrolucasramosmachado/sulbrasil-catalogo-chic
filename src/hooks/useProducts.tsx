@@ -17,6 +17,7 @@ export interface Product {
   is_promotion?: boolean | null;
   is_launch?: boolean | null;
   is_out_of_stock?: boolean | null;
+  weight_kg?: number | null;
   created_at?: string;
   updated_at?: string;
 }

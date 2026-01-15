@@ -57,6 +57,7 @@ export type Database = {
           sizes: string[] | null
           subcategory: string | null
           updated_at: string
+          weight_kg: number | null
           wholesale_price: number | null
         }
         Insert: {
@@ -77,6 +78,7 @@ export type Database = {
           sizes?: string[] | null
           subcategory?: string | null
           updated_at?: string
+          weight_kg?: number | null
           wholesale_price?: number | null
         }
         Update: {
@@ -97,6 +99,7 @@ export type Database = {
           sizes?: string[] | null
           subcategory?: string | null
           updated_at?: string
+          weight_kg?: number | null
           wholesale_price?: number | null
         }
         Relationships: []
