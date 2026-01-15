@@ -26,6 +26,7 @@ const productSchema = z.object({
   color: z.string().optional(),
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
+  weight_kg: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -71,6 +72,7 @@ const AdminProducts = () => {
       color: '',
       retail_price: '',
       wholesale_price: '',
+      weight_kg: '',
     },
   });
 
@@ -162,6 +164,7 @@ const AdminProducts = () => {
         subcategory: data.subcategory || null,
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
+        weight_kg: data.weight_kg ? parseFloat(data.weight_kg.replace(',', '.')) : null,
         image_url: imageUrl || null,
         display_order: 0,
       };
@@ -229,6 +232,7 @@ const AdminProducts = () => {
       color: extractedColor,
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
+      weight_kg: product.weight_kg ? product.weight_kg.toString() : '',
     });
     setImagePreview(product.image_url || null);
     setIsDialogOpen(true);
@@ -243,6 +247,7 @@ const AdminProducts = () => {
       color: '',
       retail_price: '',
       wholesale_price: '',
+      weight_kg: '',
     });
     setIsDialogOpen(true);
   };
@@ -854,6 +859,27 @@ const AdminProducts = () => {
                           )}
                         />
                       </div>
+
+                      <FormField
+                        control={form.control}
+                        name="weight_kg"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Peso (kg)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Ex: 0.5"
+                                type="text"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground">
+                              Usado para cálculo de frete. Deixe vazio para usar 0.5kg padrão.
+                            </p>
+                          </FormItem>
+                        )}
+                      />
                       
                       <div className="flex justify-end gap-2 pt-4">
                         <Button 
