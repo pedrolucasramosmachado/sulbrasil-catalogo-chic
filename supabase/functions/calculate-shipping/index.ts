@@ -207,10 +207,10 @@ serve(async (req) => {
       );
     }
 
-    // Calculate total weight (default to 0.5kg if not specified)
+    // Calculate total weight (default to 0.15kg / 150g if not specified)
     const totalWeightKg = products?.reduce((sum, p) => {
-      return sum + (p.weight_kg || 0.5);
-    }, 0) || 0.5;
+      return sum + (p.weight_kg || 0.15);
+    }, 0) || 0.15;
 
     console.log(`Calculating shipping for ${products?.length || 0} products, total weight: ${totalWeightKg}kg`);
 
