@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AdminHeader } from '@/components/AdminHeader';
 import { supabase } from '@/integrations/supabase/client';
-import { Truck, Package, Calculator, Search, Loader2 } from 'lucide-react';
+import { Truck, Package, Calculator, Search, Loader2, Copy, Check } from 'lucide-react';
 
 interface ShippingResult {
   carrier: string;
@@ -28,6 +29,8 @@ interface ShippingResponse {
   results: ShippingResult[];
 }
 
+const DEFAULT_WEIGHT_KG = 0.15; // 150g padrão
+
 const AdminShipping = () => {
   const { products, loading } = useProducts();
   const { toast } = useToast();
@@ -38,6 +41,8 @@ const AdminShipping = () => {
   const [destinationCep, setDestinationCep] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [shippingResults, setShippingResults] = useState<ShippingResponse | null>(null);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingResult | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -121,8 +126,72 @@ const AdminShipping = () => {
   const getSelectedProductsWeight = () => {
     return Array.from(selectedProducts).reduce((total, id) => {
       const product = products.find(p => p.id === id);
-      return total + ((product as any)?.weight_kg || 0.5);
+      return total + ((product as any)?.weight_kg || DEFAULT_WEIGHT_KG);
     }, 0);
+  };
+
+  const getSelectedProductsList = () => {
+    return Array.from(selectedProducts).map(id => products.find(p => p.id === id)).filter(Boolean) as Product[];
+  };
+
+  const generateOrderPreview = () => {
+    if (!selectedShipping || selectedProducts.size === 0) return '';
+
+    const selectedProductsList = getSelectedProductsList();
+    const totalWeight = getSelectedProductsWeight();
+    
+    const productLines = selectedProductsList.map(p => {
+      const price = p.is_promotion && p.promotion_wholesale_price 
+        ? p.promotion_wholesale_price 
+        : p.wholesale_price;
+      return `• ${p.name} - ${formatPrice(price || 0)}`;
+    }).join('\n');
+
+    const subtotal = selectedProductsList.reduce((sum, p) => {
+      const price = p.is_promotion && p.promotion_wholesale_price 
+        ? p.promotion_wholesale_price 
+        : p.wholesale_price;
+      return sum + (price || 0);
+    }, 0);
+
+    const total = subtotal + selectedShipping.price;
+
+    return `📦 *PEDIDO SULBRASIL*
+
+🛍️ *Produtos:*
+${productLines}
+
+📍 *Envio:*
+• ${selectedShipping.carrier} - ${selectedShipping.service}
+• CEP: ${destinationCep}
+• Prazo: ${selectedShipping.delivery_days} dias úteis
+• Frete: ${formatPrice(selectedShipping.price)}
+
+💰 *Resumo:*
+• Subtotal: ${formatPrice(subtotal)}
+• Frete: ${formatPrice(selectedShipping.price)}
+• *TOTAL: ${formatPrice(total)}*
+
+✅ Peso total: ${totalWeight.toFixed(2)}kg`;
+  };
+
+  const copyOrderPreview = async () => {
+    const preview = generateOrderPreview();
+    try {
+      await navigator.clipboard.writeText(preview);
+      setCopied(true);
+      toast({
+        title: 'Copiado!',
+        description: 'Preview do pedido copiado para a área de transferência',
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível copiar o texto',
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -205,7 +274,7 @@ const AdminShipping = () => {
                         <TableCell className="text-right">
                           {(product as any).weight_kg ? 
                             `${(product as any).weight_kg} kg` : 
-                            <span className="text-muted-foreground">0.5 kg (padrão)</span>
+                            <span className="text-muted-foreground">150g (padrão)</span>
                           }
                         </TableCell>
                       </TableRow>
@@ -282,10 +351,18 @@ const AdminShipping = () => {
                   </div>
 
                   <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Selecione uma opção de envio:</p>
                     {shippingResults.results.map((result, index) => (
                       <div 
                         key={index}
-                        className={`p-4 border rounded-lg ${result.error ? 'border-orange-300 bg-orange-50' : 'border-green-300 bg-green-50'}`}
+                        onClick={() => !result.error && setSelectedShipping(result)}
+                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                          result.error 
+                            ? 'border-orange-300 bg-orange-50 cursor-not-allowed' 
+                            : selectedShipping?.service === result.service && selectedShipping?.carrier === result.carrier
+                              ? 'border-primary bg-primary/10 ring-2 ring-primary'
+                              : 'border-green-300 bg-green-50 hover:border-primary'
+                        }`}
                       >
                         <div className="flex justify-between items-start">
                           <div>
@@ -309,6 +386,38 @@ const AdminShipping = () => {
                       </div>
                     ))}
                   </div>
+
+                  {/* Order Preview */}
+                  {selectedShipping && (
+                    <div className="mt-6 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">📋 Preview do Pedido</h4>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={copyOrderPreview}
+                          className="flex items-center gap-2"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="h-4 w-4" />
+                              Copiado!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-4 w-4" />
+                              Copiar
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <Textarea
+                        readOnly
+                        value={generateOrderPreview()}
+                        className="min-h-[300px] font-mono text-sm bg-muted"
+                      />
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
