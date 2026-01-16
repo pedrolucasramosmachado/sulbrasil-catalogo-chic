@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AdminHeader } from '@/components/AdminHeader';
 import { supabase } from '@/integrations/supabase/client';
-import { Truck, Package, Calculator, Search, Loader2, Copy, Check } from 'lucide-react';
+import { Truck, Package, Calculator, Search, Loader2, Copy, Check, X } from 'lucide-react';
 
 interface ShippingResult {
   carrier: string;
@@ -30,6 +29,7 @@ interface ShippingResponse {
 }
 
 const DEFAULT_WEIGHT_KG = 0.15; // 150g padrão
+const DEFAULT_ORIGIN_CEP = '03045-000';
 
 const AdminShipping = () => {
   const { products, loading } = useProducts();
@@ -37,7 +37,7 @@ const AdminShipping = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-  const [originCep, setOriginCep] = useState('');
+  const [originCep, setOriginCep] = useState(DEFAULT_ORIGIN_CEP);
   const [destinationCep, setDestinationCep] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
   const [shippingResults, setShippingResults] = useState<ShippingResponse | null>(null);
@@ -56,6 +56,18 @@ const AdminShipping = () => {
       newSelected.add(productId);
     }
     setSelectedProducts(newSelected);
+  };
+
+  const removeProduct = (productId: string) => {
+    const newSelected = new Set(selectedProducts);
+    newSelected.delete(productId);
+    setSelectedProducts(newSelected);
+  };
+
+  const clearAllProducts = () => {
+    setSelectedProducts(new Set());
+    setShippingResults(null);
+    setSelectedShipping(null);
   };
 
   const formatCep = (value: string) => {
@@ -205,224 +217,229 @@ ${productLines}
     );
   }
 
+  const selectedProductsList = getSelectedProductsList();
+
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 py-4 md:px-4 md:py-8 max-w-4xl">
         <AdminHeader 
           title="Simulador de Frete" 
-          description="Calcule o frete de produtos usando SEDEX, PAC e Loggi" 
+          description="Calcule o frete de produtos" 
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Product Selection */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Selecionar Produtos
-              </CardTitle>
-              <CardDescription>
-                Selecione os produtos para calcular o frete
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar por nome..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="rounded-md border max-h-96 overflow-y-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12"></TableHead>
-                      <TableHead>Produto</TableHead>
-                      <TableHead className="text-right">Peso (kg)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => (
-                      <TableRow 
-                        key={product.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => toggleProductSelection(product.id)}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedProducts.has(product.id)}
-                            onCheckedChange={() => toggleProductSelection(product.id)}
-                          />
-                        </TableCell>
-                        <TableCell className="flex items-center gap-3">
-                          {product.image_url && (
-                            <img 
-                              src={product.image_url} 
-                              alt={product.name}
-                              className="w-10 h-10 object-cover rounded"
-                            />
-                          )}
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(product as any).weight_kg ? 
-                            `${(product as any).weight_kg} kg` : 
-                            <span className="text-muted-foreground">150g (padrão)</span>
-                          }
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {selectedProducts.size > 0 && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-sm">
-                    <strong>{selectedProducts.size}</strong> produto(s) selecionado(s) • 
-                    Peso total: <strong>{getSelectedProductsWeight().toFixed(2)} kg</strong>
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Shipping Calculator */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Calcular Frete
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">CEP de Origem</label>
+        {/* CEP Section - Always visible */}
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Origem</label>
                 <Input
                   placeholder="00000-000"
                   value={originCep}
                   onChange={(e) => setOriginCep(formatCep(e.target.value))}
                   maxLength={9}
+                  className="text-center font-mono"
                 />
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">CEP de Destino</label>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Destino</label>
                 <Input
                   placeholder="00000-000"
                   value={destinationCep}
                   onChange={(e) => setDestinationCep(formatCep(e.target.value))}
                   maxLength={9}
+                  className="text-center font-mono"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <Button 
-                onClick={calculateShipping} 
-                className="w-full"
-                disabled={isCalculating || selectedProducts.size === 0}
-              >
-                {isCalculating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Calculando...
-                  </>
-                ) : (
-                  <>
-                    <Truck className="h-4 w-4 mr-2" />
-                    Calcular Frete
-                  </>
-                )}
-              </Button>
-
-              {/* Results */}
-              {shippingResults && (
-                <div className="mt-6 space-y-4">
-                  <div className="p-3 bg-muted rounded-lg text-sm">
-                    <p><strong>Origem:</strong> {shippingResults.origin_cep}</p>
-                    <p><strong>Destino:</strong> {shippingResults.destination_cep}</p>
-                    <p><strong>Peso Total:</strong> {shippingResults.total_weight_kg.toFixed(2)} kg</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-muted-foreground">Selecione uma opção de envio:</p>
-                    {shippingResults.results.map((result, index) => (
-                      <div 
-                        key={index}
-                        onClick={() => !result.error && setSelectedShipping(result)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          result.error 
-                            ? 'border-orange-300 bg-orange-50 cursor-not-allowed' 
-                            : selectedShipping?.service === result.service && selectedShipping?.carrier === result.carrier
-                              ? 'border-primary bg-primary/10 ring-2 ring-primary'
-                              : 'border-green-300 bg-green-50 hover:border-primary'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <Badge variant="outline" className="mb-2">
-                              {result.carrier}
-                            </Badge>
-                            <h4 className="font-semibold">{result.service}</h4>
-                            {result.error && (
-                              <p className="text-xs text-orange-600 mt-1">{result.error}</p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-green-700">
-                              {formatPrice(result.price)}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {result.delivery_days} dias úteis
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Order Preview */}
-                  {selectedShipping && (
-                    <div className="mt-6 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">📋 Preview do Pedido</h4>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={copyOrderPreview}
-                          className="flex items-center gap-2"
-                        >
-                          {copied ? (
-                            <>
-                              <Check className="h-4 w-4" />
-                              Copiado!
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-4 w-4" />
-                              Copiar
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      <Textarea
-                        readOnly
-                        value={generateOrderPreview()}
-                        className="min-h-[300px] font-mono text-sm bg-muted"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+        {/* Selected Products Summary */}
+        {selectedProducts.size > 0 && (
+          <Card className="mb-4 border-primary/50">
+            <CardContent className="p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  {selectedProducts.size} produto(s) • {getSelectedProductsWeight().toFixed(2)}kg
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={clearAllProducts}
+                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Limpar
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedProductsList.map(product => (
+                  <Badge 
+                    key={product.id} 
+                    variant="secondary" 
+                    className="flex items-center gap-1 pr-1 text-xs"
+                  >
+                    <span className="max-w-[120px] truncate">{product.name}</span>
+                    <button
+                      onClick={() => removeProduct(product.id)}
+                      className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* Product Search & List */}
+        <Card className="mb-4">
+          <CardHeader className="p-3 pb-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar produto..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-[300px] overflow-y-auto divide-y">
+              {filteredProducts.map((product) => (
+                <div 
+                  key={product.id}
+                  onClick={() => toggleProductSelection(product.id)}
+                  className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                    selectedProducts.has(product.id) 
+                      ? 'bg-primary/10' 
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
+                  <Checkbox
+                    checked={selectedProducts.has(product.id)}
+                    onCheckedChange={() => toggleProductSelection(product.id)}
+                  />
+                  {product.image_url && (
+                    <img 
+                      src={product.image_url} 
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-muted-foreground">{product.category}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {(product as any).weight_kg ? `${(product as any).weight_kg}kg` : '150g'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Calculate Button */}
+        <Button 
+          onClick={calculateShipping} 
+          className="w-full mb-4 h-12 text-base"
+          disabled={isCalculating || selectedProducts.size === 0 || !destinationCep}
+        >
+          {isCalculating ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Calculando...
+            </>
+          ) : (
+            <>
+              <Calculator className="h-5 w-5 mr-2" />
+              Calcular Frete ({selectedProducts.size} itens)
+            </>
+          )}
+        </Button>
+
+        {/* Shipping Results */}
+        {shippingResults && (
+          <Card className="mb-4">
+            <CardHeader className="p-3 pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                Opções de Envio
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 space-y-2">
+              {shippingResults.results.map((result, index) => (
+                <div 
+                  key={index}
+                  onClick={() => !result.error && setSelectedShipping(result)}
+                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                    result.error 
+                      ? 'border-orange-300 bg-orange-50 cursor-not-allowed opacity-60' 
+                      : selectedShipping?.service === result.service && selectedShipping?.carrier === result.carrier
+                        ? 'border-primary bg-primary/10 ring-2 ring-primary'
+                        : 'border-muted hover:border-primary'
+                  }`}
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {result.carrier}
+                        </Badge>
+                        <span className="font-medium text-sm">{result.service}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {result.delivery_days} dias úteis
+                      </p>
+                    </div>
+                    <span className="text-lg font-bold text-primary">
+                      {formatPrice(result.price)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Order Preview */}
+        {selectedShipping && (
+          <Card>
+            <CardHeader className="p-3 pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">📋 Preview do Pedido</CardTitle>
+                <Button 
+                  size="sm" 
+                  onClick={copyOrderPreview}
+                  className="h-8"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copiar
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3 pt-0">
+              <Textarea
+                readOnly
+                value={generateOrderPreview()}
+                className="min-h-[250px] font-mono text-xs bg-muted resize-none"
+              />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
