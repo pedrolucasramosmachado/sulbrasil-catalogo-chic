@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +29,7 @@ interface ShippingResponse {
 }
 
 const DEFAULT_WEIGHT_KG = 0.15; // 150g padrão
-const DEFAULT_ORIGIN_CEP = '03045-000';
+const DEFAULT_ORIGIN_CEP = '03053-000';
 
 const AdminShipping = () => {
   const { products, loading } = useProducts();
@@ -43,6 +43,7 @@ const AdminShipping = () => {
   const [shippingResults, setShippingResults] = useState<ShippingResponse | null>(null);
   const [selectedShipping, setSelectedShipping] = useState<ShippingResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -116,6 +117,11 @@ const AdminShipping = () => {
         title: 'Cálculo realizado',
         description: `Frete calculado para ${data.products_count} produto(s)`,
       });
+
+      // Auto-scroll para os resultados
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } catch (error) {
       console.error('Error calculating shipping:', error);
       toast({
@@ -363,6 +369,7 @@ ${productLines}
         </Button>
 
         {/* Shipping Results */}
+        <div ref={resultsRef} />
         {shippingResults && (
           <Card className="mb-4">
             <CardHeader className="p-3 pb-2">
