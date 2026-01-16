@@ -21,40 +21,152 @@ interface ShippingResult {
   error?: string;
 }
 
-// Correios API (SEDEX/PAC) - Using melhorenvio API as fallback since Correios official API requires contract
-async function calculateCorreios(
+// Default package dimensions (cm) and weight (kg)
+const DEFAULT_HEIGHT = 6;
+const DEFAULT_WIDTH = 16;
+const DEFAULT_LENGTH = 24;
+const DEFAULT_WEIGHT_KG = 0.15;
+
+// MelhorEnvio API calculation
+async function calculateMelhorEnvio(
   originCep: string,
   destinationCep: string,
-  weightKg: number,
-  service: 'sedex' | 'pac'
-): Promise<ShippingResult> {
+  weightKg: number
+): Promise<ShippingResult[]> {
+  const results: ShippingResult[] = [];
+  const MELHORENVIO_TOKEN = Deno.env.get('MELHORENVIO_TOKEN');
+
+  if (!MELHORENVIO_TOKEN) {
+    console.error('MELHORENVIO_TOKEN not configured');
+    return [
+      {
+        carrier: 'Correios',
+        service: 'SEDEX',
+        price: 0,
+        delivery_days: 0,
+        error: 'Token MelhorEnvio não configurado',
+      },
+      {
+        carrier: 'Correios',
+        service: 'PAC',
+        price: 0,
+        delivery_days: 0,
+        error: 'Token MelhorEnvio não configurado',
+      },
+    ];
+  }
+
   try {
-    // Using free Correios calculator endpoint
-    const serviceCode = service === 'sedex' ? '04014' : '04510'; // SEDEX = 04014, PAC = 04510
+    // MelhorEnvio Shipment Calculate endpoint
+    // Use sandbox for testing, production URL: https://melhorenvio.com.br/api/v2/me/shipment/calculate
+    const apiUrl = 'https://melhorenvio.com.br/api/v2/me/shipment/calculate';
     
-    // Simulated calculation based on weight and distance
-    // In production, integrate with actual Correios API (requires contract) or use MelhorEnvio
-    const basePrice = service === 'sedex' ? 25.0 : 18.0;
-    const pricePerKg = service === 'sedex' ? 8.0 : 5.0;
-    const deliveryDays = service === 'sedex' ? 3 : 8;
-    
-    const estimatedPrice = basePrice + (weightKg * pricePerKg);
-    
-    return {
-      carrier: 'Correios',
-      service: service.toUpperCase(),
-      price: parseFloat(estimatedPrice.toFixed(2)),
-      delivery_days: deliveryDays,
+    const requestBody = {
+      from: {
+        postal_code: originCep,
+      },
+      to: {
+        postal_code: destinationCep,
+      },
+      products: [
+        {
+          id: "package",
+          width: DEFAULT_WIDTH,
+          height: DEFAULT_HEIGHT,
+          length: DEFAULT_LENGTH,
+          weight: weightKg,
+          insurance_value: 0,
+          quantity: 1,
+        },
+      ],
     };
+
+    console.log('MelhorEnvio request:', JSON.stringify(requestBody));
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MELHORENVIO_TOKEN}`,
+        'User-Agent': 'SulBrasil Catalogo (contato@sulbrasil.com.br)',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const data = await response.json();
+    console.log('MelhorEnvio response:', JSON.stringify(data));
+
+    if (!response.ok) {
+      console.error('MelhorEnvio API error:', data);
+      throw new Error(data.message || 'Erro na API MelhorEnvio');
+    }
+
+    // Parse response - MelhorEnvio returns an array of shipping options
+    if (Array.isArray(data)) {
+      for (const option of data) {
+        // Filter for Correios services (SEDEX and PAC)
+        // Service IDs: 1 = PAC, 2 = SEDEX
+        if (option.id === 1 || option.id === 2 || option.name?.includes('PAC') || option.name?.includes('SEDEX')) {
+          if (option.error) {
+            results.push({
+              carrier: option.company?.name || 'Correios',
+              service: option.name || (option.id === 1 ? 'PAC' : 'SEDEX'),
+              price: 0,
+              delivery_days: 0,
+              error: option.error,
+            });
+          } else {
+            results.push({
+              carrier: option.company?.name || 'Correios',
+              service: option.name || (option.id === 1 ? 'PAC' : 'SEDEX'),
+              price: parseFloat(option.custom_price || option.price) || 0,
+              delivery_days: parseInt(option.custom_delivery_time || option.delivery_time) || 0,
+            });
+          }
+        }
+      }
+    }
+
+    // If no results, return error
+    if (results.length === 0) {
+      return [
+        {
+          carrier: 'Correios',
+          service: 'SEDEX',
+          price: 0,
+          delivery_days: 0,
+          error: 'Nenhuma opção disponível para este CEP',
+        },
+        {
+          carrier: 'Correios',
+          service: 'PAC',
+          price: 0,
+          delivery_days: 0,
+          error: 'Nenhuma opção disponível para este CEP',
+        },
+      ];
+    }
+
+    return results;
   } catch (error) {
-    console.error(`Error calculating ${service}:`, error);
-    return {
-      carrier: 'Correios',
-      service: service.toUpperCase(),
-      price: 0,
-      delivery_days: 0,
-      error: `Erro ao calcular ${service}`,
-    };
+    console.error('Error calculating MelhorEnvio:', error);
+    return [
+      {
+        carrier: 'Correios',
+        service: 'SEDEX',
+        price: 0,
+        delivery_days: 0,
+        error: `Erro: ${error.message}`,
+      },
+      {
+        carrier: 'Correios',
+        service: 'PAC',
+        price: 0,
+        delivery_days: 0,
+        error: `Erro: ${error.message}`,
+      },
+    ];
   }
 }
 
@@ -80,11 +192,12 @@ async function calculateLoggi(
         service: 'Express',
         price: parseFloat(estimatedPrice.toFixed(2)),
         delivery_days: 5,
+        error: 'Usando estimativa (API não configurada)',
       };
     }
     
     // Loggi GraphQL API endpoint
-    const loggiEndpoint = 'https://staging.loggi.com/graphql'; // Use production URL in prod
+    const loggiEndpoint = 'https://staging.loggi.com/graphql';
     
     const query = `
       mutation estimateCreatePackage($input: CreatePackageInput!) {
@@ -96,7 +209,6 @@ async function calculateLoggi(
       }
     `;
     
-    // Note: This is a simplified structure - adjust based on actual Loggi API docs
     const response = await fetch(loggiEndpoint, {
       method: 'POST',
       headers: {
@@ -133,17 +245,12 @@ async function calculateLoggi(
   } catch (error) {
     console.error('Error calculating Loggi:', error);
     
-    // Return simulated result on error
-    const basePrice = 15.0;
-    const pricePerKg = 4.0;
-    const estimatedPrice = basePrice + (weightKg * pricePerKg);
-    
     return {
       carrier: 'Loggi',
       service: 'Express',
-      price: parseFloat(estimatedPrice.toFixed(2)),
-      delivery_days: 5,
-      error: 'Usando estimativa (API não configurada)',
+      price: 0,
+      delivery_days: 0,
+      error: 'Erro ao calcular Loggi',
     };
   }
 }
@@ -209,24 +316,20 @@ serve(async (req) => {
 
     // Calculate total weight (default to 0.15kg / 150g if not specified)
     const totalWeightKg = products?.reduce((sum, p) => {
-      return sum + (p.weight_kg || 0.15);
-    }, 0) || 0.15;
+      return sum + (p.weight_kg || DEFAULT_WEIGHT_KG);
+    }, 0) || DEFAULT_WEIGHT_KG;
 
     console.log(`Calculating shipping for ${products?.length || 0} products, total weight: ${totalWeightKg}kg`);
 
     const results: ShippingResult[] = [];
 
-    // Calculate based on carrier selection
-    if (carrier === 'all' || carrier === 'sedex') {
-      const sedexResult = await calculateCorreios(cleanOriginCep, cleanDestinationCep, totalWeightKg, 'sedex');
-      results.push(sedexResult);
+    // Calculate using MelhorEnvio API for SEDEX and PAC
+    if (carrier === 'all' || carrier === 'sedex' || carrier === 'pac') {
+      const melhorEnvioResults = await calculateMelhorEnvio(cleanOriginCep, cleanDestinationCep, totalWeightKg);
+      results.push(...melhorEnvioResults);
     }
 
-    if (carrier === 'all' || carrier === 'pac') {
-      const pacResult = await calculateCorreios(cleanOriginCep, cleanDestinationCep, totalWeightKg, 'pac');
-      results.push(pacResult);
-    }
-
+    // Calculate Loggi if requested
     if (carrier === 'all' || carrier === 'loggi') {
       const loggiResult = await calculateLoggi(cleanOriginCep, cleanDestinationCep, totalWeightKg);
       results.push(loggiResult);
