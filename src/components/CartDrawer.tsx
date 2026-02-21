@@ -9,6 +9,7 @@ export const CartDrawer = () => {
   const {
     items,
     totalItems,
+    totalPieces,
     isWholesale,
     isCartOpen,
     setIsCartOpen,
@@ -27,7 +28,7 @@ export const CartDrawer = () => {
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-lg sm:text-xl">
               <ShoppingBag className="w-5 h-5 text-primary" />
-              Carrinho ({totalItems} {totalItems === 1 ? "peça" : "peças"})
+              Carrinho ({totalPieces} {totalPieces === 1 ? "peça" : "peças"})
             </SheetTitle>
           </div>
 
@@ -38,13 +39,13 @@ export const CartDrawer = () => {
                 💎 Preço de Atacado Aplicado!
               </p>
               <p className="text-xs text-foreground-muted mt-1">
-                Com {totalItems} peças, você recebe o melhor preço.
+                Com {totalPieces} peças, você recebe o melhor preço.
               </p>
             </div>
           ) : totalItems > 0 ? (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mt-3">
               <p className="text-sm font-medium text-primary">
-                🔥 Faltam {10 - totalItems} peça(s) para preço de atacado!
+                🔥 Faltam {10 - totalPieces} peça(s) para preço de atacado!
               </p>
             </div>
           ) : null}
