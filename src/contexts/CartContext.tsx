@@ -9,6 +9,7 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   totalItems: number;
+  totalPieces: number;
   isWholesale: boolean;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
@@ -26,12 +27,19 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const WHOLESALE_THRESHOLD = 10;
 const WHATSAPP_NUMBER = "5511961890347";
 
+/** Extract piece count from product name, e.g. "Kit X 4 peças" → 4, default 1 */
+const getPieceCount = (product: Product): number => {
+  const match = product.name.match(/(\d+)\s*pe[cç]as?/i);
+  return match ? parseInt(match[1], 10) : 1;
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
+  const totalPieces = items.reduce((sum, item) => sum + getPieceCount(item.product) * item.quantity, 0);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const isWholesale = totalItems >= WHOLESALE_THRESHOLD;
+  const isWholesale = totalPieces >= WHOLESALE_THRESHOLD;
 
   const addItem = useCallback((product: Product) => {
     setItems((prev) => {
@@ -88,35 +96,39 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const sendToWhatsApp = useCallback(() => {
     const priceType = isWholesale ? "ATACADO" : "VAREJO";
-    let message = `🛒 *Pedido - ${priceType}* (${totalItems} peças)\n\n`;
+    let message = `🛒 *Pedido - ${priceType}* (${totalPieces} peças)\n\n`;
 
     items.forEach((item, idx) => {
       const price = getItemPrice(item);
       const subtotal = price * item.quantity;
+      const pieces = getPieceCount(item.product);
       message += `${idx + 1}. *${item.product.name}*\n`;
-      message += `   Qtd: ${item.quantity} × R$ ${price.toFixed(2)} = R$ ${subtotal.toFixed(2)}\n`;
+      message += `   Qtd: ${item.quantity}`;
+      if (pieces > 1) message += ` (${pieces * item.quantity} peças)`;
+      message += ` × R$ ${price.toFixed(2)} = R$ ${subtotal.toFixed(2)}\n`;
       if (item.product.category) message += `   Categoria: ${item.product.category}\n`;
       message += `\n`;
     });
 
     message += `──────────────\n`;
     message += `*Total: R$ ${getTotal().toFixed(2)}*\n`;
-    message += `*Modalidade: ${priceType}*\n`;
+    message += `*Modalidade: ${priceType}* (${totalPieces} peças)\n`;
     if (isWholesale) {
-      message += `✅ Preço de atacado aplicado (${totalItems} peças)\n`;
+      message += `✅ Preço de atacado aplicado\n`;
     } else {
-      message += `ℹ️ Adicione mais ${WHOLESALE_THRESHOLD - totalItems} peça(s) para preço de atacado\n`;
+      message += `ℹ️ Adicione mais ${WHOLESALE_THRESHOLD - totalPieces} peça(s) para preço de atacado\n`;
     }
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
-  }, [items, isWholesale, totalItems, getItemPrice, getTotal]);
+  }, [items, isWholesale, totalPieces, getItemPrice, getTotal]);
 
   return (
     <CartContext.Provider
       value={{
         items,
         totalItems,
+        totalPieces,
         isWholesale,
         isCartOpen,
         setIsCartOpen,
