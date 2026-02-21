@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ShoppingCart, Check } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Product } from "@/hooks/useProducts";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -20,7 +22,20 @@ export const ProductCard = ({
   isSubcategoryView = false
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
+  const { addItem } = useCart();
 
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (product.is_out_of_stock) return;
+    addItem(product);
+    setJustAdded(true);
+    toast({
+      title: "Adicionado ao carrinho! 🛒",
+      description: product.name,
+    });
+    setTimeout(() => setJustAdded(false), 1500);
+  };
 
   return (
     <Card className="group cursor-pointer overflow-hidden bg-white border border-border/30 hover:shadow-xl transition-all duration-300 w-full h-full flex flex-col rounded-xl">
@@ -136,16 +151,40 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 sm:p-5 pt-0">
+      <CardFooter className="p-4 sm:p-5 pt-0 flex flex-col gap-2">
         <Button
           size="lg"
+          onClick={handleAddToCart}
+          disabled={!!product.is_out_of_stock}
+          className={cn(
+            "w-full text-sm sm:text-base h-11 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300",
+            justAdded
+              ? "bg-green-600 hover:bg-green-700 text-white"
+              : "bg-primary hover:bg-primary/90 text-primary-foreground"
+          )}
+        >
+          {justAdded ? (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Adicionado!
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Adicionar ao Carrinho
+            </>
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
             onConsult(product);
           }}
-          className="w-full text-sm sm:text-base h-12 bg-[#E91E63] hover:bg-[#D81B60] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+          className="w-full text-xs sm:text-sm h-9"
         >
-          <MessageCircle className="w-4 h-4 mr-2" />
+          <MessageCircle className="w-3 h-3 mr-1" />
           Consultar
         </Button>
       </CardFooter>
