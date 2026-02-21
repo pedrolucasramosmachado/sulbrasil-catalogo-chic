@@ -16,6 +16,9 @@ import Vitrine from "./pages/Vitrine";
 import VitrineCategory from "./pages/VitrineCategory";
 import { RequireAuth } from "./components/RequireAuth";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { CartProvider } from "./contexts/CartContext";
+import { CartDrawer } from "./components/CartDrawer";
+import { FloatingCartButton } from "./components/FloatingCartButton";
 
 const queryClient = new QueryClient();
 
@@ -25,28 +28,32 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Navigate to="/catalogo" replace />} />
-          <Route path="/catalogo" element={<Index />} />
-          <Route path="/catalogo/:category" element={<CategoryPage />} />
-          <Route path="/catalogo/:category/:subcategory" element={<CategoryPage />} />
-          <Route path="/produto/:id" element={<ProductPage />} />
-          
-          {/* Vitrine Routes - Without Prices */}
-          <Route path="/vitrine" element={<Vitrine />} />
-          <Route path="/vitrine/:category" element={<VitrineCategory />} />
-          <Route path="/vitrine/:category/:subcategory" element={<VitrineCategory />} />
-          
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
-          <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
-          <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
-          <Route path="/admin/categories" element={<RequireAuth><AdminCategoryOrder /></RequireAuth>} />
-          <Route path="/admin/shipping" element={<RequireAuth><AdminShipping /></RequireAuth>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <CartProvider>
+          <ScrollToTop />
+          <CartDrawer />
+          <FloatingCartButton />
+          <Routes>
+            <Route path="/" element={<Navigate to="/catalogo" replace />} />
+            <Route path="/catalogo" element={<Index />} />
+            <Route path="/catalogo/:category" element={<CategoryPage />} />
+            <Route path="/catalogo/:category/:subcategory" element={<CategoryPage />} />
+            <Route path="/produto/:id" element={<ProductPage />} />
+            
+            {/* Vitrine Routes - Without Prices */}
+            <Route path="/vitrine" element={<Vitrine />} />
+            <Route path="/vitrine/:category" element={<VitrineCategory />} />
+            <Route path="/vitrine/:category/:subcategory" element={<VitrineCategory />} />
+            
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<RequireAuth><AdminHome /></RequireAuth>} />
+            <Route path="/admin/home" element={<RequireAuth><AdminHome /></RequireAuth>} />
+            <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
+            <Route path="/admin/categories" element={<RequireAuth><AdminCategoryOrder /></RequireAuth>} />
+            <Route path="/admin/shipping" element={<RequireAuth><AdminShipping /></RequireAuth>} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </CartProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
