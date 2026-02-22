@@ -100,21 +100,37 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     message += `📦 Total de peças: *${totalPieces}*\n`;
     message += `━━━━━━━━━━━━━━━━\n\n`;
 
-    items.forEach((item, idx) => {
-      const price = getItemPrice(item);
-      const pieces = getPieceCount(item.product);
-      const totalPiecesItem = pieces * item.quantity;
-      const subtotal = price * item.quantity;
+    // Group items by category (model)
+    const groupedByCategory: Record<string, CartItem[]> = {};
+    items.forEach((item) => {
+      const key = item.product.category || item.product.name;
+      if (!groupedByCategory[key]) groupedByCategory[key] = [];
+      groupedByCategory[key].push(item);
+    });
 
-      message += `*${idx + 1}. ${item.product.name}*\n`;
-      if (item.product.category) message += `   📂 ${item.product.category}`;
-      if (item.product.subcategory) message += ` › ${item.product.subcategory}`;
-      if (item.product.category) message += `\n`;
-      message += `   Quantidade: ${item.quantity}`;
-      if (pieces > 1) message += ` (${totalPiecesItem} peças)`;
+    let idx = 1;
+    Object.entries(groupedByCategory).forEach(([category, groupItems]) => {
+      const groupTotalQty = groupItems.reduce((s, i) => s + i.quantity, 0);
+      const groupTotalPieces = groupItems.reduce((s, i) => s + getPieceCount(i.product) * i.quantity, 0);
+      const groupSubtotal = groupItems.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
+      const unitPrice = getItemPrice(groupItems[0]);
+
+      message += `*${idx}. 👗 ${category}*\n`;
+      message += `   Cores: `;
+      message += groupItems
+        .map((i) => {
+          const parts = i.product.name.split(" ");
+          const color = parts[parts.length - 1];
+          return `${color} (${i.quantity})`;
+        })
+        .join(", ");
       message += `\n`;
-      message += `   Valor unitário: R$ ${price.toFixed(2)}\n`;
-      message += `   *Subtotal: R$ ${subtotal.toFixed(2)}*\n\n`;
+      message += `   Quantidade total: ${groupTotalQty}`;
+      if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
+      message += `\n`;
+      message += `   Valor unitário: R$ ${unitPrice.toFixed(2)}\n`;
+      message += `   *Subtotal: R$ ${groupSubtotal.toFixed(2)}*\n\n`;
+      idx++;
     });
 
     message += `━━━━━━━━━━━━━━━━\n`;
