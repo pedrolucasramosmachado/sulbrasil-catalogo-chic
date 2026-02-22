@@ -116,15 +116,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const unitPrice = getItemPrice(groupItems[0]);
 
       message += `*${idx}. 👗 ${category}*\n`;
-      message += `   Cores: `;
-      message += groupItems
-        .map((i) => {
-          const parts = i.product.name.split(" ");
-          const color = parts[parts.length - 1];
-          return `${color} (${i.quantity})`;
-        })
-        .join(", ");
-      message += `\n`;
+      message += `   Cores:\n`;
+      groupItems.forEach((i) => {
+        const parts = i.product.name.split(" ");
+        const color = parts[parts.length - 1];
+        message += `      • ${color} — ${i.quantity} un.\n`;
+      });
       message += `   Quantidade total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
       message += `\n`;
