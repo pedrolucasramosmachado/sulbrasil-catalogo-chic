@@ -120,7 +120,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       groupItems.forEach((i) => {
         const parts = i.product.name.split(" ");
         const color = parts[parts.length - 1];
-        message += `      • ${color} — ${i.quantity} un.\n`;
+        message += `      • ${i.quantity} ${color}\n`;
       });
       message += `   Quantidade total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;

@@ -151,13 +151,13 @@ export const ProductCard = ({
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 sm:p-5 pt-0 flex flex-col gap-2">
+      <CardFooter className="p-3 sm:p-5 pt-0 flex flex-col gap-2">
         <Button
           size="lg"
           onClick={handleAddToCart}
           disabled={!!product.is_out_of_stock}
           className={cn(
-            "w-full text-sm sm:text-base h-11 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300",
+            "w-full text-xs sm:text-base h-10 sm:h-11 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300",
             justAdded
               ? "bg-green-600 hover:bg-green-700 text-white"
               : "bg-primary hover:bg-primary/90 text-primary-foreground"
@@ -165,13 +165,13 @@ export const ProductCard = ({
         >
           {justAdded ? (
             <>
-              <Check className="w-4 h-4 mr-2" />
+              <Check className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               Adicionado!
             </>
           ) : (
             <>
-              <ShoppingCart className="w-4 h-4 mr-2" />
-              Adicionar ao Carrinho
+              <ShoppingCart className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+              <span className="truncate">Adicionar ao Carrinho</span>
             </>
           )}
         </Button>

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
-import { ChevronDown } from "lucide-react";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { useProducts } from "@/hooks/useProducts";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -31,11 +31,7 @@ const Vitrine = () => {
       <Header />
 
       {/* Scroll Indicator for Mobile */}
-      <div className="block sm:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30 animate-bounce">
-        <div className="bg-primary text-white p-3 rounded-full shadow-glow">
-          <ChevronDown className="w-6 h-6" />
-        </div>
-      </div>
+      <ScrollIndicator />
 
       {/* Hero Section - Category Selection */}
       <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden min-h-[40vh] flex items-center">
