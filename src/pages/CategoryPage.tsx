@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImageZoom } from "@/components/ProductImageZoom";
 import { CategoryCard } from "@/components/CategoryCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
 
@@ -88,11 +89,7 @@ const CategoryPage = () => {
       <Header />
 
       {/* Scroll Indicator for Mobile */}
-      <div className="block sm:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30 animate-bounce">
-        <div className="bg-primary text-white p-3 rounded-full shadow-glow">
-          <ChevronDown className="w-6 h-6" />
-        </div>
-      </div>
+      <ScrollIndicator />
 
       {/* Fixed Back Button */}
       <div className="sticky top-[56px] sm:top-[64px] z-40 bg-background/95 backdrop-blur-md border-b border-card-border shadow-soft">

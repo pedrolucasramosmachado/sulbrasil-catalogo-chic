@@ -11,7 +11,7 @@ export const FloatingCartButton = () => {
     <button
       onClick={() => setIsCartOpen(true)}
       className={cn(
-        "fixed bottom-6 right-6 z-[100] flex items-center gap-2 px-5 py-3 rounded-full shadow-strong transition-all duration-300 hover:scale-105 active:scale-95",
+        "fixed bottom-20 right-6 z-[100] flex items-center gap-2 px-5 py-3 rounded-full shadow-strong transition-all duration-300 hover:scale-105 active:scale-95",
         isWholesale
           ? "bg-accent text-accent-foreground"
           : "bg-primary text-primary-foreground"

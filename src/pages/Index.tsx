@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
-import { ChevronDown } from "lucide-react";
+import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { toast } from "@/hooks/use-toast";
 
@@ -55,13 +55,7 @@ const Index = () => {
       <Header onSearchResults={handleSearchResults} />
 
       {/* Scroll Indicator for Mobile */}
-      {!isSearching && (
-        <div className="block sm:hidden fixed bottom-8 left-1/2 transform -translate-x-1/2 z-30 animate-bounce">
-          <div className="bg-primary text-white p-3 rounded-full shadow-glow">
-            <ChevronDown className="w-6 h-6" />
-          </div>
-        </div>
-      )}
+      {!isSearching && <ScrollIndicator />}
 
       {/* Search Results Section */}
       {isSearching && (
