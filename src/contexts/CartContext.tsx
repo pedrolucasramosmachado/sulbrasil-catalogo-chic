@@ -96,27 +96,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const sendToWhatsApp = useCallback(() => {
     const priceType = isWholesale ? "ATACADO" : "VAREJO";
-    let message = `🛒 *Pedido - ${priceType}* (${totalPieces} peças)\n\n`;
+    let message = `🛒 *PEDIDO - ${priceType}*\n`;
+    message += `📦 Total de peças: *${totalPieces}*\n`;
+    message += `━━━━━━━━━━━━━━━━\n\n`;
 
     items.forEach((item, idx) => {
       const price = getItemPrice(item);
-      const subtotal = price * item.quantity;
       const pieces = getPieceCount(item.product);
-      message += `${idx + 1}. *${item.product.name}*\n`;
-      message += `   Qtd: ${item.quantity}`;
-      if (pieces > 1) message += ` (${pieces * item.quantity} peças)`;
-      message += ` × R$ ${price.toFixed(2)} = R$ ${subtotal.toFixed(2)}\n`;
-      if (item.product.category) message += `   Categoria: ${item.product.category}\n`;
+      const totalPiecesItem = pieces * item.quantity;
+      const subtotal = price * item.quantity;
+
+      message += `*${idx + 1}. ${item.product.name}*\n`;
+      if (item.product.category) message += `   📂 ${item.product.category}`;
+      if (item.product.subcategory) message += ` › ${item.product.subcategory}`;
+      if (item.product.category) message += `\n`;
+      message += `   Quantidade: ${item.quantity}`;
+      if (pieces > 1) message += ` (${totalPiecesItem} peças)`;
       message += `\n`;
+      message += `   Valor unitário: R$ ${price.toFixed(2)}\n`;
+      message += `   *Subtotal: R$ ${subtotal.toFixed(2)}*\n\n`;
     });
 
-    message += `──────────────\n`;
-    message += `*Total: R$ ${getTotal().toFixed(2)}*\n`;
-    message += `*Modalidade: ${priceType}* (${totalPieces} peças)\n`;
+    message += `━━━━━━━━━━━━━━━━\n`;
+    message += `💰 *TOTAL DO PEDIDO: R$ ${getTotal().toFixed(2)}*\n`;
+    message += `📋 Modalidade: *${priceType}* (${totalPieces} peças)\n`;
     if (isWholesale) {
       message += `✅ Preço de atacado aplicado\n`;
-    } else {
-      message += `ℹ️ Adicione mais ${WHOLESALE_THRESHOLD - totalPieces} peça(s) para preço de atacado\n`;
     }
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
