@@ -118,16 +118,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       name = name.replace(/^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\u200D]+\s*/gu, "").trim();
 
       // Build a list of possible prefixes to strip (longest first)
+      // Include common product type prefixes (Regata, Vestidos, etc.)
       const prefixes: string[] = [];
       const sub = (product.subcategory || "").trim();
       const cat = (product.category || "").trim();
+      
+      // Common garment type words that may prefix the model name
+      const typeWords = ["regata", "vestidos", "vestido", "blusa", "body", "cropped", "camiseta", "t-shirt", "conjunto", "kit"];
+      
       if (sub) {
+        typeWords.forEach(tw => prefixes.push(`lançamento ${tw} ${sub}`, `${tw} ${sub}`));
         prefixes.push(`lançamento ${sub}`, sub);
       }
       if (cat) {
+        typeWords.forEach(tw => prefixes.push(`lançamento ${tw} ${cat}`, `${tw} ${cat}`));
         prefixes.push(`lançamento ${cat}`, cat);
       }
+      typeWords.forEach(tw => prefixes.push(`lançamento ${tw} ${model}`, `${tw} ${model}`));
       prefixes.push(`lançamento ${model}`, model);
+      // Also try just the type word + lançamento as standalone prefix
+      typeWords.forEach(tw => prefixes.push(`lançamento ${tw}`, tw));
 
       // Sort by length descending to match longest first
       prefixes.sort((a, b) => b.length - a.length);
