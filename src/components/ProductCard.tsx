@@ -6,7 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Product } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
-import { toast } from "@/hooks/use-toast";
+
 
 interface ProductCardProps {
   product: Product;
@@ -30,10 +30,6 @@ export const ProductCard = ({
     if (product.is_out_of_stock) return;
     addItem(product);
     setJustAdded(true);
-    toast({
-      title: "Adicionado ao carrinho! 🛒",
-      description: product.name,
-    });
     setTimeout(() => setJustAdded(false), 1500);
   };
 
