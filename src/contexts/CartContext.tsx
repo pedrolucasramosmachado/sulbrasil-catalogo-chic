@@ -111,27 +111,34 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       groupedByModel[key].push(item);
     });
 
-    /** Extract color from product name by removing the model prefix */
+    /** Extract color from product name by removing known prefixes */
     const getColor = (product: Product, model: string): string => {
-      const name = product.name.trim();
-      // Try subcategory first (more specific)
-      if (product.subcategory) {
-        const sub = product.subcategory.trim();
-        if (name.toLowerCase().startsWith(sub.toLowerCase())) {
-          const remainder = name.slice(sub.length).trim();
+      let name = product.name.trim();
+      // Remove leading emojis and whitespace
+      name = name.replace(/^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\u200D]+\s*/gu, "").trim();
+
+      // Build a list of possible prefixes to strip (longest first)
+      const prefixes: string[] = [];
+      const sub = (product.subcategory || "").trim();
+      const cat = (product.category || "").trim();
+      if (sub) {
+        prefixes.push(`lançamento ${sub}`, sub);
+      }
+      if (cat) {
+        prefixes.push(`lançamento ${cat}`, cat);
+      }
+      prefixes.push(`lançamento ${model}`, model);
+
+      // Sort by length descending to match longest first
+      prefixes.sort((a, b) => b.length - a.length);
+
+      const nameLower = name.toLowerCase();
+      for (const prefix of prefixes) {
+        const pLower = prefix.toLowerCase();
+        if (nameLower.startsWith(pLower)) {
+          const remainder = name.slice(prefix.length).replace(/^[\s🔥✨⭐💎]+/gu, "").trim();
           if (remainder) return remainder;
         }
-      }
-      // Then try category
-      const cat = (product.category || "").trim();
-      if (cat && name.toLowerCase().startsWith(cat.toLowerCase())) {
-        const remainder = name.slice(cat.length).trim();
-        if (remainder) return remainder;
-      }
-      // Then try the model key itself
-      if (name.toLowerCase().startsWith(model.toLowerCase())) {
-        const remainder = name.slice(model.length).trim();
-        if (remainder) return remainder;
       }
       return name;
     };
