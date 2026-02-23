@@ -31,13 +31,13 @@ export const CartDrawer = () => {
               Carrinho ({totalPieces} {totalPieces === 1 ? "peça" : "peças"})
             </SheetTitle>
             <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-foreground-muted"
+              variant="default"
+              size="default"
+              className="gap-2 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
               onClick={() => setIsCartOpen(false)}
             >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              Voltar
+              <ArrowLeft className="w-4 h-4" />
+              Voltar às compras
             </Button>
           </div>
 
