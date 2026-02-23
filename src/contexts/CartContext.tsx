@@ -108,34 +108,46 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       groupedByCategory[key].push(item);
     });
 
+    /** Extract color from product name by removing the category/model prefix */
+    const getColor = (product: Product, category: string): string => {
+      const name = product.name.trim();
+      const cat = category.trim();
+      if (name.toLowerCase().startsWith(cat.toLowerCase())) {
+        const remainder = name.slice(cat.length).trim();
+        if (remainder) return remainder;
+      }
+      // Fallback: try subcategory
+      if (product.subcategory) {
+        const sub = product.subcategory.trim();
+        if (name.toLowerCase().startsWith(sub.toLowerCase())) {
+          const remainder = name.slice(sub.length).trim();
+          if (remainder) return remainder;
+        }
+      }
+      return name;
+    };
+
     let idx = 1;
     Object.entries(groupedByCategory).forEach(([category, groupItems]) => {
       const groupTotalQty = groupItems.reduce((s, i) => s + i.quantity, 0);
       const groupTotalPieces = groupItems.reduce((s, i) => s + getPieceCount(i.product) * i.quantity, 0);
-      const groupSubtotal = groupItems.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
       const unitPrice = getItemPrice(groupItems[0]);
 
       message += `*${idx}. 👗 ${category}*\n`;
       message += `   Cores:\n`;
       groupItems.forEach((i) => {
-        const parts = i.product.name.split(" ");
-        const color = parts[parts.length - 1];
+        const color = getColor(i.product, category);
         message += `      • ${i.quantity} ${color}\n`;
       });
-      message += `   Quantidade total: ${groupTotalQty}`;
+      message += `   Quant. Total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
       message += `\n`;
-      message += `   Valor unitário: R$ ${unitPrice.toFixed(2)}\n`;
-      message += `   *Subtotal: R$ ${groupSubtotal.toFixed(2)}*\n\n`;
+      message += `   Valor pçs: R$ ${unitPrice.toFixed(2)}\n\n`;
       idx++;
     });
 
     message += `━━━━━━━━━━━━━━━━\n`;
     message += `💰 *TOTAL DO PEDIDO: R$ ${getTotal().toFixed(2)}*\n`;
-    message += `📋 Modalidade: *${priceType}* (${totalPieces} peças)\n`;
-    if (isWholesale) {
-      message += `✅ Preço de atacado aplicado\n`;
-    }
 
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
