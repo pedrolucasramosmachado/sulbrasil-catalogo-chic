@@ -100,23 +100,21 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     message += `📦 Total de peças: *${totalPieces}*\n`;
     message += `━━━━━━━━━━━━━━━━\n\n`;
 
-    // Group items by category (model)
-    const groupedByCategory: Record<string, CartItem[]> = {};
+    // Clothing emojis to alternate per model
+    const clothingEmojis = ["👗", "👚", "👕", "🧥", "👔", "🩱", "👘", "🎽"];
+
+    // Group items by model (subcategory if available, otherwise category)
+    const groupedByModel: Record<string, CartItem[]> = {};
     items.forEach((item) => {
-      const key = item.product.category || item.product.name;
-      if (!groupedByCategory[key]) groupedByCategory[key] = [];
-      groupedByCategory[key].push(item);
+      const key = item.product.subcategory || item.product.category || item.product.name;
+      if (!groupedByModel[key]) groupedByModel[key] = [];
+      groupedByModel[key].push(item);
     });
 
-    /** Extract color from product name by removing the category/model prefix */
-    const getColor = (product: Product, category: string): string => {
+    /** Extract color from product name by removing the model prefix */
+    const getColor = (product: Product, model: string): string => {
       const name = product.name.trim();
-      const cat = category.trim();
-      if (name.toLowerCase().startsWith(cat.toLowerCase())) {
-        const remainder = name.slice(cat.length).trim();
-        if (remainder) return remainder;
-      }
-      // Fallback: try subcategory
+      // Try subcategory first (more specific)
       if (product.subcategory) {
         const sub = product.subcategory.trim();
         if (name.toLowerCase().startsWith(sub.toLowerCase())) {
@@ -124,25 +122,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           if (remainder) return remainder;
         }
       }
+      // Then try category
+      const cat = (product.category || "").trim();
+      if (cat && name.toLowerCase().startsWith(cat.toLowerCase())) {
+        const remainder = name.slice(cat.length).trim();
+        if (remainder) return remainder;
+      }
+      // Then try the model key itself
+      if (name.toLowerCase().startsWith(model.toLowerCase())) {
+        const remainder = name.slice(model.length).trim();
+        if (remainder) return remainder;
+      }
       return name;
     };
 
     let idx = 1;
-    Object.entries(groupedByCategory).forEach(([category, groupItems]) => {
+    Object.entries(groupedByModel).forEach(([model, groupItems]) => {
       const groupTotalQty = groupItems.reduce((s, i) => s + i.quantity, 0);
       const groupTotalPieces = groupItems.reduce((s, i) => s + getPieceCount(i.product) * i.quantity, 0);
       const unitPrice = getItemPrice(groupItems[0]);
+      const totalModelValue = groupItems.reduce((s, i) => s + getItemPrice(i) * i.quantity, 0);
+      const emoji = clothingEmojis[(idx - 1) % clothingEmojis.length];
 
-      message += `*${idx}. 👗 ${category}*\n`;
+      message += `*${idx}. ${emoji} ${model}*\n`;
       message += `   Cores:\n`;
       groupItems.forEach((i) => {
-        const color = getColor(i.product, category);
+        const color = getColor(i.product, model);
         message += `      • ${i.quantity} ${color}\n`;
       });
       message += `   Quant. Total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
       message += `\n`;
-      message += `   Valor pçs: R$ ${unitPrice.toFixed(2)}\n\n`;
+      message += `   Valor pçs: R$ ${totalModelValue.toFixed(2)}\n\n`;
       idx++;
     });
 

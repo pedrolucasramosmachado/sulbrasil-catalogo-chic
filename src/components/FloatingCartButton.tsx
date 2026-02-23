@@ -3,9 +3,9 @@ import { useCart } from "@/contexts/CartContext";
 import { cn } from "@/lib/utils";
 
 export const FloatingCartButton = () => {
-  const { totalItems, totalPieces, setIsCartOpen, isWholesale } = useCart();
+  const { totalItems, totalPieces, setIsCartOpen, isWholesale, isCartOpen } = useCart();
 
-  if (totalItems === 0) return null;
+  if (totalItems === 0 || isCartOpen) return null;
 
   return (
     <button

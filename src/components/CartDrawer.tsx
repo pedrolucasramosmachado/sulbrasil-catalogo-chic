@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
-import { Minus, Plus, Trash2, ShoppingBag, Send, X } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Send, ArrowLeft } from "lucide-react";
 
 export const CartDrawer = () => {
   const {
@@ -30,6 +30,15 @@ export const CartDrawer = () => {
               <ShoppingBag className="w-5 h-5 text-primary" />
               Carrinho ({totalPieces} {totalPieces === 1 ? "peça" : "peças"})
             </SheetTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs text-foreground-muted"
+              onClick={() => setIsCartOpen(false)}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Voltar
+            </Button>
           </div>
 
           {/* Wholesale indicator */}
