@@ -31,7 +31,7 @@ const App = () => (
         <CartProvider>
           <ScrollToTop />
           <CartDrawer />
-          <FloatingCartButton />
+          <FloatingCartButton key="cart-btn" />
           <Routes>
             <Route path="/" element={<Navigate to="/catalogo" replace />} />
             <Route path="/catalogo" element={<Index />} />
