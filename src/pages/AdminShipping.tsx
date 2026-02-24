@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { AdminHeader } from '@/components/AdminHeader';
+import { AdminOrdersTab } from '@/components/AdminOrdersTab';
 import { supabase } from '@/integrations/supabase/client';
-import { Truck, Package, Calculator, Search, Loader2, Copy, Check, X } from 'lucide-react';
+import { Truck, Package, Calculator, Search, Loader2, Copy, Check, X, ClipboardList } from 'lucide-react';
 
 interface ShippingResult {
   carrier: string;
@@ -229,224 +231,243 @@ ${productLines}
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-3 py-4 md:px-4 md:py-8 max-w-4xl">
         <AdminHeader 
-          title="Simulador de Frete" 
-          description="Calcule o frete de produtos" 
+          title="Frete & Pedidos" 
+          description="Calcule frete e gerencie pedidos" 
         />
 
-        {/* CEP Section - Always visible */}
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Origem</label>
-                <Input
-                  placeholder="00000-000"
-                  value={originCep}
-                  onChange={(e) => setOriginCep(formatCep(e.target.value))}
-                  maxLength={9}
-                  className="text-center font-mono"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Destino</label>
-                <Input
-                  placeholder="00000-000"
-                  value={destinationCep}
-                  onChange={(e) => setDestinationCep(formatCep(e.target.value))}
-                  maxLength={9}
-                  className="text-center font-mono"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="shipping" className="w-full">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="shipping" className="flex-1 gap-2">
+              <Calculator className="h-4 w-4" />
+              Simulador
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex-1 gap-2">
+              <ClipboardList className="h-4 w-4" />
+              Pedidos
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Selected Products Summary */}
-        {selectedProducts.size > 0 && (
-          <Card className="mb-4 border-primary/50">
-            <CardContent className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  {selectedProducts.size} produto(s) • {getSelectedProductsWeight().toFixed(2)}kg
-                </span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearAllProducts}
-                  className="h-7 text-xs text-muted-foreground hover:text-destructive"
-                >
-                  Limpar
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedProductsList.map(product => (
-                  <Badge 
-                    key={product.id} 
-                    variant="secondary" 
-                    className="flex items-center gap-1 pr-1 text-xs"
-                  >
-                    <span className="max-w-[120px] truncate">{product.name}</span>
-                    <button
-                      onClick={() => removeProduct(product.id)}
-                      className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Product Search & List */}
-        <Card className="mb-4">
-          <CardHeader className="p-3 pb-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar produto..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[300px] overflow-y-auto divide-y">
-              {filteredProducts.map((product) => (
-                <div 
-                  key={product.id}
-                  onClick={() => toggleProductSelection(product.id)}
-                  className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
-                    selectedProducts.has(product.id) 
-                      ? 'bg-primary/10' 
-                      : 'hover:bg-muted/50'
-                  }`}
-                >
-                  <Checkbox
-                    checked={selectedProducts.has(product.id)}
-                    onCheckedChange={() => toggleProductSelection(product.id)}
-                  />
-                  {product.image_url && (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="w-12 h-12 object-cover rounded"
+          <TabsContent value="shipping">
+            {/* CEP Section */}
+            <Card className="mb-4">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Origem</label>
+                    <Input
+                      placeholder="00000-000"
+                      value={originCep}
+                      onChange={(e) => setOriginCep(formatCep(e.target.value))}
+                      maxLength={9}
+                      className="text-center font-mono"
                     />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{product.name}</p>
-                    <p className="text-xs text-muted-foreground">{product.category}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {(product as any).weight_kg ? `${(product as any).weight_kg}kg` : '150g'}
-                  </span>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP Destino</label>
+                    <Input
+                      placeholder="00000-000"
+                      value={destinationCep}
+                      onChange={(e) => setDestinationCep(formatCep(e.target.value))}
+                      maxLength={9}
+                      className="text-center font-mono"
+                    />
+                  </div>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
 
-        {/* Calculate Button */}
-        <Button 
-          onClick={calculateShipping} 
-          className="w-full mb-4 h-12 text-base"
-          disabled={isCalculating || selectedProducts.size === 0 || !destinationCep}
-        >
-          {isCalculating ? (
-            <>
-              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-              Calculando...
-            </>
-          ) : (
-            <>
-              <Calculator className="h-5 w-5 mr-2" />
-              Calcular Frete ({selectedProducts.size} itens)
-            </>
-          )}
-        </Button>
-
-        {/* Shipping Results */}
-        <div ref={resultsRef} />
-        {shippingResults && (
-          <Card className="mb-4">
-            <CardHeader className="p-3 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Truck className="h-4 w-4" />
-                Opções de Envio
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 pt-0 space-y-2">
-              {shippingResults.results.map((result, index) => (
-                <div 
-                  key={index}
-                  onClick={() => !result.error && setSelectedShipping(result)}
-                  className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                    result.error 
-                      ? 'border-orange-300 bg-orange-50 cursor-not-allowed opacity-60' 
-                      : selectedShipping?.service === result.service && selectedShipping?.carrier === result.carrier
-                        ? 'border-primary bg-primary/10 ring-2 ring-primary'
-                        : 'border-muted hover:border-primary'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">
-                          {result.carrier}
-                        </Badge>
-                        <span className="font-medium text-sm">{result.service}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {result.delivery_days} dias úteis
-                      </p>
-                    </div>
-                    <span className="text-lg font-bold text-primary">
-                      {formatPrice(result.price)}
+            {/* Selected Products Summary */}
+            {selectedProducts.size > 0 && (
+              <Card className="mb-4 border-primary/50">
+                <CardContent className="p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      {selectedProducts.size} produto(s) • {getSelectedProductsWeight().toFixed(2)}kg
                     </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={clearAllProducts}
+                      className="h-7 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      Limpar
+                    </Button>
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProductsList.map(product => (
+                      <Badge 
+                        key={product.id} 
+                        variant="secondary" 
+                        className="flex items-center gap-1 pr-1 text-xs"
+                      >
+                        <span className="max-w-[120px] truncate">{product.name}</span>
+                        <button
+                          onClick={() => removeProduct(product.id)}
+                          className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-        {/* Order Preview */}
-        {selectedShipping && (
-          <Card>
-            <CardHeader className="p-3 pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">📋 Preview do Pedido</CardTitle>
-                <Button 
-                  size="sm" 
-                  onClick={copyOrderPreview}
-                  className="h-8"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="h-4 w-4 mr-1" />
-                      Copiado!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copiar
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-3 pt-0">
-              <Textarea
-                readOnly
-                value={generateOrderPreview()}
-                className="min-h-[250px] font-mono text-xs bg-muted resize-none"
-              />
-            </CardContent>
-          </Card>
-        )}
+            {/* Product Search & List */}
+            <Card className="mb-4">
+              <CardHeader className="p-3 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar produto..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[300px] overflow-y-auto divide-y">
+                  {filteredProducts.map((product) => (
+                    <div 
+                      key={product.id}
+                      onClick={() => toggleProductSelection(product.id)}
+                      className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                        selectedProducts.has(product.id) 
+                          ? 'bg-primary/10' 
+                          : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <Checkbox
+                        checked={selectedProducts.has(product.id)}
+                        onCheckedChange={() => toggleProductSelection(product.id)}
+                      />
+                      {product.image_url && (
+                        <img 
+                          src={product.image_url} 
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{product.name}</p>
+                        <p className="text-xs text-muted-foreground">{product.category}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {(product as any).weight_kg ? `${(product as any).weight_kg}kg` : '150g'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Calculate Button */}
+            <Button 
+              onClick={calculateShipping} 
+              className="w-full mb-4 h-12 text-base"
+              disabled={isCalculating || selectedProducts.size === 0 || !destinationCep}
+            >
+              {isCalculating ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Calculando...
+                </>
+              ) : (
+                <>
+                  <Calculator className="h-5 w-5 mr-2" />
+                  Calcular Frete ({selectedProducts.size} itens)
+                </>
+              )}
+            </Button>
+
+            {/* Shipping Results */}
+            <div ref={resultsRef} />
+            {shippingResults && (
+              <Card className="mb-4">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Opções de Envio
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-3 pt-0 space-y-2">
+                  {shippingResults.results.map((result, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => !result.error && setSelectedShipping(result)}
+                      className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                        result.error 
+                          ? 'border-orange-300 bg-orange-50 cursor-not-allowed opacity-60' 
+                          : selectedShipping?.service === result.service && selectedShipping?.carrier === result.carrier
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary'
+                            : 'border-muted hover:border-primary'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {result.carrier}
+                            </Badge>
+                            <span className="font-medium text-sm">{result.service}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {result.delivery_days} dias úteis
+                          </p>
+                        </div>
+                        <span className="text-lg font-bold text-primary">
+                          {formatPrice(result.price)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Order Preview */}
+            {selectedShipping && (
+              <Card>
+                <CardHeader className="p-3 pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">📋 Preview do Pedido</CardTitle>
+                    <Button 
+                      size="sm" 
+                      onClick={copyOrderPreview}
+                      className="h-8"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4 mr-1" />
+                          Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copiar
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3 pt-0">
+                  <Textarea
+                    readOnly
+                    value={generateOrderPreview()}
+                    className="min-h-[250px] font-mono text-xs bg-muted resize-none"
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <AdminOrdersTab />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

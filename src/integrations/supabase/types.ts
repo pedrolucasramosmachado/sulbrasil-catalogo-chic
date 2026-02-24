@@ -38,11 +38,52 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          created_at: string
+          customer_name: string
+          id: string
+          is_wholesale: boolean
+          items: Json
+          status: string
+          total: number
+          total_pieces: number
+          updated_at: string
+          whatsapp_message: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          id?: string
+          is_wholesale?: boolean
+          items: Json
+          status?: string
+          total?: number
+          total_pieces?: number
+          updated_at?: string
+          whatsapp_message?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          id?: string
+          is_wholesale?: boolean
+          items?: Json
+          status?: string
+          total?: number
+          total_pieces?: number
+          updated_at?: string
+          whatsapp_message?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
+          color_name: string | null
           created_at: string
           description: string | null
+          display_emoji: string | null
           display_order: number
           id: string
           image_url: string | null
@@ -50,6 +91,7 @@ export type Database = {
           is_launch: boolean | null
           is_out_of_stock: boolean | null
           is_promotion: boolean | null
+          model_name: string | null
           name: string
           promotion_retail_price: number | null
           promotion_wholesale_price: number | null
@@ -62,8 +104,10 @@ export type Database = {
         }
         Insert: {
           category: string
+          color_name?: string | null
           created_at?: string
           description?: string | null
+          display_emoji?: string | null
           display_order: number
           id?: string
           image_url?: string | null
@@ -71,6 +115,7 @@ export type Database = {
           is_launch?: boolean | null
           is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
+          model_name?: string | null
           name: string
           promotion_retail_price?: number | null
           promotion_wholesale_price?: number | null
@@ -83,8 +128,10 @@ export type Database = {
         }
         Update: {
           category?: string
+          color_name?: string | null
           created_at?: string
           description?: string | null
+          display_emoji?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
@@ -92,6 +139,7 @@ export type Database = {
           is_launch?: boolean | null
           is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
+          model_name?: string | null
           name?: string
           promotion_retail_price?: number | null
           promotion_wholesale_price?: number | null

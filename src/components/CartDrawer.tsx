@@ -1,9 +1,10 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/CartContext";
-import { Minus, Plus, Trash2, ShoppingBag, Send, ArrowLeft } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, Send, ArrowLeft, User } from "lucide-react";
 
 export const CartDrawer = () => {
   const {
@@ -12,6 +13,8 @@ export const CartDrawer = () => {
     totalPieces,
     isWholesale,
     isCartOpen,
+    customerName,
+    setCustomerName,
     setIsCartOpen,
     updateQuantity,
     removeItem,
@@ -137,6 +140,17 @@ export const CartDrawer = () => {
         {/* Footer */}
         {items.length > 0 && (
           <div className="border-t border-border p-4 sm:p-6 space-y-4">
+            {/* Customer Name Input */}
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              <Input
+                placeholder="Seu nome (para o pedido)"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-base font-semibold text-foreground">Total</span>
               <div className="text-right">
@@ -152,9 +166,10 @@ export const CartDrawer = () => {
             <Button
               className="w-full h-12 text-base font-semibold bg-green-600 hover:bg-green-700 text-white"
               onClick={sendToWhatsApp}
+              disabled={!customerName.trim()}
             >
               <Send className="w-5 h-5 mr-2" />
-              Enviar Pedido via WhatsApp
+              {customerName.trim() ? "Enviar Pedido via WhatsApp" : "Digite seu nome para enviar"}
             </Button>
 
             <Button
