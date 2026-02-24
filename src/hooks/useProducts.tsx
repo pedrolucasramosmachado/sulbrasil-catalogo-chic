@@ -18,6 +18,9 @@ export interface Product {
   is_launch?: boolean | null;
   is_out_of_stock?: boolean | null;
   weight_kg?: number | null;
+  display_emoji?: string | null;
+  model_name?: string | null;
+  color_name?: string | null;
   created_at?: string;
   updated_at?: string;
 }

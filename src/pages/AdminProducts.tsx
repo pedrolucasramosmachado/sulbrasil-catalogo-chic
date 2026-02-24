@@ -27,6 +27,9 @@ const productSchema = z.object({
   retail_price: z.string().optional(),
   wholesale_price: z.string().optional(),
   weight_kg: z.string().optional(),
+  display_emoji: z.string().optional(),
+  model_name: z.string().optional(),
+  color_name: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -73,6 +76,9 @@ const AdminProducts = () => {
       retail_price: '',
       wholesale_price: '',
       weight_kg: '',
+      display_emoji: '',
+      model_name: '',
+      color_name: '',
     },
   });
 
@@ -165,6 +171,9 @@ const AdminProducts = () => {
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
         weight_kg: data.weight_kg ? parseFloat(data.weight_kg.replace(',', '.')) : null,
+        display_emoji: data.display_emoji || null,
+        model_name: data.model_name || null,
+        color_name: data.color_name || null,
         image_url: imageUrl || null,
         display_order: 0,
       };
@@ -233,6 +242,9 @@ const AdminProducts = () => {
       retail_price: product.retail_price ? product.retail_price.toString() : '',
       wholesale_price: product.wholesale_price ? product.wholesale_price.toString() : '',
       weight_kg: product.weight_kg ? product.weight_kg.toString() : '',
+      display_emoji: (product as any).display_emoji || '',
+      model_name: (product as any).model_name || '',
+      color_name: (product as any).color_name || '',
     });
     setImagePreview(product.image_url || null);
     setIsDialogOpen(true);
@@ -248,6 +260,9 @@ const AdminProducts = () => {
       retail_price: '',
       wholesale_price: '',
       weight_kg: '',
+      display_emoji: '',
+      model_name: '',
+      color_name: '',
     });
     setIsDialogOpen(true);
   };
@@ -766,22 +781,49 @@ const AdminProducts = () => {
                       <FormField
                         control={form.control}
                         name="subcategory"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Subcategoria</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Ex: Blusas, Calças, Vestidos"
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  updateProductName(form.getValues('category'), e.target.value, form.getValues('color') || '');
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const existingSubcategories = [...new Set(products.map(p => p.subcategory).filter(Boolean))] as string[];
+                          return (
+                            <FormItem>
+                              <FormLabel>Subcategoria (Modelo)</FormLabel>
+                              <FormControl>
+                                <Select 
+                                  value={field.value || undefined} 
+                                  onValueChange={(value) => {
+                                    if (value === '__new__') {
+                                      // Switch to input mode - clear and let user type
+                                      field.onChange('');
+                                    } else {
+                                      field.onChange(value);
+                                      updateProductName(form.getValues('category'), value, form.getValues('color') || '');
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecione ou crie nova" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__new__">+ Nova Subcategoria</SelectItem>
+                                    {existingSubcategories.map(sub => (
+                                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </FormControl>
+                              {field.value === '' && (
+                                <Input 
+                                  placeholder="Digite a nova subcategoria"
+                                  onChange={(e) => {
+                                    field.onChange(e.target.value);
+                                    updateProductName(form.getValues('category'), e.target.value, form.getValues('color') || '');
+                                  }}
+                                  className="mt-2"
+                                />
+                              )}
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -880,6 +922,63 @@ const AdminProducts = () => {
                           </FormItem>
                         )}
                       />
+
+                      {/* WhatsApp Display Fields */}
+                      <div className="border-t pt-4 mt-2">
+                        <p className="text-sm font-semibold text-foreground mb-3">📱 Campos para WhatsApp</p>
+                        <div className="grid grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="display_emoji"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Emoji</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="👗"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="model_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome do Modelo</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="Ex: Celina, Jade"
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">Usado no agrupamento do WhatsApp</p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="color_name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome da Cor</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    placeholder="Ex: Preto, Cereja"
+                                  />
+                                </FormControl>
+                                <p className="text-xs text-muted-foreground">Exibido na lista de cores</p>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
                       
                       <div className="flex justify-end gap-2 pt-4">
                         <Button 
