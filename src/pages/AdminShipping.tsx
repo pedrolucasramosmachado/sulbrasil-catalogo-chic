@@ -45,6 +45,7 @@ const AdminShipping = () => {
   const [shippingResults, setShippingResults] = useState<ShippingResponse | null>(null);
   const [selectedShipping, setSelectedShipping] = useState<ShippingResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState('shipping');
   const resultsRef = useRef<HTMLDivElement>(null);
 
   const filteredProducts = products.filter(product =>
@@ -71,6 +72,14 @@ const AdminShipping = () => {
     setSelectedProducts(new Set());
     setShippingResults(null);
     setSelectedShipping(null);
+  };
+
+  const handleSimulateFromOrder = (productIds: string[]) => {
+    setSelectedProducts(new Set(productIds));
+    setShippingResults(null);
+    setSelectedShipping(null);
+    setActiveTab('shipping');
+    toast({ title: 'Produtos carregados', description: `${productIds.length} produto(s) do pedido selecionados` });
   };
 
   const formatCep = (value: string) => {
@@ -235,7 +244,7 @@ ${productLines}
           description="Calcule frete e gerencie pedidos" 
         />
 
-        <Tabs defaultValue="shipping" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full mb-4">
             <TabsTrigger value="shipping" className="flex-1 gap-2">
               <Calculator className="h-4 w-4" />
@@ -465,7 +474,7 @@ ${productLines}
           </TabsContent>
 
           <TabsContent value="orders">
-            <AdminOrdersTab />
+            <AdminOrdersTab onSimulateShipping={handleSimulateFromOrder} />
           </TabsContent>
         </Tabs>
       </div>
