@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Package, User, Clock, Copy, Check, RefreshCw } from 'lucide-react';
+import { Package, User, Clock, Truck, RefreshCw } from 'lucide-react';
 
 interface OrderItem {
   product_id: string;
@@ -46,10 +46,13 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
-export const AdminOrdersTab = () => {
+interface AdminOrdersTabProps {
+  onSimulateShipping?: (productIds: string[]) => void;
+}
+
+export const AdminOrdersTab = ({ onSimulateShipping }: AdminOrdersTabProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchOrders = async () => {
@@ -90,15 +93,13 @@ export const AdminOrdersTab = () => {
     }
   };
 
-  const copyMessage = async (order: Order) => {
-    if (!order.whatsapp_message) return;
-    try {
-      await navigator.clipboard.writeText(order.whatsapp_message);
-      setCopiedId(order.id);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch {
-      toast({ title: 'Erro ao copiar', variant: 'destructive' });
+  const handleSimulate = (order: Order) => {
+    const productIds = (order.items as OrderItem[]).map(item => item.product_id).filter(Boolean);
+    if (productIds.length === 0) {
+      toast({ title: 'Erro', description: 'Pedido sem produtos identificados', variant: 'destructive' });
+      return;
     }
+    onSimulateShipping?.(productIds);
   };
 
   const formatPrice = (price: number) =>
@@ -181,19 +182,15 @@ export const AdminOrdersTab = () => {
                 ))}
               </div>
 
-              {/* Copy WhatsApp message */}
-              {order.whatsapp_message && (
+              {/* Simulate shipping from order */}
+              {onSimulateShipping && (
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => copyMessage(order)}
+                  onClick={() => handleSimulate(order)}
                   className="w-full h-7 text-xs"
                 >
-                  {copiedId === order.id ? (
-                    <><Check className="h-3 w-3 mr-1" /> Copiado!</>
-                  ) : (
-                    <><Copy className="h-3 w-3 mr-1" /> Copiar mensagem WhatsApp</>
-                  )}
+                  <Truck className="h-3 w-3 mr-1" /> Simular Frete
                 </Button>
               )}
             </CardContent>
