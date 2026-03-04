@@ -6,6 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { toast } from "@/hooks/use-toast";
+import { BannerCarousel } from "@/components/BannerCarousel";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -53,6 +54,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-surface to-surface-elevated">
       <Header onSearchResults={handleSearchResults} />
+
+      {/* Banner Carousel */}
+      {!isSearching && <BannerCarousel />}
 
       {/* Scroll Indicator for Mobile */}
       {!isSearching && <ScrollIndicator />}

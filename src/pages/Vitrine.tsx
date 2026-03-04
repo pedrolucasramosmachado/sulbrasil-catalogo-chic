@@ -6,6 +6,7 @@ import { useProducts } from "@/hooks/useProducts";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { BannerCarousel } from "@/components/BannerCarousel";
 
 const Vitrine = () => {
   const navigate = useNavigate();
@@ -29,6 +30,9 @@ const Vitrine = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-surface to-surface-elevated">
       <Header />
+
+      {/* Banner Carousel */}
+      <BannerCarousel />
 
       {/* Scroll Indicator for Mobile */}
       <ScrollIndicator />
