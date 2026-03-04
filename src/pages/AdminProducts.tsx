@@ -578,6 +578,9 @@ const AdminProducts = () => {
           description={`${products.length} produtos cadastrados`} 
         />
 
+        {/* Banner Management */}
+        <AdminBannersSection />
+
         <Card className="mb-6">
           <CardHeader>
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
