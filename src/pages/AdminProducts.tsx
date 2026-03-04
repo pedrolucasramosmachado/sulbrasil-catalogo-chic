@@ -18,6 +18,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AdminHeader } from '@/components/AdminHeader';
+import { AdminBannersSection } from '@/components/AdminBannersSection';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
