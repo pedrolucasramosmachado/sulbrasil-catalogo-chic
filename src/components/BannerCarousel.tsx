@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 export const BannerCarousel = () => {
   const { activeBanners, loading } = useBanners();
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const [volume, setVolume] = useState(0.5);
+  const [muted, setMuted] = useState(true);
+  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
   const count = activeBanners.length;
 
@@ -20,7 +24,6 @@ export const BannerCarousel = () => {
     setCurrent(c => (c - 1 + count) % count);
   }, [count]);
 
-  // Auto-play
   useEffect(() => {
     if (count <= 1) return;
     timerRef.current = setInterval(next, 5000);
@@ -32,16 +35,34 @@ export const BannerCarousel = () => {
     timerRef.current = setInterval(next, 5000);
   };
 
+  // Sync volume/muted to all video elements
+  useEffect(() => {
+    videoRefs.current.forEach(video => {
+      video.volume = volume;
+      video.muted = muted;
+    });
+  }, [volume, muted]);
+
+  const registerVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
+    if (el) {
+      el.volume = volume;
+      el.muted = muted;
+      videoRefs.current.set(id, el);
+    } else {
+      videoRefs.current.delete(id);
+    }
+  }, []);
+
   if (loading || count === 0) return null;
 
   const banner = activeBanners[current];
   const isVertical = banner.aspect_ratio === '9:16';
+  const currentIsVideo = banner.media_type === 'video';
 
   return (
     <section className="w-full bg-black/5">
       <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="relative overflow-hidden rounded-xl shadow-medium">
-          {/* Slide area */}
           <div
             className={cn(
               "relative w-full overflow-hidden",
@@ -53,11 +74,35 @@ export const BannerCarousel = () => {
                 key={b.id}
                 banner={b}
                 active={i === current}
+                registerVideo={registerVideo}
               />
             ))}
           </div>
 
-          {/* Navigation arrows */}
+          {/* Volume controls for video */}
+          {currentIsVideo && (
+            <div className="absolute bottom-10 right-3 z-20 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1.5 backdrop-blur-sm">
+              <button
+                onClick={() => setMuted(m => !m)}
+                className="text-white hover:text-white/80 transition-colors"
+                aria-label={muted ? 'Ativar som' : 'Mutar'}
+              >
+                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+              <Slider
+                value={[muted ? 0 : volume * 100]}
+                onValueChange={([v]) => {
+                  setVolume(v / 100);
+                  if (v > 0 && muted) setMuted(false);
+                  if (v === 0) setMuted(true);
+                }}
+                max={100}
+                step={1}
+                className="w-20"
+              />
+            </div>
+          )}
+
           {count > 1 && (
             <>
               <button
@@ -77,7 +122,6 @@ export const BannerCarousel = () => {
             </>
           )}
 
-          {/* Dots */}
           {count > 1 && (
             <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
               {activeBanners.map((_, i) => (
@@ -98,7 +142,7 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active }: { banner: Banner; active: boolean }) => {
+const BannerSlide = ({ banner, active, registerVideo }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void }) => {
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     if (banner.link_url) {
       return (
@@ -120,10 +164,10 @@ const BannerSlide = ({ banner, active }: { banner: Banner; active: boolean }) =>
       <Wrapper>
         {banner.media_type === 'video' ? (
           <video
+            ref={el => registerVideo(banner.id, el)}
             src={banner.media_url}
             className="w-full h-full object-cover"
             autoPlay
-            muted
             loop
             playsInline
           />
