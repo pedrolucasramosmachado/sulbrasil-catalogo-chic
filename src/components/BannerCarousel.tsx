@@ -193,7 +193,12 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
     if (!video) return;
     if (active) {
       video.currentTime = 0;
-      video.play().catch(() => {});
+      video.muted = false;
+      video.play().catch(() => {
+        // Browser blocked unmuted autoplay — retry muted
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     } else {
       video.pause();
       video.currentTime = 0;
