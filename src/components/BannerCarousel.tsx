@@ -74,6 +74,9 @@ export const BannerCarousel = () => {
   return (
     <section className="w-full bg-black/5">
       <div className="container mx-auto px-4 py-3 sm:py-4">
+        {banner.title && (
+          <h3 className="text-center text-lg font-semibold text-foreground mb-2">{banner.title}</h3>
+        )}
         <div className="relative overflow-hidden rounded-xl shadow-medium">
           <div
             className={cn(
@@ -87,6 +90,7 @@ export const BannerCarousel = () => {
                 banner={b}
                 active={i === current}
                 registerVideo={registerVideo}
+                onVideoEnded={handleVideoEnded}
               />
             ))}
           </div>
