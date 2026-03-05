@@ -24,15 +24,27 @@ export const BannerCarousel = () => {
     setCurrent(c => (c - 1 + count) % count);
   }, [count]);
 
-  useEffect(() => {
+  const startAutoPlay = useCallback(() => {
+    clearInterval(timerRef.current);
     if (count <= 1) return;
+    const currentBanner = activeBanners[current];
+    if (currentBanner?.media_type === 'video') return; // Don't auto-advance during video
     timerRef.current = setInterval(next, 5000);
+  }, [next, count, current, activeBanners]);
+
+  useEffect(() => {
+    startAutoPlay();
     return () => clearInterval(timerRef.current);
+  }, [startAutoPlay]);
+
+  const handleVideoEnded = useCallback(() => {
+    if (count <= 1) return;
+    next();
   }, [next, count]);
 
   const resetTimer = () => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(next, 5000);
+    startAutoPlay();
   };
 
   // Sync volume/muted to all video elements
@@ -62,6 +74,9 @@ export const BannerCarousel = () => {
   return (
     <section className="w-full bg-black/5">
       <div className="container mx-auto px-4 py-3 sm:py-4">
+        {banner.title && (
+          <h3 className="text-center text-lg font-semibold text-foreground mb-2">{banner.title}</h3>
+        )}
         <div className="relative overflow-hidden rounded-xl shadow-medium">
           <div
             className={cn(
@@ -75,6 +90,7 @@ export const BannerCarousel = () => {
                 banner={b}
                 active={i === current}
                 registerVideo={registerVideo}
+                onVideoEnded={handleVideoEnded}
               />
             ))}
           </div>
@@ -142,7 +158,20 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, registerVideo }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void }) => {
+const BannerSlide = ({ banner, active, registerVideo, onVideoEnded }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void; onVideoEnded: () => void }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (active) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [active]);
+
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     if (banner.link_url) {
       return (
@@ -158,18 +187,20 @@ const BannerSlide = ({ banner, active, registerVideo }: { banner: Banner; active
     <div
       className={cn(
         "absolute inset-0 transition-opacity duration-700",
-        active ? "opacity-100 z-[1]" : "opacity-0 z-0"
+        active ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
       )}
     >
       <Wrapper>
         {banner.media_type === 'video' ? (
           <video
-            ref={el => registerVideo(banner.id, el)}
+            ref={el => {
+              videoRef.current = el;
+              registerVideo(banner.id, el);
+            }}
             src={banner.media_url}
             className="w-full h-full object-cover"
-            autoPlay
-            loop
             playsInline
+            onEnded={onVideoEnded}
           />
         ) : (
           <img
