@@ -24,15 +24,27 @@ export const BannerCarousel = () => {
     setCurrent(c => (c - 1 + count) % count);
   }, [count]);
 
-  useEffect(() => {
+  const startAutoPlay = useCallback(() => {
+    clearInterval(timerRef.current);
     if (count <= 1) return;
+    const currentBanner = activeBanners[current];
+    if (currentBanner?.media_type === 'video') return; // Don't auto-advance during video
     timerRef.current = setInterval(next, 5000);
+  }, [next, count, current, activeBanners]);
+
+  useEffect(() => {
+    startAutoPlay();
     return () => clearInterval(timerRef.current);
+  }, [startAutoPlay]);
+
+  const handleVideoEnded = useCallback(() => {
+    if (count <= 1) return;
+    next();
   }, [next, count]);
 
   const resetTimer = () => {
     clearInterval(timerRef.current);
-    timerRef.current = setInterval(next, 5000);
+    startAutoPlay();
   };
 
   // Sync volume/muted to all video elements
