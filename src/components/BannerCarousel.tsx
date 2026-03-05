@@ -11,17 +11,19 @@ export const BannerCarousel = () => {
   const [volume, setVolume] = useState(0.5);
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
-  const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
+  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const count = activeBanners.length;
 
   const next = useCallback(() => {
     if (count <= 1) return;
+    setPaused(false);
     setCurrent(c => (c + 1) % count);
   }, [count]);
 
   const prev = useCallback(() => {
     if (count <= 1) return;
+    setPaused(false);
     setCurrent(c => (c - 1 + count) % count);
   }, [count]);
 
@@ -48,28 +50,24 @@ export const BannerCarousel = () => {
     startAutoPlay();
   };
 
-  // Sync volume/muted to all video elements
+  // Sync volume/muted to active video only
   useEffect(() => {
-    videoRefs.current.forEach(video => {
-      video.volume = volume;
-      video.muted = muted;
-    });
+    const video = activeVideoRef.current;
+    if (!video) return;
+    video.volume = volume;
+    video.muted = muted;
   }, [volume, muted]);
 
-  const registerVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
+  const setActiveVideo = useCallback((el: HTMLVideoElement | null) => {
+    activeVideoRef.current = el;
     if (el) {
       el.volume = volume;
       el.muted = muted;
-      videoRefs.current.set(id, el);
-    } else {
-      videoRefs.current.delete(id);
     }
-  }, []);
+  }, [volume, muted]);
 
   const togglePause = () => {
-    const banner = activeBanners[current];
-    if (banner?.media_type !== 'video') return;
-    const video = videoRefs.current.get(banner.id);
+    const video = activeVideoRef.current;
     if (!video) return;
     if (video.paused) {
       video.play().catch(() => {});
@@ -106,14 +104,12 @@ export const BannerCarousel = () => {
                 key={b.id}
                 banner={b}
                 active={i === current}
-                registerVideo={registerVideo}
                 onVideoEnded={handleVideoEnded}
-                paused={paused}
+                setActiveVideo={i === current ? setActiveVideo : undefined}
               />
             ))}
           </div>
 
-          {/* Video controls */}
           {currentIsVideo && (
             <div className="absolute bottom-10 right-3 z-20 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1.5 backdrop-blur-sm">
               <button
@@ -183,25 +179,36 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, registerVideo, onVideoEnded, paused }: {
+const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
   banner: Banner;
   active: boolean;
-  registerVideo: (id: string, el: HTMLVideoElement | null) => void;
   onVideoEnded: () => void;
-  paused: boolean;
+  setActiveVideo?: (el: HTMLVideoElement | null) => void;
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Play/pause based on active state
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (active && !paused) {
+    if (active) {
       video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
+      video.currentTime = 0;
     }
   }, [active]);
+
+  // Register active video ref with parent
+  useEffect(() => {
+    if (setActiveVideo && videoRef.current) {
+      setActiveVideo(videoRef.current);
+    }
+    return () => {
+      if (setActiveVideo) setActiveVideo(null);
+    };
+  }, [setActiveVideo]);
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     if (banner.link_url) {
@@ -224,13 +231,9 @@ const BannerSlide = ({ banner, active, registerVideo, onVideoEnded, paused }: {
       <Wrapper>
         {banner.media_type === 'video' ? (
           <video
-            ref={el => {
-              videoRef.current = el;
-              registerVideo(banner.id, el);
-            }}
+            ref={videoRef}
             src={banner.media_url}
             className="w-full h-full object-cover"
-            autoPlay
             playsInline
             muted
             onEnded={onVideoEnded}
