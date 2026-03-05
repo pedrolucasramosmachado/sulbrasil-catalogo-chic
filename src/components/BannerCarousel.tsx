@@ -9,7 +9,7 @@ export const BannerCarousel = () => {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [volume, setVolume] = useState(0.5);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -193,7 +193,12 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
     if (!video) return;
     if (active) {
       video.currentTime = 0;
-      video.play().catch(() => {});
+      video.muted = false;
+      video.play().catch(() => {
+        // Browser blocked unmuted autoplay — retry muted
+        video.muted = true;
+        video.play().catch(() => {});
+      });
     } else {
       video.pause();
       video.currentTime = 0;
@@ -235,7 +240,6 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
             src={banner.media_url}
             className="w-full h-full object-cover"
             playsInline
-            muted
             onEnded={onVideoEnded}
           />
         ) : (
