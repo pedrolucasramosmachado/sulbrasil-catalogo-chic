@@ -240,7 +240,6 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
             src={banner.media_url}
             className="w-full h-full object-cover"
             playsInline
-            muted
             onEnded={onVideoEnded}
           />
         ) : (
