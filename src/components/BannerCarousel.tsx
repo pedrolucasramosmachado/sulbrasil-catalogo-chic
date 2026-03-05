@@ -9,7 +9,7 @@ export const BannerCarousel = () => {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [volume, setVolume] = useState(0.5);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false);
   const [paused, setPaused] = useState(false);
   const activeVideoRef = useRef<HTMLVideoElement | null>(null);
 
