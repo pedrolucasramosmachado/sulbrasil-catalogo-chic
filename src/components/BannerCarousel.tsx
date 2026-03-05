@@ -158,7 +158,20 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, registerVideo }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void }) => {
+const BannerSlide = ({ banner, active, registerVideo, onVideoEnded }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void; onVideoEnded: () => void }) => {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (active) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [active]);
+
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     if (banner.link_url) {
       return (
@@ -174,18 +187,20 @@ const BannerSlide = ({ banner, active, registerVideo }: { banner: Banner; active
     <div
       className={cn(
         "absolute inset-0 transition-opacity duration-700",
-        active ? "opacity-100 z-[1]" : "opacity-0 z-0"
+        active ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
       )}
     >
       <Wrapper>
         {banner.media_type === 'video' ? (
           <video
-            ref={el => registerVideo(banner.id, el)}
+            ref={el => {
+              videoRef.current = el;
+              registerVideo(banner.id, el);
+            }}
             src={banner.media_url}
             className="w-full h-full object-cover"
-            autoPlay
-            loop
             playsInline
+            onEnded={onVideoEnded}
           />
         ) : (
           <img
