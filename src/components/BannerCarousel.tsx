@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Volume2, VolumeX, Pause, Play } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 
 export const BannerCarousel = () => {
@@ -10,6 +10,7 @@ export const BannerCarousel = () => {
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [volume, setVolume] = useState(0.5);
   const [muted, setMuted] = useState(true);
+  const [paused, setPaused] = useState(false);
   const videoRefs = useRef<Map<string, HTMLVideoElement>>(new Map());
 
   const count = activeBanners.length;
@@ -28,7 +29,7 @@ export const BannerCarousel = () => {
     clearInterval(timerRef.current);
     if (count <= 1) return;
     const currentBanner = activeBanners[current];
-    if (currentBanner?.media_type === 'video') return; // Don't auto-advance during video
+    if (currentBanner?.media_type === 'video') return;
     timerRef.current = setInterval(next, 5000);
   }, [next, count, current, activeBanners]);
 
@@ -65,6 +66,20 @@ export const BannerCarousel = () => {
     }
   }, []);
 
+  const togglePause = () => {
+    const banner = activeBanners[current];
+    if (banner?.media_type !== 'video') return;
+    const video = videoRefs.current.get(banner.id);
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+      setPaused(false);
+    } else {
+      video.pause();
+      setPaused(true);
+    }
+  };
+
   if (loading || count === 0) return null;
 
   const banner = activeBanners[current];
@@ -75,7 +90,9 @@ export const BannerCarousel = () => {
     <section className="w-full bg-black/5">
       <div className="container mx-auto px-4 py-3 sm:py-4">
         {banner.title && (
-          <h3 className="text-center text-lg font-semibold text-foreground mb-2">{banner.title}</h3>
+          <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 tracking-tight drop-shadow-sm">
+            🔥 {banner.title}
+          </h2>
         )}
         <div className="relative overflow-hidden rounded-xl shadow-medium">
           <div
@@ -91,13 +108,21 @@ export const BannerCarousel = () => {
                 active={i === current}
                 registerVideo={registerVideo}
                 onVideoEnded={handleVideoEnded}
+                paused={paused}
               />
             ))}
           </div>
 
-          {/* Volume controls for video */}
+          {/* Video controls */}
           {currentIsVideo && (
             <div className="absolute bottom-10 right-3 z-20 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1.5 backdrop-blur-sm">
+              <button
+                onClick={togglePause}
+                className="text-white hover:text-white/80 transition-colors"
+                aria-label={paused ? 'Reproduzir' : 'Pausar'}
+              >
+                {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              </button>
               <button
                 onClick={() => setMuted(m => !m)}
                 className="text-white hover:text-white/80 transition-colors"
@@ -158,13 +183,19 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, registerVideo, onVideoEnded }: { banner: Banner; active: boolean; registerVideo: (id: string, el: HTMLVideoElement | null) => void; onVideoEnded: () => void }) => {
+const BannerSlide = ({ banner, active, registerVideo, onVideoEnded, paused }: {
+  banner: Banner;
+  active: boolean;
+  registerVideo: (id: string, el: HTMLVideoElement | null) => void;
+  onVideoEnded: () => void;
+  paused: boolean;
+}) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (active) {
+    if (active && !paused) {
       video.currentTime = 0;
       video.play().catch(() => {});
     } else {
@@ -199,7 +230,9 @@ const BannerSlide = ({ banner, active, registerVideo, onVideoEnded }: { banner: 
             }}
             src={banner.media_url}
             className="w-full h-full object-cover"
+            autoPlay
             playsInline
+            muted
             onEnded={onVideoEnded}
           />
         ) : (
