@@ -125,6 +125,7 @@ const AdminShipping = () => {
           origin_cep: originCep.replace(/\D/g, ''),
           destination_cep: destinationCep.replace(/\D/g, ''),
           product_ids: Array.from(selectedProducts),
+          product_quantities: productQuantities,
           carrier: 'all',
         },
       });
@@ -164,7 +165,8 @@ const AdminShipping = () => {
   const getSelectedProductsWeight = () => {
     return Array.from(selectedProducts).reduce((total, id) => {
       const product = products.find(p => p.id === id);
-      return total + ((product as any)?.weight_kg || DEFAULT_WEIGHT_KG);
+      const qty = productQuantities[id] || 1;
+      return total + ((product as any)?.weight_kg || DEFAULT_WEIGHT_KG) * qty;
     }, 0);
   };
 
