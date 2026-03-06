@@ -2,72 +2,43 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
 import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, Volume2, VolumeX, Pause, Play } from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
 
 export const BannerCarousel = () => {
   const { activeBanners, loading } = useBanners();
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
-  const [volume, setVolume] = useState(0.5);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
-  const activeVideoRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const count = activeBanners.length;
 
   const next = useCallback(() => {
     if (count <= 1) return;
-    setPaused(false);
     setCurrent(c => (c + 1) % count);
   }, [count]);
 
   const prev = useCallback(() => {
     if (count <= 1) return;
-    setPaused(false);
     setCurrent(c => (c - 1 + count) % count);
   }, [count]);
 
-  const startAutoPlay = useCallback(() => {
+  // Auto-advance for image slides only
+  useEffect(() => {
     clearInterval(timerRef.current);
     if (count <= 1) return;
     const currentBanner = activeBanners[current];
     if (currentBanner?.media_type === 'video') return;
     timerRef.current = setInterval(next, 5000);
+    return () => clearInterval(timerRef.current);
   }, [next, count, current, activeBanners]);
 
-  useEffect(() => {
-    startAutoPlay();
-    return () => clearInterval(timerRef.current);
-  }, [startAutoPlay]);
-
   const handleVideoEnded = useCallback(() => {
-    if (count <= 1) return;
-    next();
+    if (count > 1) next();
   }, [next, count]);
 
-  const resetTimer = () => {
-    clearInterval(timerRef.current);
-    startAutoPlay();
-  };
-
-  // Sync volume/muted to active video only
-  useEffect(() => {
-    const video = activeVideoRef.current;
-    if (!video) return;
-    video.volume = volume;
-    video.muted = muted;
-  }, [volume, muted]);
-
-  const setActiveVideo = useCallback((el: HTMLVideoElement | null) => {
-    activeVideoRef.current = el;
-    if (el) {
-      el.volume = volume;
-      el.muted = muted;
-    }
-  }, [volume, muted]);
-
   const togglePause = () => {
-    const video = activeVideoRef.current;
+    const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
       video.play().catch(() => {});
@@ -76,6 +47,10 @@ export const BannerCarousel = () => {
       video.pause();
       setPaused(true);
     }
+  };
+
+  const toggleMute = () => {
+    setMuted(m => !m);
   };
 
   if (loading || count === 0) return null;
@@ -104,54 +79,63 @@ export const BannerCarousel = () => {
                 key={b.id}
                 banner={b}
                 active={i === current}
+                muted={muted}
                 onVideoEnded={handleVideoEnded}
-                setActiveVideo={i === current ? setActiveVideo : undefined}
+                onVideoRef={i === current ? (el) => { videoRef.current = el; } : undefined}
               />
             ))}
           </div>
 
+          {/* Video controls */}
           {currentIsVideo && (
-            <div className="absolute bottom-10 right-3 z-20 flex items-center gap-2 bg-black/50 rounded-full px-2 py-1.5 backdrop-blur-sm">
-              <button
-                onClick={togglePause}
-                className="text-white hover:text-white/80 transition-colors"
-                aria-label={paused ? 'Reproduzir' : 'Pausar'}
-              >
-                {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-              </button>
-              <button
-                onClick={() => setMuted(m => !m)}
-                className="text-white hover:text-white/80 transition-colors"
-                aria-label={muted ? 'Ativar som' : 'Mutar'}
-              >
-                {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </button>
-              <Slider
-                value={[muted ? 0 : volume * 100]}
-                onValueChange={([v]) => {
-                  setVolume(v / 100);
-                  if (v > 0 && muted) setMuted(false);
-                  if (v === 0) setMuted(true);
-                }}
-                max={100}
-                step={1}
-                className="w-20"
-              />
+            <div className="absolute bottom-10 left-0 right-0 z-20 flex justify-center">
+              <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
+                <button
+                  onClick={togglePause}
+                  className="text-white active:scale-90 transition-transform p-1"
+                  aria-label={paused ? 'Reproduzir' : 'Pausar'}
+                >
+                  {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+                </button>
+                <button
+                  onClick={toggleMute}
+                  className={cn(
+                    "text-white active:scale-90 transition-all p-1 rounded-full",
+                    muted && "bg-white/20 ring-2 ring-white/50"
+                  )}
+                  aria-label={muted ? 'Ativar som' : 'Mutar'}
+                >
+                  {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
+          )}
+
+          {/* Tap to unmute overlay — prominent on first load */}
+          {currentIsVideo && muted && !paused && (
+            <button
+              onClick={toggleMute}
+              className="absolute inset-0 z-10 flex items-center justify-center bg-black/10 transition-opacity"
+              aria-label="Toque para ativar o som"
+            >
+              <div className="bg-black/60 rounded-full p-4 backdrop-blur-sm animate-pulse">
+                <VolumeX className="h-8 w-8 text-white" />
+              </div>
+            </button>
           )}
 
           {count > 1 && (
             <>
               <button
-                onClick={() => { prev(); resetTimer(); }}
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 sm:p-2 transition-colors z-10"
+                onClick={prev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 sm:p-2 transition-colors z-20"
                 aria-label="Anterior"
               >
                 <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
-                onClick={() => { next(); resetTimer(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 sm:p-2 transition-colors z-10"
+                onClick={next}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-1.5 sm:p-2 transition-colors z-20"
                 aria-label="Próximo"
               >
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -160,11 +144,11 @@ export const BannerCarousel = () => {
           )}
 
           {count > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
               {activeBanners.map((_, i) => (
                 <button
                   key={i}
-                  onClick={() => { setCurrent(i); resetTimer(); }}
+                  onClick={() => setCurrent(i)}
                   className={cn(
                     "w-2 h-2 rounded-full transition-all",
                     i === current ? "bg-white w-5" : "bg-white/50"
@@ -179,23 +163,24 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
+const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
   banner: Banner;
   active: boolean;
+  muted: boolean;
   onVideoEnded: () => void;
-  setActiveVideo?: (el: HTMLVideoElement | null) => void;
+  onVideoRef?: (el: HTMLVideoElement | null) => void;
 }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const localRef = useRef<HTMLVideoElement | null>(null);
 
   // Play/pause based on active state
   useEffect(() => {
-    const video = videoRef.current;
+    const video = localRef.current;
     if (!video) return;
     if (active) {
       video.currentTime = 0;
-      video.muted = false;
+      video.muted = muted;
       video.play().catch(() => {
-        // Browser blocked unmuted autoplay — retry muted
+        // If unmuted play fails, fallback to muted
         video.muted = true;
         video.play().catch(() => {});
       });
@@ -205,15 +190,23 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
     }
   }, [active]);
 
-  // Register active video ref with parent
+  // Sync muted state
   useEffect(() => {
-    if (setActiveVideo && videoRef.current) {
-      setActiveVideo(videoRef.current);
-    }
-    return () => {
-      if (setActiveVideo) setActiveVideo(null);
-    };
-  }, [setActiveVideo]);
+    const video = localRef.current;
+    if (!video || !active) return;
+    video.muted = muted;
+  }, [muted, active]);
+
+  // Register ref with parent
+  useEffect(() => {
+    if (onVideoRef) onVideoRef(localRef.current);
+    return () => { if (onVideoRef) onVideoRef(null); };
+  }, [onVideoRef]);
+
+  const setRef = (el: HTMLVideoElement | null) => {
+    localRef.current = el;
+    if (onVideoRef) onVideoRef(el);
+  };
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => {
     if (banner.link_url) {
@@ -236,10 +229,11 @@ const BannerSlide = ({ banner, active, onVideoEnded, setActiveVideo }: {
       <Wrapper>
         {banner.media_type === 'video' ? (
           <video
-            ref={videoRef}
+            ref={setRef}
             src={banner.media_url}
             className="w-full h-full object-cover"
             playsInline
+            muted
             onEnded={onVideoEnded}
           />
         ) : (

@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { AdminHeader } from '@/components/AdminHeader';
-import { AdminOrdersTab } from '@/components/AdminOrdersTab';
+import { AdminOrdersTab, OrderProductItem } from '@/components/AdminOrdersTab';
 import { supabase } from '@/integrations/supabase/client';
 import { Truck, Package, Calculator, Search, Loader2, Copy, Check, X, ClipboardList } from 'lucide-react';
 
@@ -39,6 +39,7 @@ const AdminShipping = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [productQuantities, setProductQuantities] = useState<Record<string, number>>({});
   const [originCep, setOriginCep] = useState(DEFAULT_ORIGIN_CEP);
   const [destinationCep, setDestinationCep] = useState('');
   const [isCalculating, setIsCalculating] = useState(false);
@@ -70,16 +71,24 @@ const AdminShipping = () => {
 
   const clearAllProducts = () => {
     setSelectedProducts(new Set());
+    setProductQuantities({});
     setShippingResults(null);
     setSelectedShipping(null);
   };
 
-  const handleSimulateFromOrder = (productIds: string[]) => {
-    setSelectedProducts(new Set(productIds));
+  const handleSimulateFromOrder = (items: OrderProductItem[]) => {
+    const ids = new Set(items.map(i => i.product_id));
+    const qtys: Record<string, number> = {};
+    items.forEach(i => {
+      qtys[i.product_id] = (qtys[i.product_id] || 0) + i.quantity;
+    });
+    setSelectedProducts(ids);
+    setProductQuantities(qtys);
     setShippingResults(null);
     setSelectedShipping(null);
     setActiveTab('shipping');
-    toast({ title: 'Produtos carregados', description: `${productIds.length} produto(s) do pedido selecionados` });
+    const totalPieces = items.reduce((s, i) => s + i.quantity, 0);
+    toast({ title: 'Produtos carregados', description: `${totalPieces} peça(s) do pedido selecionadas` });
   };
 
   const formatCep = (value: string) => {
@@ -116,6 +125,7 @@ const AdminShipping = () => {
           origin_cep: originCep.replace(/\D/g, ''),
           destination_cep: destinationCep.replace(/\D/g, ''),
           product_ids: Array.from(selectedProducts),
+          product_quantities: productQuantities,
           carrier: 'all',
         },
       });
@@ -155,7 +165,8 @@ const AdminShipping = () => {
   const getSelectedProductsWeight = () => {
     return Array.from(selectedProducts).reduce((total, id) => {
       const product = products.find(p => p.id === id);
-      return total + ((product as any)?.weight_kg || DEFAULT_WEIGHT_KG);
+      const qty = productQuantities[id] || 1;
+      return total + ((product as any)?.weight_kg || DEFAULT_WEIGHT_KG) * qty;
     }, 0);
   };
 
@@ -310,7 +321,9 @@ ${productLines}
                         variant="secondary" 
                         className="flex items-center gap-1 pr-1 text-xs"
                       >
-                        <span className="max-w-[120px] truncate">{product.name}</span>
+                        <span className="max-w-[120px] truncate">
+                          {productQuantities[product.id] > 1 ? `${productQuantities[product.id]}x ` : ''}{product.name}
+                        </span>
                         <button
                           onClick={() => removeProduct(product.id)}
                           className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
