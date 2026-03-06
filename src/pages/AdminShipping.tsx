@@ -181,17 +181,20 @@ const AdminShipping = () => {
     const totalWeight = getSelectedProductsWeight();
     
     const productLines = selectedProductsList.map(p => {
+      const qty = productQuantities[p.id] || 1;
       const price = p.is_promotion && p.promotion_wholesale_price 
         ? p.promotion_wholesale_price 
         : p.wholesale_price;
-      return `• ${p.name} - ${formatPrice(price || 0)}`;
+      const lineTotal = (price || 0) * qty;
+      return `• ${qty}x ${p.name} - ${formatPrice(lineTotal)}`;
     }).join('\n');
 
     const subtotal = selectedProductsList.reduce((sum, p) => {
+      const qty = productQuantities[p.id] || 1;
       const price = p.is_promotion && p.promotion_wholesale_price 
         ? p.promotion_wholesale_price 
         : p.wholesale_price;
-      return sum + (price || 0);
+      return sum + (price || 0) * qty;
     }, 0);
 
     const total = subtotal + selectedShipping.price;
@@ -303,7 +306,7 @@ ${productLines}
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium flex items-center gap-2">
                       <Package className="h-4 w-4" />
-                      {selectedProducts.size} produto(s) • {getSelectedProductsWeight().toFixed(2)}kg
+                      {Object.values(productQuantities).reduce((s, q) => s + q, 0) || selectedProducts.size} peça(s) • {getSelectedProductsWeight().toFixed(2)}kg
                     </span>
                     <Button 
                       variant="ghost" 
@@ -400,7 +403,7 @@ ${productLines}
               ) : (
                 <>
                   <Calculator className="h-5 w-5 mr-2" />
-                  Calcular Frete ({selectedProducts.size} itens)
+                  Calcular Frete ({Object.values(productQuantities).reduce((s, q) => s + q, 0) || selectedProducts.size} peças)
                 </>
               )}
             </Button>
