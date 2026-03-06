@@ -46,8 +46,13 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+export interface OrderProductItem {
+  product_id: string;
+  quantity: number;
+}
+
 interface AdminOrdersTabProps {
-  onSimulateShipping?: (productIds: string[]) => void;
+  onSimulateShipping?: (items: OrderProductItem[]) => void;
 }
 
 export const AdminOrdersTab = ({ onSimulateShipping }: AdminOrdersTabProps) => {
@@ -94,12 +99,14 @@ export const AdminOrdersTab = ({ onSimulateShipping }: AdminOrdersTabProps) => {
   };
 
   const handleSimulate = (order: Order) => {
-    const productIds = (order.items as OrderItem[]).map(item => item.product_id).filter(Boolean);
-    if (productIds.length === 0) {
+    const orderItems = (order.items as OrderItem[])
+      .filter(item => item.product_id)
+      .map(item => ({ product_id: item.product_id, quantity: item.quantity }));
+    if (orderItems.length === 0) {
       toast({ title: 'Erro', description: 'Pedido sem produtos identificados', variant: 'destructive' });
       return;
     }
-    onSimulateShipping?.(productIds);
+    onSimulateShipping?.(orderItems);
   };
 
   const formatPrice = (price: number) =>
