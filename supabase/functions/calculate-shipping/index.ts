@@ -10,6 +10,7 @@ interface ShippingRequest {
   origin_cep: string;
   destination_cep: string;
   product_ids: string[];
+  product_quantities?: Record<string, number>;
   carrier?: 'sedex' | 'pac' | 'loggi' | 'all';
 }
 
@@ -287,7 +288,7 @@ serve(async (req) => {
       );
     }
 
-    const { origin_cep, destination_cep, product_ids, carrier = 'all' }: ShippingRequest = await req.json();
+    const { origin_cep, destination_cep, product_ids, product_quantities, carrier = 'all' }: ShippingRequest = await req.json();
 
     // Validate CEPs
     const cleanOriginCep = origin_cep.replace(/\D/g, '');
@@ -314,12 +315,17 @@ serve(async (req) => {
       );
     }
 
-    // Calculate total weight (default to 0.15kg / 150g if not specified)
+    // Calculate total weight (default to 0.15kg / 150g if not specified), multiplied by quantity
     const totalWeightKg = products?.reduce((sum, p) => {
-      return sum + (p.weight_kg || DEFAULT_WEIGHT_KG);
+      const qty = product_quantities?.[p.id] || 1;
+      return sum + (p.weight_kg || DEFAULT_WEIGHT_KG) * qty;
     }, 0) || DEFAULT_WEIGHT_KG;
 
-    console.log(`Calculating shipping for ${products?.length || 0} products, total weight: ${totalWeightKg}kg`);
+    const totalPieces = products?.reduce((sum, p) => {
+      return sum + (product_quantities?.[p.id] || 1);
+    }, 0) || 1;
+
+    console.log(`Calculating shipping for ${totalPieces} pieces (${products?.length || 0} products), total weight: ${totalWeightKg}kg`);
 
     const results: ShippingResult[] = [];
 
@@ -341,7 +347,7 @@ serve(async (req) => {
         origin_cep: cleanOriginCep,
         destination_cep: cleanDestinationCep,
         total_weight_kg: totalWeightKg,
-        products_count: products?.length || 0,
+        products_count: totalPieces,
         results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
