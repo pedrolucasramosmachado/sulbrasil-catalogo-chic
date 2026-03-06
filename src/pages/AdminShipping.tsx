@@ -321,7 +321,9 @@ ${productLines}
                         variant="secondary" 
                         className="flex items-center gap-1 pr-1 text-xs"
                       >
-                        <span className="max-w-[120px] truncate">{product.name}</span>
+                        <span className="max-w-[120px] truncate">
+                          {productQuantities[product.id] > 1 ? `${productQuantities[product.id]}x ` : ''}{product.name}
+                        </span>
                         <button
                           onClick={() => removeProduct(product.id)}
                           className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
