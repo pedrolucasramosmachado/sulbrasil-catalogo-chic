@@ -191,18 +191,11 @@ const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
   useEffect(() => {
     const video = localRef.current;
     if (!video) return;
-    if (active) {
-      video.currentTime = 0;
-      video.muted = muted;
-      video.play().catch(() => {
-        // If unmuted play fails, fallback to muted
-        video.muted = true;
-        video.play().catch(() => {});
-      });
-    } else {
+    if (!active) {
       video.pause();
       video.currentTime = 0;
     }
+    // Don't auto-play — user must tap the big play button
   }, [active]);
 
   // Sync muted state
