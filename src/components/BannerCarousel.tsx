@@ -8,7 +8,8 @@ export const BannerCarousel = () => {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [muted, setMuted] = useState(true);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true); // Start paused, user taps big play
+  const [userStarted, setUserStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const count = activeBanners.length;
@@ -41,8 +42,11 @@ export const BannerCarousel = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      video.muted = false;
       video.play().catch(() => {});
+      setMuted(false);
       setPaused(false);
+      setUserStarted(true);
     } else {
       video.pause();
       setPaused(true);
@@ -51,6 +55,17 @@ export const BannerCarousel = () => {
 
   const toggleMute = () => {
     setMuted(m => !m);
+  };
+
+  const handleBigPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = false;
+    video.currentTime = 0;
+    video.play().catch(() => {});
+    setMuted(false);
+    setPaused(false);
+    setUserStarted(true);
   };
 
   if (loading || count === 0) return null;
@@ -86,16 +101,29 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {/* Video controls */}
-          {currentIsVideo && (
+          {/* Big play button — shown before user starts */}
+          {currentIsVideo && (!userStarted || paused) && (
+            <button
+              onClick={handleBigPlay}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity"
+              aria-label="Reproduzir vídeo"
+            >
+              <div className="bg-white/90 rounded-full p-5 shadow-lg hover:scale-110 transition-transform">
+                <Play className="h-12 w-12 text-foreground fill-current" />
+              </div>
+            </button>
+          )}
+
+          {/* Video controls — shown after user started */}
+          {currentIsVideo && userStarted && !paused && (
             <div className="absolute bottom-10 left-0 right-0 z-20 flex justify-center">
               <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
                 <button
                   onClick={togglePause}
                   className="text-white active:scale-90 transition-transform p-1"
-                  aria-label={paused ? 'Reproduzir' : 'Pausar'}
+                  aria-label="Pausar"
                 >
-                  {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+                  <Pause className="h-5 w-5" />
                 </button>
                 <button
                   onClick={toggleMute}
@@ -109,19 +137,6 @@ export const BannerCarousel = () => {
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Tap to unmute overlay — prominent on first load */}
-          {currentIsVideo && muted && !paused && (
-            <button
-              onClick={toggleMute}
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/10 transition-opacity"
-              aria-label="Toque para ativar o som"
-            >
-              <div className="bg-black/60 rounded-full p-4 backdrop-blur-sm animate-pulse">
-                <VolumeX className="h-8 w-8 text-white" />
-              </div>
-            </button>
           )}
 
           {count > 1 && (
@@ -176,18 +191,11 @@ const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
   useEffect(() => {
     const video = localRef.current;
     if (!video) return;
-    if (active) {
-      video.currentTime = 0;
-      video.muted = muted;
-      video.play().catch(() => {
-        // If unmuted play fails, fallback to muted
-        video.muted = true;
-        video.play().catch(() => {});
-      });
-    } else {
+    if (!active) {
       video.pause();
       video.currentTime = 0;
     }
+    // Don't auto-play — user must tap the big play button
   }, [active]);
 
   // Sync muted state
