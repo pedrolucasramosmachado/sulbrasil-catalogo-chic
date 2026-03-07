@@ -38,18 +38,24 @@ export const BannerCarousel = () => {
     if (count > 1) next();
   }, [next, count]);
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused || !userStarted) {
-      video.muted = false;
       if (!userStarted) video.currentTime = 0;
-      video.play().catch(() => {
+      // Always start muted to guarantee play works, then unmute
+      video.muted = true;
+      try {
+        await video.play();
+        // Play succeeded, now try to unmute
+        video.muted = false;
+        setMuted(false);
+      } catch {
+        // Fallback: keep muted
         video.muted = true;
         setMuted(true);
-        video.play().catch(() => {});
-      });
-      setMuted(false);
+        try { await video.play(); } catch { /* give up */ }
+      }
       setPaused(false);
       setUserStarted(true);
     } else {
