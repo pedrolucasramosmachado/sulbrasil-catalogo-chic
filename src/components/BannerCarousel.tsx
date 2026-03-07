@@ -72,29 +72,62 @@ export const BannerCarousel = () => {
     setUserStarted(true);
   };
 
-           {/* Big play button — shown before user starts or when paused */}
-           {currentIsVideo && (!userStarted || paused) && (
-             <button
-               onClick={handleBigPlay}
-               className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity"
-               aria-label="Reproduzir vídeo"
-             >
-               <div className="bg-white/90 rounded-full p-5 shadow-lg hover:scale-110 transition-transform">
-                 <Play className="h-12 w-12 text-foreground fill-current" />
-               </div>
-             </button>
-           )}
+  if (loading || count === 0) return null;
 
-           {/* Small pause button — bottom right, shown while playing */}
-           {currentIsVideo && userStarted && !paused && (
-             <button
-               onClick={togglePause}
-               className="absolute bottom-12 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
-               aria-label="Pausar"
-             >
-               <Pause className="h-5 w-5" />
-             </button>
-           )}
+  const banner = activeBanners[current];
+  const isVertical = banner.aspect_ratio === '9:16';
+  const currentIsVideo = banner.media_type === 'video';
+
+  return (
+    <section className="w-full bg-black/5">
+      <div className="container mx-auto px-4 py-3 sm:py-4">
+        {banner.title && (
+          <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 tracking-tight drop-shadow-sm">
+            🔥 {banner.title}
+          </h2>
+        )}
+        <div className="relative overflow-hidden rounded-xl shadow-medium">
+          <div
+            className={cn(
+              "relative w-full overflow-hidden",
+              isVertical ? "max-w-sm mx-auto aspect-[9/16]" : "aspect-video"
+            )}
+          >
+            {activeBanners.map((b, i) => (
+              <BannerSlide
+                key={b.id}
+                banner={b}
+                active={i === current}
+                muted={muted}
+                onVideoEnded={handleVideoEnded}
+                onVideoRef={i === current ? (el) => { videoRef.current = el; } : undefined}
+              />
+            ))}
+          </div>
+
+          {/* Big play button — shown before user starts or when paused */}
+          {currentIsVideo && (!userStarted || paused) && (
+            <button
+              onClick={handleBigPlay}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity"
+              aria-label="Reproduzir vídeo"
+            >
+              <div className="bg-white/90 rounded-full p-5 shadow-lg hover:scale-110 transition-transform">
+                <Play className="h-12 w-12 text-foreground fill-current" />
+              </div>
+            </button>
+          )}
+
+          {/* Small pause button — bottom right, shown while playing */}
+          {currentIsVideo && userStarted && !paused && (
+            <button
+              onClick={togglePause}
+              className="absolute bottom-12 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
+              aria-label="Pausar"
+            >
+              <Pause className="h-5 w-5" />
+            </button>
+          )}
 
           {count > 1 && (
             <>
