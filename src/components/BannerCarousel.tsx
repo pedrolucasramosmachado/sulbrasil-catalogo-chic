@@ -114,30 +114,16 @@ export const BannerCarousel = () => {
             </button>
           )}
 
-          {/* Video controls — shown after user started */}
-          {currentIsVideo && userStarted && !paused && (
-            <div className="absolute bottom-10 left-0 right-0 z-20 flex justify-center">
-              <div className="flex items-center gap-3 bg-black/60 rounded-full px-4 py-2 backdrop-blur-sm">
-                <button
-                  onClick={togglePause}
-                  className="text-white active:scale-90 transition-transform p-1"
-                  aria-label="Pausar"
-                >
-                  <Pause className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={toggleMute}
-                  className={cn(
-                    "text-white active:scale-90 transition-all p-1 rounded-full",
-                    muted && "bg-white/20 ring-2 ring-white/50"
-                  )}
-                  aria-label={muted ? 'Ativar som' : 'Mutar'}
-                >
-                  {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-          )}
+           {/* Pause button center — shown after user started */}
+           {currentIsVideo && userStarted && !paused && (
+             <button
+               onClick={togglePause}
+               className="absolute inset-0 z-20 flex items-center justify-center"
+               aria-label="Pausar"
+             >
+               <Pause className="h-12 w-12 text-white opacity-0 hover:opacity-100 transition-opacity" />
+             </button>
+           )}
 
           {count > 1 && (
             <>
