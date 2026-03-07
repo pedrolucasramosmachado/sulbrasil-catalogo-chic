@@ -38,12 +38,17 @@ export const BannerCarousel = () => {
     if (count > 1) next();
   }, [next, count]);
 
-  const togglePause = () => {
+  const handlePlayPause = () => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) {
+    if (video.paused || !userStarted) {
       video.muted = false;
-      video.play().catch(() => {});
+      if (!userStarted) video.currentTime = 0;
+      video.play().catch(() => {
+        video.muted = true;
+        setMuted(true);
+        video.play().catch(() => {});
+      });
       setMuted(false);
       setPaused(false);
       setUserStarted(true);
@@ -54,22 +59,11 @@ export const BannerCarousel = () => {
   };
 
   const toggleMute = () => {
-    setMuted(m => !m);
-  };
-
-  const handleBigPlay = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = false;
-    if (!userStarted) video.currentTime = 0;
-    video.play().catch(() => {
-      video.muted = true;
-      setMuted(true);
-      video.play().catch(() => {});
+    setMuted(m => {
+      const next = !m;
+      if (videoRef.current) videoRef.current.muted = next;
+      return next;
     });
-    setMuted(false);
-    setPaused(false);
-    setUserStarted(true);
   };
 
   if (loading || count === 0) return null;
@@ -105,28 +99,38 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {/* Big play button — shown before user starts or when paused */}
-          {currentIsVideo && (!userStarted || paused) && (
-            <button
-              onClick={handleBigPlay}
-              className="absolute inset-0 z-20 flex items-center justify-center bg-black/30 transition-opacity"
-              aria-label="Reproduzir vídeo"
-            >
-              <div className="bg-white/90 rounded-full p-5 shadow-lg hover:scale-110 transition-transform">
-                <Play className="h-12 w-12 text-foreground fill-current" />
-              </div>
-            </button>
-          )}
-
-          {/* Small pause button — bottom right, shown while playing */}
-          {currentIsVideo && userStarted && !paused && (
-            <button
-              onClick={togglePause}
-              className="absolute bottom-12 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
-              aria-label="Pausar"
-            >
-              <Pause className="h-5 w-5" />
-            </button>
+          {/* Single video control overlay */}
+          {currentIsVideo && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center">
+              {/* Tap anywhere to play/pause */}
+              <button
+                onClick={handlePlayPause}
+                className={cn(
+                  "absolute inset-0 z-10",
+                  (!userStarted || paused) && "bg-black/30"
+                )}
+                aria-label={paused ? 'Reproduzir' : 'Pausar'}
+              />
+              {/* Central play/pause icon */}
+              {(!userStarted || paused) && (
+                <div className="relative z-20 bg-white/90 rounded-full p-5 shadow-lg pointer-events-none">
+                  <Play className="h-12 w-12 text-foreground fill-current" />
+                </div>
+              )}
+              {/* Volume button — bottom right, only when playing */}
+              {userStarted && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                  className={cn(
+                    "absolute bottom-12 right-3 z-30 rounded-full p-2.5 transition-colors backdrop-blur-sm",
+                    muted ? "bg-white/80 text-foreground" : "bg-black/50 hover:bg-black/70 text-white"
+                  )}
+                  aria-label={muted ? 'Ativar som' : 'Mutar'}
+                >
+                  {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                </button>
+              )}
+            </div>
           )}
 
           {count > 1 && (
