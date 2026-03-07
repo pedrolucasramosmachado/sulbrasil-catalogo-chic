@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Volume2, VolumeX, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 
 export const BannerCarousel = () => {
   const { activeBanners, loading } = useBanners();
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [muted, setMuted] = useState(true);
-  const [paused, setPaused] = useState(true); // Start paused, user taps big play
-  const [userStarted, setUserStarted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const count = activeBanners.length;
@@ -37,32 +35,6 @@ export const BannerCarousel = () => {
   const handleVideoEnded = useCallback(() => {
     if (count > 1) next();
   }, [next, count]);
-
-  const handlePlayPause = async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (video.paused || !userStarted) {
-      if (!userStarted) video.currentTime = 0;
-      // Always start muted to guarantee play works, then unmute
-      video.muted = true;
-      try {
-        await video.play();
-        // Play succeeded, now try to unmute
-        video.muted = false;
-        setMuted(false);
-      } catch {
-        // Fallback: keep muted
-        video.muted = true;
-        setMuted(true);
-        try { await video.play(); } catch { /* give up */ }
-      }
-      setPaused(false);
-      setUserStarted(true);
-    } else {
-      video.pause();
-      setPaused(true);
-    }
-  };
 
   const toggleMute = () => {
     setMuted(m => {
@@ -105,38 +77,18 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {/* Single video control overlay */}
+          {/* Volume button for video */}
           {currentIsVideo && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
-              {/* Tap anywhere to play/pause */}
-              <button
-                onClick={handlePlayPause}
-                className={cn(
-                  "absolute inset-0 z-10",
-                  (!userStarted || paused) && "bg-black/30"
-                )}
-                aria-label={paused ? 'Reproduzir' : 'Pausar'}
-              />
-              {/* Central play/pause icon */}
-              {(!userStarted || paused) && (
-                <div className="relative z-20 bg-white/90 rounded-full p-5 shadow-lg pointer-events-none">
-                  <Play className="h-12 w-12 text-foreground fill-current" />
-                </div>
+            <button
+              onClick={toggleMute}
+              className={cn(
+                "absolute bottom-12 right-3 z-30 rounded-full p-2.5 transition-colors backdrop-blur-sm",
+                muted ? "bg-white/80 text-foreground" : "bg-black/50 hover:bg-black/70 text-white"
               )}
-              {/* Volume button — bottom right, only when playing */}
-              {userStarted && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                  className={cn(
-                    "absolute bottom-12 right-3 z-30 rounded-full p-2.5 transition-colors backdrop-blur-sm",
-                    muted ? "bg-white/80 text-foreground" : "bg-black/50 hover:bg-black/70 text-white"
-                  )}
-                  aria-label={muted ? 'Ativar som' : 'Mutar'}
-                >
-                  {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                </button>
-              )}
-            </div>
+              aria-label={muted ? 'Ativar som' : 'Mutar'}
+            >
+              {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            </button>
           )}
 
           {count > 1 && (
@@ -187,15 +139,18 @@ const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
 }) => {
   const localRef = useRef<HTMLVideoElement | null>(null);
 
-  // Play/pause based on active state
+  // Autoplay muted when active
   useEffect(() => {
     const video = localRef.current;
     if (!video) return;
-    if (!active) {
+    if (active) {
+      video.muted = true;
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
       video.pause();
       video.currentTime = 0;
     }
-    // Don't auto-play — user must tap the big play button
   }, [active]);
 
   // Sync muted state
