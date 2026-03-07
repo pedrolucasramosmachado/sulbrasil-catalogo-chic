@@ -61,8 +61,12 @@ export const BannerCarousel = () => {
     const video = videoRef.current;
     if (!video) return;
     video.muted = false;
-    video.currentTime = 0;
-    video.play().catch(() => {});
+    if (!userStarted) video.currentTime = 0;
+    video.play().catch(() => {
+      video.muted = true;
+      setMuted(true);
+      video.play().catch(() => {});
+    });
     setMuted(false);
     setPaused(false);
     setUserStarted(true);
@@ -101,7 +105,7 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {/* Big play button — shown before user starts */}
+          {/* Big play button — shown before user starts or when paused */}
           {currentIsVideo && (!userStarted || paused) && (
             <button
               onClick={handleBigPlay}
@@ -114,16 +118,16 @@ export const BannerCarousel = () => {
             </button>
           )}
 
-           {/* Pause button center — shown after user started */}
-           {currentIsVideo && userStarted && !paused && (
-             <button
-               onClick={togglePause}
-               className="absolute inset-0 z-20 flex items-center justify-center"
-               aria-label="Pausar"
-             >
-               <Pause className="h-12 w-12 text-white opacity-0 hover:opacity-100 transition-opacity" />
-             </button>
-           )}
+          {/* Small pause button — bottom right, shown while playing */}
+          {currentIsVideo && userStarted && !paused && (
+            <button
+              onClick={togglePause}
+              className="absolute bottom-12 right-3 z-20 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition-colors backdrop-blur-sm"
+              aria-label="Pausar"
+            >
+              <Pause className="h-5 w-5" />
+            </button>
+          )}
 
           {count > 1 && (
             <>
