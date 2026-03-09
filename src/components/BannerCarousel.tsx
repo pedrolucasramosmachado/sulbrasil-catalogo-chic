@@ -8,7 +8,6 @@ export const BannerCarousel = () => {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [muted, setMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const count = activeBanners.length;
 
@@ -32,23 +31,10 @@ export const BannerCarousel = () => {
     return () => clearInterval(timerRef.current);
   }, [next, count, current, activeBanners]);
 
-  const handleVideoEnded = useCallback(() => {
-    if (count > 1) next();
-  }, [next, count]);
-
-  const toggleMute = () => {
-    setMuted(m => {
-      const next = !m;
-      if (videoRef.current) videoRef.current.muted = next;
-      return next;
-    });
-  };
-
   if (loading || count === 0) return null;
 
   const banner = activeBanners[current];
   const isVertical = banner.aspect_ratio === '9:16';
-  const currentIsVideo = banner.media_type === 'video';
 
   return (
     <section className="w-full bg-black/5">
@@ -67,29 +53,15 @@ export const BannerCarousel = () => {
           >
             {activeBanners.map((b, i) => (
               <BannerSlide
-                key={b.id}
+                key={`${b.id}-${i === current}`}
                 banner={b}
                 active={i === current}
                 muted={muted}
-                onVideoEnded={handleVideoEnded}
-                onVideoRef={i === current ? (el) => { videoRef.current = el; } : undefined}
+                onVideoEnded={next}
+                onToggleMute={() => setMuted(m => !m)}
               />
             ))}
           </div>
-
-          {/* Volume button for video */}
-          {currentIsVideo && (
-            <button
-              onClick={toggleMute}
-              className={cn(
-                "absolute bottom-12 right-3 z-30 rounded-full p-2.5 transition-colors backdrop-blur-sm",
-                muted ? "bg-white/80 text-foreground" : "bg-black/50 hover:bg-black/70 text-white"
-              )}
-              aria-label={muted ? 'Ativar som' : 'Mutar'}
-            >
-              {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-            </button>
-          )}
 
           {count > 1 && (
             <>
@@ -130,57 +102,52 @@ export const BannerCarousel = () => {
   );
 };
 
-const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
+const BannerSlide = ({ banner, active, muted, onVideoEnded, onToggleMute }: {
   banner: Banner;
   active: boolean;
   muted: boolean;
   onVideoEnded: () => void;
-  onVideoRef?: (el: HTMLVideoElement | null) => void;
+  onToggleMute: () => void;
 }) => {
-  const localRef = useRef<HTMLVideoElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Autoplay muted when active
+  // Simple autoplay: play when active, pause when not
   useEffect(() => {
-    const video = localRef.current;
+    const video = videoRef.current;
     if (!video) return;
     if (active) {
-      video.muted = true;
       video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
-      video.currentTime = 0;
     }
   }, [active]);
 
-  // Sync muted state
+  // Sync muted
   useEffect(() => {
-    const video = localRef.current;
-    if (!video || !active) return;
-    video.muted = muted;
-  }, [muted, active]);
+    if (videoRef.current) videoRef.current.muted = muted;
+  }, [muted]);
 
-  // Register ref with parent
-  useEffect(() => {
-    if (onVideoRef) onVideoRef(localRef.current);
-    return () => { if (onVideoRef) onVideoRef(null); };
-  }, [onVideoRef]);
+  const isVideo = banner.media_type === 'video';
 
-  const setRef = (el: HTMLVideoElement | null) => {
-    localRef.current = el;
-    if (onVideoRef) onVideoRef(el);
-  };
-
-  const Wrapper = ({ children }: { children: React.ReactNode }) => {
-    if (banner.link_url) {
-      return (
-        <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block absolute inset-0">
-          {children}
-        </a>
-      );
-    }
-    return <div className="absolute inset-0">{children}</div>;
-  };
+  const content = isVideo ? (
+    <video
+      ref={videoRef}
+      src={banner.media_url}
+      className="w-full h-full object-cover"
+      playsInline
+      autoPlay
+      muted
+      onEnded={onVideoEnded}
+    />
+  ) : (
+    <img
+      src={banner.media_url}
+      alt={banner.title || 'Banner promocional'}
+      className="w-full h-full object-cover"
+      loading="lazy"
+    />
+  );
 
   return (
     <div
@@ -189,25 +156,27 @@ const BannerSlide = ({ banner, active, muted, onVideoEnded, onVideoRef }: {
         active ? "opacity-100 z-[1]" : "opacity-0 z-0 pointer-events-none"
       )}
     >
-      <Wrapper>
-        {banner.media_type === 'video' ? (
-          <video
-            ref={setRef}
-            src={banner.media_url}
-            className="w-full h-full object-cover"
-            playsInline
-            muted
-            onEnded={onVideoEnded}
-          />
-        ) : (
-          <img
-            src={banner.media_url}
-            alt={banner.title || 'Banner promocional'}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        )}
-      </Wrapper>
+      {banner.link_url ? (
+        <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="block absolute inset-0">
+          {content}
+        </a>
+      ) : (
+        <div className="absolute inset-0">{content}</div>
+      )}
+
+      {/* Volume toggle - only on active video slides */}
+      {isVideo && active && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleMute(); }}
+          className={cn(
+            "absolute bottom-12 right-3 z-30 rounded-full p-2.5 transition-colors backdrop-blur-sm",
+            muted ? "bg-white/80 text-foreground" : "bg-black/50 hover:bg-black/70 text-white"
+          )}
+          aria-label={muted ? 'Ativar som' : 'Mutar'}
+        >
+          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+      )}
     </div>
   );
 };
