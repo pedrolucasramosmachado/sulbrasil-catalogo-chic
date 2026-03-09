@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
 import { cn } from '@/lib/utils';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const BannerCarousel = () => {
   const { activeBanners, loading } = useBanners();
@@ -100,18 +100,34 @@ export const BannerCarousel = () => {
           </div>
 
           {count > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-              {activeBanners.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setCurrent(i)}
-                  className={cn(
-                    "w-2 h-2 rounded-full transition-all",
-                    i === current ? "bg-white w-5" : "bg-white/50"
-                  )}
-                />
-              ))}
-            </div>
+            <>
+              <button
+                onClick={prev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 backdrop-blur-sm p-1.5 text-white hover:bg-black/50 transition-colors"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+              <button
+                onClick={next}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 backdrop-blur-sm p-1.5 text-white hover:bg-black/50 transition-colors"
+                aria-label="Próximo"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </button>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                {activeBanners.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrent(i)}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-all",
+                      i === current ? "bg-white w-5" : "bg-white/50"
+                    )}
+                  />
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
