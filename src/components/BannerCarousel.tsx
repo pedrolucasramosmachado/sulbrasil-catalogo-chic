@@ -84,7 +84,7 @@ export const BannerCarousel = () => {
           <div
             className={cn(
               "relative w-full overflow-hidden",
-              isVertical ? "max-w-sm mx-auto aspect-[9/16]" : "aspect-video"
+              isVertical ? "max-w-xs sm:max-w-sm mx-auto aspect-[9/16]" : "aspect-[4/3] sm:aspect-video"
             )}
           >
             {activeBanners.map((b, i) => (
