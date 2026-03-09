@@ -102,18 +102,18 @@ export const BannerCarousel = () => {
           {count > 1 && (
             <>
               <button
-                onClick={prev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 backdrop-blur-sm p-1.5 text-white hover:bg-black/50 transition-colors"
+                onClick={(e) => { e.stopPropagation(); prev(); }}
+                className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-30 rounded-full bg-black/40 backdrop-blur-sm p-1 sm:p-1.5 text-white active:bg-black/60 hover:bg-black/50 transition-colors"
                 aria-label="Anterior"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <button
-                onClick={next}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-full bg-black/30 backdrop-blur-sm p-1.5 text-white hover:bg-black/50 transition-colors"
+                onClick={(e) => { e.stopPropagation(); next(); }}
+                className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 rounded-full bg-black/40 backdrop-blur-sm p-1 sm:p-1.5 text-white active:bg-black/60 hover:bg-black/50 transition-colors"
                 aria-label="Próximo"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
                 {activeBanners.map((_, i) => (
