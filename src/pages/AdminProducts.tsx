@@ -771,12 +771,14 @@ const AdminProducts = () => {
                                         form.setValue('category', '');
                                         form.setValue('name', '');
                                       } else {
-                                        field.onChange(value);
+                                      field.onChange(value);
                                         // Pré-preencher preços da categoria
                                         if (!editingProduct) {
                                           const defaultPrices = getDefaultPricesForCategory(value);
                                           form.setValue('retail_price', defaultPrices.retail_price);
                                           form.setValue('wholesale_price', defaultPrices.wholesale_price);
+                                          // Auto-populate sizes
+                                          setSelectedSizes(getSizePresetForCategory(value));
                                         }
                                         // Atualizar nome
                                         updateProductName(value, form.getValues('subcategory') || '', form.getValues('color') || '');
