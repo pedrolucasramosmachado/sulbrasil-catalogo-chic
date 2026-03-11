@@ -273,6 +273,7 @@ const AdminProducts = () => {
       color_name: (product as any).color_name || '',
     });
     setImagePreview(product.image_url || null);
+    setSelectedSizes(product.sizes || []);
     setIsDialogOpen(true);
   };
 
