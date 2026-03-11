@@ -199,6 +199,7 @@ const AdminProducts = () => {
         model_name: data.model_name || null,
         color_name: data.color_name || null,
         image_url: imageUrl || null,
+        sizes: selectedSizes.length > 0 ? selectedSizes : null,
         display_order: 0,
       };
 
