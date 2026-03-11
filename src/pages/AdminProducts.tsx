@@ -955,6 +955,60 @@ const AdminProducts = () => {
                         )}
                       />
 
+                      {/* Tamanhos */}
+                      <div className="border-t pt-4 mt-2">
+                        <p className="text-sm font-semibold text-foreground mb-3">📏 Tamanhos</p>
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            {(() => {
+                              const category = form.getValues('category') || '';
+                              const preset = getSizePresetForCategory(category);
+                              const allSizes = [...new Set([...preset, ...selectedSizes])];
+                              return allSizes.map(size => (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => toggleSize(size)}
+                                  className={cn(
+                                    "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
+                                    selectedSizes.includes(size)
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                                  )}
+                                >
+                                  {size}
+                                </button>
+                              ));
+                            })()}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSizes(getSizePresetForCategory(form.getValues('category') || ''))}
+                              className="text-xs"
+                            >
+                              Resetar padrão
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSizes([])}
+                              className="text-xs"
+                            >
+                              Limpar
+                            </Button>
+                          </div>
+                          {selectedSizes.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Selecionados: {selectedSizes.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
                       {/* WhatsApp Display Fields */}
                       <div className="border-t pt-4 mt-2">
                         <p className="text-sm font-semibold text-foreground mb-3">📱 Campos para WhatsApp</p>
