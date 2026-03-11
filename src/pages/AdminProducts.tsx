@@ -249,6 +249,7 @@ const AdminProducts = () => {
     setImageFile(null);
     setImagePreview(null);
     setIsNewCategory(false);
+    setSelectedSizes([]);
   };
 
   const openEditDialog = (product: Product) => {
