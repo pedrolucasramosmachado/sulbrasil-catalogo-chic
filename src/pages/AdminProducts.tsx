@@ -66,6 +66,29 @@ const AdminProducts = () => {
   const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
   const [promoWholesalePrice, setPromoWholesalePrice] = useState('');
   const [promoRetailPrice, setPromoRetailPrice] = useState('');
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+
+  // Size presets by category
+  const SIZE_PRESETS: Record<string, string[]> = {
+    'default': ['Tamanho Único (36 ao 44)'],
+    'plus_size': ['44', '46', '48', '50', '52', '54'],
+    'infantil': ['2', '4', '6', '8', '10', '12'],
+    'kit': ['Tamanho Único'],
+  };
+
+  const getSizePresetForCategory = (category: string): string[] => {
+    const lower = category.toLowerCase();
+    if (lower.includes('plus') || lower.includes('plus size')) return SIZE_PRESETS.plus_size;
+    if (lower.includes('infantil') || lower.includes('infantis') || lower.includes('kids')) return SIZE_PRESETS.infantil;
+    if (lower.includes('kit') || lower.includes('kits')) return SIZE_PRESETS.kit;
+    return SIZE_PRESETS.default;
+  };
+
+  const toggleSize = (size: string) => {
+    setSelectedSizes(prev => 
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
+  };
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
