@@ -159,6 +159,20 @@ export const ProductDetailModal = ({
               </div>
             )}
 
+            {/* Sizes */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Tamanhos disponíveis:</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map(size => (
+                    <span key={size} className="px-3 py-1 rounded-full text-xs font-medium bg-surface border border-card-border text-foreground">
+                      {size}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <Separator />
 
             {/* Action Buttons */}

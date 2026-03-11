@@ -19,6 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AdminHeader } from '@/components/AdminHeader';
 import { AdminBannersSection } from '@/components/AdminBannersSection';
+import { cn } from '@/lib/utils';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -66,6 +67,29 @@ const AdminProducts = () => {
   const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
   const [promoWholesalePrice, setPromoWholesalePrice] = useState('');
   const [promoRetailPrice, setPromoRetailPrice] = useState('');
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+
+  // Size presets by category
+  const SIZE_PRESETS: Record<string, string[]> = {
+    'default': ['Tamanho Único (36 ao 44)'],
+    'plus_size': ['44', '46', '48', '50', '52', '54'],
+    'infantil': ['2', '4', '6', '8', '10', '12'],
+    'kit': ['Tamanho Único'],
+  };
+
+  const getSizePresetForCategory = (category: string): string[] => {
+    const lower = category.toLowerCase();
+    if (lower.includes('plus') || lower.includes('plus size')) return SIZE_PRESETS.plus_size;
+    if (lower.includes('infantil') || lower.includes('infantis') || lower.includes('kids')) return SIZE_PRESETS.infantil;
+    if (lower.includes('kit') || lower.includes('kits')) return SIZE_PRESETS.kit;
+    return SIZE_PRESETS.default;
+  };
+
+  const toggleSize = (size: string) => {
+    setSelectedSizes(prev => 
+      prev.includes(size) ? prev.filter(s => s !== size) : [...prev, size]
+    );
+  };
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -176,6 +200,7 @@ const AdminProducts = () => {
         model_name: data.model_name || null,
         color_name: data.color_name || null,
         image_url: imageUrl || null,
+        sizes: selectedSizes.length > 0 ? selectedSizes : null,
         display_order: 0,
       };
 
@@ -225,6 +250,7 @@ const AdminProducts = () => {
     setImageFile(null);
     setImagePreview(null);
     setIsNewCategory(false);
+    setSelectedSizes([]);
   };
 
   const openEditDialog = (product: Product) => {
@@ -248,6 +274,7 @@ const AdminProducts = () => {
       color_name: (product as any).color_name || '',
     });
     setImagePreview(product.image_url || null);
+    setSelectedSizes(product.sizes || []);
     setIsDialogOpen(true);
   };
 
@@ -745,12 +772,14 @@ const AdminProducts = () => {
                                         form.setValue('category', '');
                                         form.setValue('name', '');
                                       } else {
-                                        field.onChange(value);
+                                      field.onChange(value);
                                         // Pré-preencher preços da categoria
                                         if (!editingProduct) {
                                           const defaultPrices = getDefaultPricesForCategory(value);
                                           form.setValue('retail_price', defaultPrices.retail_price);
                                           form.setValue('wholesale_price', defaultPrices.wholesale_price);
+                                          // Auto-populate sizes
+                                          setSelectedSizes(getSizePresetForCategory(value));
                                         }
                                         // Atualizar nome
                                         updateProductName(value, form.getValues('subcategory') || '', form.getValues('color') || '');
@@ -926,6 +955,60 @@ const AdminProducts = () => {
                           </FormItem>
                         )}
                       />
+
+                      {/* Tamanhos */}
+                      <div className="border-t pt-4 mt-2">
+                        <p className="text-sm font-semibold text-foreground mb-3">📏 Tamanhos</p>
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            {(() => {
+                              const category = form.getValues('category') || '';
+                              const preset = getSizePresetForCategory(category);
+                              const allSizes = [...new Set([...preset, ...selectedSizes])];
+                              return allSizes.map(size => (
+                                <button
+                                  key={size}
+                                  type="button"
+                                  onClick={() => toggleSize(size)}
+                                  className={cn(
+                                    "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
+                                    selectedSizes.includes(size)
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                                  )}
+                                >
+                                  {size}
+                                </button>
+                              ));
+                            })()}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSizes(getSizePresetForCategory(form.getValues('category') || ''))}
+                              className="text-xs"
+                            >
+                              Resetar padrão
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSizes([])}
+                              className="text-xs"
+                            >
+                              Limpar
+                            </Button>
+                          </div>
+                          {selectedSizes.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Selecionados: {selectedSizes.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
 
                       {/* WhatsApp Display Fields */}
                       <div className="border-t pt-4 mt-2">

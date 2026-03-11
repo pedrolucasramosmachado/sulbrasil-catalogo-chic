@@ -93,6 +93,18 @@ export const ProductCardVitrine = ({
               </Badge>
             )}
           </div>
+
+          {/* Sizes */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-1 pt-1">
+              <span className="text-xs text-muted-foreground">Tam:</span>
+              {product.sizes.map(size => (
+                <span key={size} className="text-xs text-muted-foreground">
+                  {size}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
