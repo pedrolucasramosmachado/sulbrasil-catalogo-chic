@@ -148,6 +148,17 @@ export const ProductCard = ({
       </CardContent>
 
       <CardFooter className="p-3 sm:p-5 pt-0 flex flex-col gap-2">
+        {/* Sizes */}
+        {product.sizes && product.sizes.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-1 w-full mb-1">
+            <span className="text-[10px] sm:text-xs text-foreground-muted font-medium">Tam:</span>
+            {product.sizes.map(size => (
+              <span key={size} className="text-[10px] sm:text-xs bg-muted/60 text-foreground-muted px-1.5 py-0.5 rounded">
+                {size}
+              </span>
+            ))}
+          </div>
+        )}
         <Button
           size="lg"
           onClick={handleAddToCart}
