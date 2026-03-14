@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface CartItem {
   product: Product;
   quantity: number;
+  selectedSize?: string;
 }
 
 interface CartContextType {
@@ -16,12 +17,13 @@ interface CartContextType {
   customerName: string;
   setCustomerName: (name: string) => void;
   setIsCartOpen: (open: boolean) => void;
-  addItem: (product: Product) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addItem: (product: Product, size?: string) => void;
+  removeItem: (cartKey: string) => void;
+  updateQuantity: (cartKey: string, quantity: number) => void;
   clearCart: () => void;
   getItemPrice: (item: CartItem) => number;
   getTotal: () => number;
+  getCartKey: (item: CartItem) => string;
   sendToWhatsApp: () => void;
   generateWhatsAppMessage: () => string;
 }
@@ -30,6 +32,11 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const WHOLESALE_THRESHOLD = 10;
 const WHATSAPP_NUMBER = "5511961890347";
+
+/** Build a unique key for a cart item (product + size combo) */
+const buildCartKey = (productId: string, size?: string): string => {
+  return size ? `${productId}__${size}` : productId;
+};
 
 /** Extract piece count from product name, e.g. "Kit X 4 peças" → 4, default 1 */
 const getPieceCount = (product: Product): number => {
@@ -46,32 +53,35 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
   const isWholesale = totalPieces >= WHOLESALE_THRESHOLD;
 
-  const addItem = useCallback((product: Product) => {
+  const getCartKey = useCallback((item: CartItem) => buildCartKey(item.product.id, item.selectedSize), []);
+
+  const addItem = useCallback((product: Product, size?: string) => {
+    const key = buildCartKey(product.id, size);
     setItems((prev) => {
-      const existing = prev.find((i) => i.product.id === product.id);
+      const existing = prev.find((i) => buildCartKey(i.product.id, i.selectedSize) === key);
       if (existing) {
         return prev.map((i) =>
-          i.product.id === product.id
+          buildCartKey(i.product.id, i.selectedSize) === key
             ? { ...i, quantity: i.quantity + 1 }
             : i
         );
       }
-      return [...prev, { product, quantity: 1 }];
+      return [...prev, { product, quantity: 1, selectedSize: size }];
     });
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.product.id !== productId));
+  const removeItem = useCallback((cartKey: string) => {
+    setItems((prev) => prev.filter((i) => buildCartKey(i.product.id, i.selectedSize) !== cartKey));
   }, []);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
+  const updateQuantity = useCallback((cartKey: string, quantity: number) => {
     if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.product.id !== productId));
+      setItems((prev) => prev.filter((i) => buildCartKey(i.product.id, i.selectedSize) !== cartKey));
       return;
     }
     setItems((prev) =>
       prev.map((i) =>
-        i.product.id === productId ? { ...i, quantity } : i
+        buildCartKey(i.product.id, i.selectedSize) === cartKey ? { ...i, quantity } : i
       )
     );
   }, []);
@@ -99,20 +109,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return items.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
   }, [items, getItemPrice]);
 
-  /** Get display color for a product — prefers color_name field, falls back to extraction */
+  /** Get display color for a product */
   const getDisplayColor = useCallback((product: Product, model: string): string => {
-    // Use explicit color_name if set
     if (product.color_name) return product.color_name;
-
-    // Fallback: extract from name
     let name = product.name.trim();
     name = name.replace(/^[\p{Emoji_Presentation}\p{Emoji}\uFE0F\u200D]+\s*/gu, "").trim();
-
     const prefixes: string[] = [];
     const sub = (product.subcategory || "").trim();
     const cat = (product.category || "").trim();
     const typeWords = ["regata", "vestidos", "vestido", "blusa", "body", "cropped", "camiseta", "t-shirt", "conjunto", "kit"];
-
     if (sub) {
       typeWords.forEach(tw => prefixes.push(`lançamento ${tw} ${sub}`, `${tw} ${sub}`));
       prefixes.push(`lançamento ${sub}`, sub);
@@ -124,9 +129,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     typeWords.forEach(tw => prefixes.push(`lançamento ${tw} ${model}`, `${tw} ${model}`));
     prefixes.push(`lançamento ${model}`, model);
     typeWords.forEach(tw => prefixes.push(`lançamento ${tw}`, tw));
-
     prefixes.sort((a, b) => b.length - a.length);
-
     const nameLower = name.toLowerCase();
     for (const prefix of prefixes) {
       const pLower = prefix.toLowerCase();
@@ -138,13 +141,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return name;
   }, []);
 
-  /** Get display model name — prefers model_name field, falls back to subcategory/category */
   const getDisplayModel = useCallback((product: Product): string => {
     if (product.model_name) return product.model_name;
     return product.subcategory || product.category || product.name;
   }, []);
 
-  /** Get display emoji — prefers display_emoji field */
   const getDisplayEmoji = useCallback((product: Product, index: number): string => {
     if (product.display_emoji) return product.display_emoji;
     const clothingEmojis = ["👗", "👚", "👕", "🧥", "👔", "🩱", "👘", "🎽"];
@@ -176,10 +177,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const emoji = getDisplayEmoji(groupItems[0].product, idx - 1);
 
       message += `*${idx}. ${emoji} ${model}*\n`;
-      message += `   Cores:\n`;
+      message += `   Cores/Tamanhos:\n`;
       groupItems.forEach((i) => {
         const color = getDisplayColor(i.product, model);
-        message += `      • ${i.quantity} ${color}\n`;
+        const sizeLabel = i.selectedSize ? ` (Tam: ${i.selectedSize})` : "";
+        message += `      • ${i.quantity} ${color}${sizeLabel}\n`;
       });
       message += `   Quant. Total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
@@ -201,6 +203,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         product_name: item.product.name,
         model_name: getDisplayModel(item.product),
         color_name: getDisplayColor(item.product, getDisplayModel(item.product)),
+        selected_size: item.selectedSize || null,
         quantity: item.quantity,
         unit_price: getItemPrice(item),
         total: getItemPrice(item) * item.quantity,
@@ -222,10 +225,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const sendToWhatsApp = useCallback(() => {
     const message = generateWhatsAppMessage();
-    
-    // Save order to DB
     saveOrderToDb(message);
-
     const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   }, [generateWhatsAppMessage, saveOrderToDb]);
@@ -247,6 +247,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         clearCart,
         getItemPrice,
         getTotal,
+        getCartKey,
         sendToWhatsApp,
         generateWhatsAppMessage,
       }}

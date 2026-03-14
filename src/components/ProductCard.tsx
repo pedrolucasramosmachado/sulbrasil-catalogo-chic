@@ -23,12 +23,19 @@ export const ProductCard = ({
 }: ProductCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>(
+    product.sizes && product.sizes.length === 1 ? product.sizes[0] : undefined
+  );
   const { addItem } = useCart();
+
+  const hasSizes = product.sizes && product.sizes.length > 0;
+  const needsSizeSelection = hasSizes && product.sizes!.length > 1;
+  const canAdd = !product.is_out_of_stock && (!needsSizeSelection || selectedSize);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (product.is_out_of_stock) return;
-    addItem(product);
+    if (!canAdd) return;
+    addItem(product, selectedSize);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1500);
   };
@@ -148,20 +155,39 @@ export const ProductCard = ({
       </CardContent>
 
       <CardFooter className="p-3 sm:p-5 pt-0 flex flex-col gap-2">
-        {/* Sizes */}
-        {product.sizes && product.sizes.length > 0 && (
+        {/* Size selector */}
+        {hasSizes && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 w-full mb-1">
-            {product.sizes.map(size => (
-              <span key={size} className="text-xs sm:text-sm font-semibold bg-muted text-foreground px-2.5 py-1 rounded-md border border-border/50">
+            {product.sizes!.map(size => (
+              <button
+                key={size}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedSize(prev => prev === size && needsSizeSelection ? undefined : size);
+                }}
+                className={cn(
+                  "text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-md border transition-all duration-200",
+                  selectedSize === size
+                    ? "bg-primary text-primary-foreground border-primary shadow-md"
+                    : "bg-muted text-foreground border-border/50 hover:border-primary/50"
+                )}
+              >
                 {size}
-              </span>
+              </button>
             ))}
           </div>
         )}
+
+        {/* Add to cart hint */}
+        {needsSizeSelection && !selectedSize && (
+          <p className="text-xs text-destructive font-medium text-center">Selecione o tamanho</p>
+        )}
+
         <Button
           size="lg"
           onClick={handleAddToCart}
-          disabled={!!product.is_out_of_stock}
+          disabled={!canAdd}
           className={cn(
             "w-full text-xs sm:text-base h-10 sm:h-11 font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300",
             justAdded
