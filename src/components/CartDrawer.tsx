@@ -21,6 +21,7 @@ export const CartDrawer = () => {
     clearCart,
     getItemPrice,
     getTotal,
+    getCartKey,
     sendToWhatsApp,
   } = useCart();
 
@@ -76,9 +77,10 @@ export const CartDrawer = () => {
           ) : (
             items.map((item) => {
               const price = getItemPrice(item);
+              const key = getCartKey(item);
               return (
                 <div
-                  key={item.product.id}
+                  key={key}
                   className="flex gap-3 bg-surface rounded-xl p-3 border border-border-subtle"
                 >
                   <img
@@ -92,6 +94,11 @@ export const CartDrawer = () => {
                         {item.product.name}
                       </p>
                       <p className="text-xs text-foreground-muted">{item.product.category}</p>
+                      {item.selectedSize && (
+                        <p className="text-xs font-medium text-primary mt-0.5">
+                          Tam: {item.selectedSize}
+                        </p>
+                      )}
                       <p className="text-sm font-bold text-primary mt-1">
                         R$ {price.toFixed(2)}
                         <span className="text-xs font-normal text-foreground-muted ml-1">
@@ -105,7 +112,7 @@ export const CartDrawer = () => {
                           variant="outline"
                           size="icon"
                           className="w-7 h-7"
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(key, item.quantity - 1)}
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
@@ -116,7 +123,7 @@ export const CartDrawer = () => {
                           variant="outline"
                           size="icon"
                           className="w-7 h-7"
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(key, item.quantity + 1)}
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -125,7 +132,7 @@ export const CartDrawer = () => {
                         variant="ghost"
                         size="icon"
                         className="w-7 h-7 text-destructive hover:text-destructive"
-                        onClick={() => removeItem(item.product.id)}
+                        onClick={() => removeItem(key)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
