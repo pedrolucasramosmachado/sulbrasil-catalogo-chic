@@ -35,17 +35,24 @@ export const useProducts = () => {
   const [categoryOrders, setCategoryOrders] = useState<CategoryOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 1000; // Aumentado para carregar todo o catálogo (~300 itens) e não quebrar busca/categorias
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (isInitial = true) => {
     try {
       setLoading(true);
+      const currentPage = isInitial ? 0 : page + 1;
+      const from = currentPage * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
       
       // Fetch products and category orders in parallel
       const [productsRes, categoriesRes] = await Promise.all([
         supabase
           .from('products')
-          .select('*')
-          .order('created_at', { ascending: false }),
+          .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at')
+          .range(from, to)
+          .order('created_at', { ascending: true }),
         supabase
           .from('categories')
           .select('name, display_order')
@@ -55,7 +62,16 @@ export const useProducts = () => {
       if (productsRes.error) throw productsRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
 
-      setProducts(productsRes.data || []);
+      const newProducts = productsRes.data || [];
+      if (isInitial) {
+        setProducts(newProducts);
+        setPage(0);
+      } else {
+        setProducts(prev => [...prev, ...newProducts]);
+        setPage(currentPage);
+      }
+      
+      setHasMore(newProducts.length === PAGE_SIZE);
       setCategoryOrders(categoriesRes.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar produtos');
@@ -65,8 +81,14 @@ export const useProducts = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(true);
   }, []);
+
+  const loadMore = () => {
+    if (!loading && hasMore) {
+      fetchProducts(false);
+    }
+  };
 
   const getProductsByCategory = (category: string) => {
     if (category === 'todos') return products;
@@ -122,19 +144,29 @@ export const useProducts = () => {
     }
     
     products.forEach(product => {
-      if (!categoriesMap.has(product.category)) {
-        categoriesMap.set(product.category, {
-          imageUrl: product.image_url || '/placeholder.svg',
+      const category = product.category;
+      if (!category) return;
+
+      const imageUrl = product.image_url || '/placeholder.svg';
+
+      if (!categoriesMap.has(category)) {
+        categoriesMap.set(category, {
+          imageUrl: imageUrl,
           minWholesale: product.wholesale_price || null,
           minRetail: product.retail_price || null
         });
       } else {
-        const current = categoriesMap.get(product.category)!;
-        // Atualizar com o menor preço de atacado
+        const current = categoriesMap.get(category)!;
+        
+        // Prefer the first non-placeholder image
+        if (current.imageUrl === '/placeholder.svg' && imageUrl !== '/placeholder.svg') {
+          current.imageUrl = imageUrl;
+        }
+
+        // Keep lowest prices
         if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
           current.minWholesale = product.wholesale_price;
         }
-        // Atualizar com o menor preço de varejo
         if (product.retail_price && (!current.minRetail || product.retail_price < current.minRetail)) {
           current.minRetail = product.retail_price;
         }
@@ -168,8 +200,8 @@ export const useProducts = () => {
     }));
     
     remainingCategories.sort((a, b) => {
-      const orderA = categoryOrders.find(c => c.name === a.category)?.display_order ?? 9999;
-      const orderB = categoryOrders.find(c => c.name === b.category)?.display_order ?? 9999;
+      const orderA = categoryOrders.find(c => c.name.toLowerCase() === a.category.toLowerCase())?.display_order ?? 9999;
+      const orderB = categoryOrders.find(c => c.name.toLowerCase() === b.category.toLowerCase())?.display_order ?? 9999;
       return orderA - orderB;
     });
     
@@ -231,11 +263,30 @@ export const useProducts = () => {
     return hasSubcats;
   };
 
+  const getProductById = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data as Product;
+    } catch (err) {
+      console.error('Error fetching product details:', err);
+      return null;
+    }
+  };
+
   return {
     products,
     loading,
+    hasMore,
     error,
     fetchProducts,
+    loadMore,
+    getProductById,
     getProductsByCategory,
     getCategories,
     getFeaturedProducts,

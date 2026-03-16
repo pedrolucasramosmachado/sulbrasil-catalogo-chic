@@ -56,7 +56,7 @@ const CategoryPage = () => {
       return launchProducts;
     }
     if (subcategory) {
-      return getProductsBySubcategory(category || '', decodeURIComponent(subcategory));
+      return getProductsBySubcategory(category || '', subcategory);
     }
     if (category && !categoryHasSubcategories(category)) {
       return getProductsByCategory(category);
@@ -81,7 +81,7 @@ const CategoryPage = () => {
     : category === 'lancamentos'
     ? 'Lançamentos ✨'
     : subcategory 
-    ? decodeURIComponent(subcategory)
+    ? subcategory
     : category || '';
 
   return (
