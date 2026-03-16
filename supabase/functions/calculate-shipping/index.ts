@@ -198,7 +198,7 @@ async function calculateLoggi(
     }
     
     // Loggi GraphQL API endpoint
-    const loggiEndpoint = 'https://staging.loggi.com/graphql';
+    const loggiEndpoint = 'https://api.loggi.com/graphql';
     
     const query = `
       mutation estimateCreatePackage($input: CreatePackageInput!) {
@@ -210,6 +210,13 @@ async function calculateLoggi(
       }
     `;
     
+    console.log('Loggi request input:', JSON.stringify({
+      companyId: LOGGI_COMPANY_ID,
+      pickupAddress: { cep: originCep },
+      deliveryAddress: { cep: destinationCep },
+      packages: [{ weight: weightKg }],
+    }));
+
     const response = await fetch(loggiEndpoint, {
       method: 'POST',
       headers: {
@@ -236,6 +243,7 @@ async function calculateLoggi(
     }
     
     const data = await response.json();
+    console.log('Loggi response:', JSON.stringify(data));
     
     return {
       carrier: 'Loggi',
