@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Banner {
@@ -34,7 +34,7 @@ export function useBanners() {
     fetchBanners();
   }, []);
 
-  const activeBanners = banners.filter(b => b.is_active);
+  const activeBanners = useMemo(() => banners.filter(b => b.is_active), [banners]);
 
   return { banners, activeBanners, loading, fetchBanners };
 }
