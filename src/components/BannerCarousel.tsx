@@ -1,13 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBanners, Banner } from '@/hooks/useBanners';
+import { useProducts } from '@/hooks/useProducts';
 import { cn } from '@/lib/utils';
-import { Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Volume2, VolumeX, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 export const BannerCarousel = () => {
-  const { activeBanners, loading } = useBanners();
+  const { activeBanners, loading: bannersLoading } = useBanners();
+  const { getLatestProduct, loading: productsLoading } = useProducts();
   const [current, setCurrent] = useState(0);
+  const [displayBanners, setDisplayBanners] = useState<(Banner | any)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [muted, setMuted] = useState(true);
+
+  const loading = bannersLoading || productsLoading;
 
   // Touch/swipe state
   const touchStartX = useRef(0);
@@ -15,27 +20,51 @@ export const BannerCarousel = () => {
   const isDragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const count = activeBanners.length;
-
   const next = useCallback(() => {
-    if (count <= 1) return;
-    setCurrent(c => (c + 1) % count);
-  }, [count]);
+    if (displayBanners.length <= 1) return;
+    setCurrent(c => (c + 1) % displayBanners.length);
+  }, [displayBanners.length]);
 
   const prev = useCallback(() => {
-    if (count <= 1) return;
-    setCurrent(c => (c - 1 + count) % count);
-  }, [count]);
+    if (displayBanners.length <= 1) return;
+    setCurrent(c => (c - 1 + displayBanners.length) % displayBanners.length);
+  }, [displayBanners.length]);
+
+  // Handle banner combinations
+  useEffect(() => {
+    if (loading) return;
+
+    const latestProduct = getLatestProduct();
+    let combined: (Banner | any)[] = [...activeBanners];
+
+    // Se houver um último produto, adiciona-o como banner dinâmico
+    if (latestProduct) {
+      const dynamicBanner = {
+        id: `dynamic-${latestProduct.id}`,
+        title: `NOVIDADE: ${latestProduct.name}`,
+        media_url: latestProduct.image_url,
+        media_type: 'image',
+        aspect_ratio: '16:9',
+        link_url: `/produto/${latestProduct.id}`,
+        is_dynamic: true
+      };
+      
+      // Coloca o lançamento como primeiro destaque
+      combined = [dynamicBanner, ...combined];
+    }
+
+    setDisplayBanners(combined);
+  }, [activeBanners, getLatestProduct, loading]);
 
   // Auto-advance for image slides only
   useEffect(() => {
     clearInterval(timerRef.current);
-    if (count <= 1) return;
-    const currentBanner = activeBanners[current];
+    if (displayBanners.length <= 1) return;
+    const currentBanner = displayBanners[current];
     if (currentBanner?.media_type === 'video') return;
     timerRef.current = setInterval(next, 5000);
     return () => clearInterval(timerRef.current);
-  }, [next, count, current, activeBanners]);
+  }, [next, displayBanners.length, current, displayBanners]);
 
   // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -61,17 +90,19 @@ export const BannerCarousel = () => {
     touchDeltaX.current = 0;
   }, [next, prev]);
 
-  if (loading || count === 0) return null;
+  if (loading || displayBanners.length === 0) return null;
 
-  const banner = activeBanners[current];
+  const banner = displayBanners[current];
   const isVertical = banner.aspect_ratio === '9:16';
+  const isDynamic = 'is_dynamic' in banner;
 
   return (
     <section className="w-full bg-black/5">
       <div className="container mx-auto px-4 py-3 sm:py-4">
         {banner.title && (
-          <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 tracking-tight drop-shadow-sm">
-            🔥 {banner.title}
+          <h2 className="text-center text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-3 tracking-tight drop-shadow-sm flex items-center justify-center gap-2">
+            {isDynamic ? <Sparkles className="h-5 w-5 text-accent animate-pulse" /> : '🔥'} 
+            {banner.title}
           </h2>
         )}
         <div
@@ -87,7 +118,7 @@ export const BannerCarousel = () => {
               isVertical ? "max-w-xs sm:max-w-sm mx-auto aspect-[9/16]" : "aspect-[4/3] sm:aspect-video"
             )}
           >
-            {activeBanners.map((b, i) => (
+            {displayBanners.map((b, i) => (
               <BannerSlide
                 key={b.id}
                 banner={b}
@@ -99,7 +130,7 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {count > 1 && (
+          {displayBanners.length > 1 && (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); prev(); }}
@@ -116,7 +147,7 @@ export const BannerCarousel = () => {
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                {activeBanners.map((_, i) => (
+                {displayBanners.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}

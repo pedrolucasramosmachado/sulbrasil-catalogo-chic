@@ -114,6 +114,18 @@ export const useProducts = () => {
     return products.filter(product => product.is_launch === true);
   };
 
+  const getLatestProduct = () => {
+    // Retorna o produto com a data de criação mais recente que tenha imagem e não esteja fora de estoque
+    const availableProducts = products.filter(p => !p.is_out_of_stock && p.image_url);
+    if (availableProducts.length === 0) return null;
+    
+    return [...availableProducts].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    })[0];
+  };
+
   const getCategoriesWithImages = () => {
     const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
     
@@ -290,11 +302,12 @@ export const useProducts = () => {
     getProductsByCategory,
     getCategories,
     getFeaturedProducts,
+    getPromotionProducts,
+    getLaunchProducts,
+    getLatestProduct,
     getCategoriesWithImages,
     getSubcategoriesWithData,
     getProductsBySubcategory,
     categoryHasSubcategories,
-    getPromotionProducts,
-    getLaunchProducts,
   };
 };
