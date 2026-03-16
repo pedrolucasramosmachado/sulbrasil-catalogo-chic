@@ -10,15 +10,17 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered, Sparkles, Flame, Star, PackageX } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AdminHeader } from '@/components/AdminHeader';
 import { AdminBannersSection } from '@/components/AdminBannersSection';
+import { ProductCard } from '@/components/ProductCard';
 import { cn } from '@/lib/utils';
 
 const productSchema = z.object({
@@ -32,6 +34,12 @@ const productSchema = z.object({
   display_emoji: z.string().optional(),
   model_name: z.string().optional(),
   color_name: z.string().optional(),
+  is_featured: z.boolean().default(false),
+  is_promotion: z.boolean().default(false),
+  is_launch: z.boolean().default(false),
+  is_out_of_stock: z.boolean().default(false),
+  promotion_retail_price: z.string().optional(),
+  promotion_wholesale_price: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -104,8 +112,14 @@ const AdminProducts = () => {
       display_emoji: '',
       model_name: '',
       color_name: '',
+      is_featured: false,
+      is_promotion: false,
+      is_launch: false,
+      is_out_of_stock: false,
+      promotion_retail_price: '',
+      promotion_wholesale_price: '',
     },
-  });
+});
 
   // Função para encontrar preços padrão de uma categoria
   const getDefaultPricesForCategory = (category: string) => {
@@ -201,6 +215,12 @@ const AdminProducts = () => {
         color_name: data.color_name || null,
         image_url: imageUrl || null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
+        is_featured: data.is_featured,
+        is_promotion: data.is_promotion,
+        is_launch: data.is_launch,
+        is_out_of_stock: data.is_out_of_stock,
+        promotion_retail_price: data.promotion_retail_price ? parseFloat(data.promotion_retail_price.replace(',', '.')) : null,
+        promotion_wholesale_price: data.promotion_wholesale_price ? parseFloat(data.promotion_wholesale_price.replace(',', '.')) : null,
         display_order: 0,
       };
 
@@ -272,6 +292,12 @@ const AdminProducts = () => {
       display_emoji: (product as any).display_emoji || '',
       model_name: (product as any).model_name || '',
       color_name: (product as any).color_name || '',
+      is_featured: product.is_featured || false,
+      is_promotion: product.is_promotion || false,
+      is_launch: product.is_launch || false,
+      is_out_of_stock: product.is_out_of_stock || false,
+      promotion_retail_price: product.promotion_retail_price ? product.promotion_retail_price.toString() : '',
+      promotion_wholesale_price: product.promotion_wholesale_price ? product.promotion_wholesale_price.toString() : '',
     });
     setImagePreview(product.image_url || null);
     setSelectedSizes(product.sizes || []);
@@ -725,6 +751,12 @@ const AdminProducts = () => {
                                 src={imagePreview}
                                 alt="Preview"
                                 className="w-full h-full object-cover rounded-lg border-2 border-border shadow-md"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  if (target.src !== "/placeholder.svg") {
+                                    target.src = "/placeholder.svg";
+                                  }
+                                }}
                               />
                             </div>
                           )}
@@ -1010,7 +1042,128 @@ const AdminProducts = () => {
                         </div>
                       </div>
 
-                      {/* WhatsApp Display Fields */}
+                      {/* Status do Produto */}
+                      <div className="border-t pt-4 mt-2">
+                        <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                          📌 Status e Destaques
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="is_featured"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-accent/5">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2">
+                                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                    Destaque (Capa)
+                                  </FormLabel>
+                                  <p className="text-[10px] text-muted-foreground">Define se este produto será a capa da categoria.</p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="is_launch"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-emerald-50/50">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2 text-emerald-700">
+                                    <Sparkles className="h-4 w-4" />
+                                    Lançamento
+                                  </FormLabel>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="is_promotion"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-orange-50/50">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2 text-orange-700">
+                                    <Flame className="h-4 w-4" />
+                                    Promoção
+                                  </FormLabel>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="is_out_of_stock"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-red-50/50">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2 text-red-700">
+                                    <PackageX className="h-4 w-4" />
+                                    Esgotado
+                                  </FormLabel>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Campos de preço promocional condicionais */}
+                        {form.watch('is_promotion') && (
+                          <div className="grid grid-cols-2 gap-4 mt-4 animate-in slide-in-from-top-2 duration-300">
+                            <FormField
+                              control={form.control}
+                              name="promotion_retail_price"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Preço Promo Varejo</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Ex: 19.90" className="border-orange-200" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="promotion_wholesale_price"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Preço Promo Atacado</FormLabel>
+                                  <FormControl>
+                                    <Input {...field} placeholder="Ex: 15.90" className="border-orange-200" />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
+                      </div>
+
                       <div className="border-t pt-4 mt-2">
                         <p className="text-sm font-semibold text-foreground mb-3">📱 Campos para WhatsApp</p>
                         <div className="grid grid-cols-3 gap-4">
@@ -1311,6 +1464,12 @@ const AdminProducts = () => {
                               src={product.image_url}
                               alt={product.name}
                               className="w-12 h-12 object-cover rounded border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== "/placeholder.svg") {
+                                  target.src = "/placeholder.svg";
+                                }
+                              }}
                             />
                           ) : (
                             <div className="w-12 h-12 bg-muted rounded border flex items-center justify-center">
@@ -1318,7 +1477,33 @@ const AdminProducts = () => {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            {product.name}
+                            <div className="flex flex-wrap gap-1">
+                              {product.is_featured && (
+                                <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
+                                  <Star className="h-2 w-2 fill-current" /> Capa
+                                </Badge>
+                              )}
+                              {product.is_promotion && (
+                                <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
+                                  <Flame className="h-2 w-2" /> Promo
+                                </Badge>
+                              )}
+                              {product.is_launch && (
+                                <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
+                                  <Sparkles className="h-2 w-2" /> Novidade
+                                </Badge>
+                              )}
+                              {product.is_out_of_stock && (
+                                <Badge variant="destructive" className="text-[10px] h-4 px-1 flex items-center gap-0.5">
+                                  <PackageX className="h-2 w-2" /> Esgotado
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>{product.category}</TableCell>
                         <TableCell>
                           {product.subcategory ? (
