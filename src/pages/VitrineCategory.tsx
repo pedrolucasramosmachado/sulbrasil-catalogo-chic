@@ -16,7 +16,8 @@ const VitrineCategory = () => {
   const [zoomProduct, setZoomProduct] = useState<Product | null>(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   
-  const { products, loading, error, getProductsByCategory, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories, getPromotionProducts, getLaunchProducts } = useProducts();
+  const { products, loading, hasMore, error, loadMore, getProductsByCategory, getSubcategoriesWithData, getProductsBySubcategory, categoryHasSubcategories, getPromotionProducts, getLaunchProducts } = useProducts();
+  const [loadMoreRef, setLoadMoreRef] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -108,9 +109,13 @@ const VitrineCategory = () => {
       {/* Products/Subcategories Section */}
       <section className="py-8 sm:py-12 md:py-16 relative">
         <div className="container mx-auto px-4">
-          {loading ? (
-            <div className="text-center py-16">
-              <div className="text-2xl mb-4">Carregando...</div>
+          {loading && products.length === 0 ? (
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-white rounded-xl border border-border/30 overflow-hidden animate-pulse">
+                  <div className="h-full w-full bg-gradient-to-br from-surface-elevated to-surface"></div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-16">
@@ -133,20 +138,37 @@ const VitrineCategory = () => {
               ))}
             </div>
           ) : showProducts ? (
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
-              {currentProducts.map((product, index) => (
-                <div 
-                  key={product.id} 
-                  className="flex animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <ProductCardVitrine
-                    product={product}
-                    onImageClick={handleImageClick}
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+                {currentProducts.map((product, index) => (
+                  <div 
+                    key={product.id} 
+                    className="flex animate-fade-in"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <ProductCardVitrine
+                      product={product}
+                      onImageClick={handleImageClick}
+                    />
+                  </div>
+                ))}
+              </div>
+              
+              {/* Infinite Scroll Sensor */}
+              <div ref={setLoadMoreRef} className="h-20 flex items-center justify-center mt-8">
+                {loading && hasMore && (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-sm text-foreground-muted animate-pulse">Carregando mais modelos...</p>
+                  </div>
+                )}
+                {!hasMore && currentProducts.length > 0 && (
+                  <p className="text-foreground-muted text-sm font-medium opacity-50">
+                    Você chegou ao fim dos modelos ✨
+                  </p>
+                )}
+              </div>
+            </>
           ) : (
             <div className="text-center py-16">
               <div className="mb-4 text-6xl opacity-20">📦</div>

@@ -6,13 +6,9 @@ import { Volume2, VolumeX, ChevronLeft, ChevronRight, Sparkles } from 'lucide-re
 
 export const BannerCarousel = () => {
   const { activeBanners, loading: bannersLoading } = useBanners();
-  const { getLatestProduct, loading: productsLoading } = useProducts();
   const [current, setCurrent] = useState(0);
-  const [displayBanners, setDisplayBanners] = useState<(Banner | any)[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
   const [muted, setMuted] = useState(true);
-
-  const loading = bannersLoading || productsLoading;
 
   // Touch/swipe state
   const touchStartX = useRef(0);
@@ -21,50 +17,24 @@ export const BannerCarousel = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const next = useCallback(() => {
-    if (displayBanners.length <= 1) return;
-    setCurrent(c => (c + 1) % displayBanners.length);
-  }, [displayBanners.length]);
+    if (activeBanners.length <= 1) return;
+    setCurrent(c => (c + 1) % activeBanners.length);
+  }, [activeBanners.length]);
 
   const prev = useCallback(() => {
-    if (displayBanners.length <= 1) return;
-    setCurrent(c => (c - 1 + displayBanners.length) % displayBanners.length);
-  }, [displayBanners.length]);
-
-  // Handle banner combinations
-  useEffect(() => {
-    if (loading) return;
-
-    const latestProduct = getLatestProduct();
-    let combined: (Banner | any)[] = [...activeBanners];
-
-    // Se houver um último produto, adiciona-o como banner dinâmico
-    if (latestProduct) {
-      const dynamicBanner = {
-        id: `dynamic-${latestProduct.id}`,
-        title: `NOVIDADE: ${latestProduct.name}`,
-        media_url: latestProduct.image_url,
-        media_type: 'image',
-        aspect_ratio: '16:9',
-        link_url: `/produto/${latestProduct.id}`,
-        is_dynamic: true
-      };
-      
-      // Coloca o lançamento como primeiro destaque
-      combined = [dynamicBanner, ...combined];
-    }
-
-    setDisplayBanners(combined);
-  }, [activeBanners, getLatestProduct, loading]);
+    if (activeBanners.length <= 1) return;
+    setCurrent(c => (c - 1 + activeBanners.length) % activeBanners.length);
+  }, [activeBanners.length]);
 
   // Auto-advance for image slides only
   useEffect(() => {
     clearInterval(timerRef.current);
-    if (displayBanners.length <= 1) return;
-    const currentBanner = displayBanners[current];
+    if (activeBanners.length <= 1) return;
+    const currentBanner = activeBanners[current];
     if (currentBanner?.media_type === 'video') return;
     timerRef.current = setInterval(next, 5000);
     return () => clearInterval(timerRef.current);
-  }, [next, displayBanners.length, current, displayBanners]);
+  }, [next, activeBanners.length, current, activeBanners]);
 
   // Swipe handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -90,11 +60,11 @@ export const BannerCarousel = () => {
     touchDeltaX.current = 0;
   }, [next, prev]);
 
-  if (loading || displayBanners.length === 0) return null;
+  if (bannersLoading || activeBanners.length === 0) return null;
 
-  const banner = displayBanners[current];
+  const banner = activeBanners[current];
   const isVertical = banner.aspect_ratio === '9:16';
-  const isDynamic = 'is_dynamic' in banner;
+  const isDynamic = false;
 
   return (
     <section className="w-full bg-black/5">
@@ -118,7 +88,7 @@ export const BannerCarousel = () => {
               isVertical ? "max-w-xs sm:max-w-sm mx-auto aspect-[9/16]" : "aspect-[4/3] sm:aspect-video"
             )}
           >
-            {displayBanners.map((b, i) => (
+            {activeBanners.map((b, i) => (
               <BannerSlide
                 key={b.id}
                 banner={b}
@@ -130,7 +100,7 @@ export const BannerCarousel = () => {
             ))}
           </div>
 
-          {displayBanners.length > 1 && (
+          {activeBanners.length > 1 && (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); prev(); }}
@@ -147,7 +117,7 @@ export const BannerCarousel = () => {
                 <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-                {displayBanners.map((_, i) => (
+                {activeBanners.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrent(i)}

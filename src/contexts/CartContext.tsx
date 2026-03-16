@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { Product } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
+import { formatCurrency } from "@/lib/format";
 
 export interface CartItem {
   product: Product;
@@ -91,16 +92,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const getItemPrice = useCallback(
     (item: CartItem) => {
       const { product } = item;
+      let price = 0;
       if (isWholesale) {
         if (product.is_promotion && product.promotion_wholesale_price) {
-          return Number(product.promotion_wholesale_price);
+          price = Number(product.promotion_wholesale_price);
+        } else {
+          price = Number(product.wholesale_price || product.retail_price || 0);
         }
-        return Number(product.wholesale_price || product.retail_price || 0);
+      } else {
+        if (product.is_promotion && product.promotion_retail_price) {
+          price = Number(product.promotion_retail_price);
+        } else {
+          price = Number(product.retail_price || product.wholesale_price || 0);
+        }
       }
-      if (product.is_promotion && product.promotion_retail_price) {
-        return Number(product.promotion_retail_price);
+
+      // Lógica de acréscimo de R$ 10 para tamanho G1 na categoria Conjuntos
+      if (item.selectedSize === 'G1' && product.category?.toLowerCase() === 'conjuntos') {
+        price += 10;
       }
-      return Number(product.retail_price || product.wholesale_price || 0);
+
+      return price;
     },
     [isWholesale]
   );
@@ -186,12 +198,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       message += `   Quant. Total: ${groupTotalQty}`;
       if (groupTotalPieces !== groupTotalQty) message += ` (${groupTotalPieces} peças)`;
       message += `\n`;
-      message += `   Valor pçs: R$ ${totalModelValue.toFixed(2)}\n\n`;
+      message += `   Valor pçs: ${formatCurrency(totalModelValue)}\n\n`;
       idx++;
     });
 
     message += `━━━━━━━━━━━━━━━━\n`;
-    message += `💰 *TOTAL DO PEDIDO: R$ ${getTotal().toFixed(2)}*\n`;
+    message += `💰 *TOTAL FINAL: ${formatCurrency(getTotal())}*\n`;
 
     return message;
   }, [items, isWholesale, totalPieces, customerName, getItemPrice, getTotal, getDisplayColor, getDisplayModel, getDisplayEmoji]);

@@ -25,6 +25,7 @@ export const CartDrawer = () => {
     sendToWhatsApp,
   } = useCart();
 
+
   return (
     <Sheet open={isCartOpen} onOpenChange={setIsCartOpen}>
       <SheetContent className="w-full sm:max-w-lg flex flex-col p-0">

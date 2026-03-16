@@ -62,6 +62,12 @@ export const ProductDetailModal = ({
                   src={product.image_url || "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== "/placeholder.svg") {
+                      target.src = "/placeholder.svg";
+                    }
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background/90 backdrop-blur-sm rounded-full p-3">
@@ -85,6 +91,12 @@ export const ProductDetailModal = ({
                       src={product.image_url || "/placeholder.svg"}
                       alt={`${product.name} - ${i}`}
                       className="w-full h-full object-cover rounded-lg opacity-70 hover:opacity-100 transition-opacity"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== "/placeholder.svg") {
+                          target.src = "/placeholder.svg";
+                        }
+                      }}
                     />
                   </div>
                 ))}
@@ -219,6 +231,12 @@ export const ProductDetailModal = ({
             alt={product.name}
             className="max-w-full max-h-full object-contain pointer-events-auto"
             onClick={(e) => e.stopPropagation()}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== "/placeholder.svg") {
+                target.src = "/placeholder.svg";
+              }
+            }}
           />
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm pointer-events-none">
             Toque fora da imagem para fechar

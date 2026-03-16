@@ -6,6 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Product } from "@/hooks/useProducts";
 import { useCart } from "@/contexts/CartContext";
+import { formatCurrency, getPriceAdjustment } from "@/lib/format";
 
 
 interface ProductCardProps {
@@ -27,6 +28,21 @@ export const ProductCard = ({
     product.sizes && product.sizes.length === 1 ? product.sizes[0] : undefined
   );
   const { addItem } = useCart();
+  const adjustment = getPriceAdjustment(product.category, selectedSize);
+
+  const getPrice = (type: 'retail' | 'wholesale') => {
+    let basePrice = 0;
+    if (type === 'retail') {
+      basePrice = Number(product.is_promotion && product.promotion_retail_price
+        ? product.promotion_retail_price
+        : product.retail_price || 0);
+    } else {
+      basePrice = Number(product.is_promotion && product.promotion_wholesale_price
+        ? product.promotion_wholesale_price
+        : product.wholesale_price || 0);
+    }
+    return basePrice + adjustment;
+  };
 
   const hasSizes = product.sizes && product.sizes.length > 0;
   const needsSizeSelection = hasSizes && product.sizes!.length > 1;
@@ -59,6 +75,12 @@ export const ProductCard = ({
               product.is_out_of_stock && "opacity-50"
             )}
             onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== "/placeholder.svg") {
+                target.src = "/placeholder.svg";
+              }
+            }}
           />
           
           {/* Out of Stock Badge */}
@@ -117,9 +139,7 @@ export const ProductCard = ({
                   <span>Varejo:</span>
                 </div>
                 <div className="text-sm font-bold text-[#E91E63]">
-                  R$ {product.is_promotion && product.promotion_retail_price
-                    ? Number(product.promotion_retail_price).toFixed(2)
-                    : Number(product.retail_price).toFixed(2)}
+                  {formatCurrency(getPrice('retail'))}
                 </div>
               </div>
             )}
@@ -132,9 +152,7 @@ export const ProductCard = ({
                   <span>Atacado:</span>
                 </div>
                 <div className="text-sm font-bold text-[#9C27B0]">
-                  R$ {product.is_promotion && product.promotion_wholesale_price
-                    ? Number(product.promotion_wholesale_price).toFixed(2)
-                    : Number(product.wholesale_price).toFixed(2)}
+                  {formatCurrency(getPrice('wholesale'))}
                 </div>
               </div>
             )}
@@ -159,22 +177,26 @@ export const ProductCard = ({
         {hasSizes && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 w-full mb-1">
             {product.sizes!.map(size => (
-              <button
-                key={size}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedSize(prev => prev === size && needsSizeSelection ? undefined : size);
-                }}
-                className={cn(
-                  "text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-md border transition-all duration-200",
-                  selectedSize === size
-                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-muted text-foreground border-border/50 hover:border-primary/50"
+              <div key={size} className="flex flex-col items-center gap-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedSize(prev => prev === size && needsSizeSelection ? undefined : size);
+                  }}
+                  className={cn(
+                    "text-xs sm:text-sm font-semibold px-2.5 py-1 rounded-md border transition-all duration-200",
+                    selectedSize === size
+                      ? "bg-primary text-primary-foreground border-primary shadow-md"
+                      : "bg-muted text-foreground border-border/50 hover:border-primary/50"
+                  )}
+                >
+                  {size}
+                </button>
+                {size === 'G1' && product.category?.toLowerCase() === 'conjuntos' && (
+                  <span className="text-[10px] text-accent font-bold leading-none">+ R$ 10</span>
                 )}
-              >
-                {size}
-              </button>
+              </div>
             ))}
           </div>
         )}

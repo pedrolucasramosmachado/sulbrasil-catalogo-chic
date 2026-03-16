@@ -34,6 +34,12 @@ export const ProductCardVitrine = ({
               product.is_out_of_stock && "opacity-50"
             )}
             onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== "/placeholder.svg") {
+                target.src = "/placeholder.svg";
+              }
+            }}
           />
           
           {/* Out of Stock Badge */}

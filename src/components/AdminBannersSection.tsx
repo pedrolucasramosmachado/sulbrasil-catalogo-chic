@@ -162,7 +162,17 @@ export const AdminBannersSection = () => {
               {newFile?.type.startsWith('video/') ? (
                 <video src={preview} className="rounded-lg w-full" controls muted />
               ) : (
-                <img src={preview} className="rounded-lg w-full" alt="Preview" />
+                <img 
+                  src={preview} 
+                  className="rounded-lg w-full" 
+                  alt="Preview" 
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    if (target.src !== "/placeholder.svg") {
+                      target.src = "/placeholder.svg";
+                    }
+                  }}
+                />
               )}
             </div>
           )}
@@ -192,7 +202,17 @@ export const AdminBannersSection = () => {
                       <Video className="h-4 w-4 text-muted-foreground" />
                     </div>
                   ) : (
-                    <img src={banner.media_url} alt="" className="w-full h-full object-cover" />
+                    <img 
+                      src={banner.media_url} 
+                      alt="" 
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== "/placeholder.svg") {
+                          target.src = "/placeholder.svg";
+                        }
+                      }}
+                    />
                   )}
                 </div>
 

@@ -52,8 +52,12 @@ const Vitrine = () => {
           </div>
 
           {loading ? (
-            <div className="text-center py-16">
-              <div className="text-2xl mb-4">Carregando categorias...</div>
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-white/50 backdrop-blur-sm rounded-xl border border-border/30 overflow-hidden animate-pulse">
+                  <div className="h-full w-full bg-gradient-to-br from-surface-elevated to-surface"></div>
+                </div>
+              ))}
             </div>
           ) : error ? (
             <div className="text-center py-16">
@@ -115,6 +119,12 @@ const VitrineCategoryCard = ({
               imageLoaded ? "opacity-100" : "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== "/placeholder.svg") {
+                target.src = "/placeholder.svg";
+              }
+            }}
           />
           
           {/* Gradient Overlay */}

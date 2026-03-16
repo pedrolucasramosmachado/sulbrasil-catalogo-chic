@@ -26,8 +26,10 @@ export interface Product {
 }
 
 interface CategoryOrder {
+  id: string;
   name: string;
   display_order: number;
+  cover_image_url?: string | null;
 }
 
 export const useProducts = () => {
@@ -37,7 +39,7 @@ export const useProducts = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 1000; // Aumentado para carregar todo o catálogo (~300 itens) e não quebrar busca/categorias
+  const PAGE_SIZE = 1000;
 
   const fetchProducts = async (isInitial = true) => {
     try {
@@ -46,16 +48,15 @@ export const useProducts = () => {
       const from = currentPage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       
-      // Fetch products and category orders in parallel
       const [productsRes, categoriesRes] = await Promise.all([
         supabase
           .from('products')
-          .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at')
+          .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at, weight_kg')
           .range(from, to)
           .order('created_at', { ascending: true }),
         supabase
           .from('categories')
-          .select('name, display_order')
+          .select('id, name, display_order, cover_image_url')
           .order('display_order', { ascending: true })
       ]);
 
@@ -115,118 +116,97 @@ export const useProducts = () => {
   };
 
   const getLatestProduct = () => {
-    // Retorna o produto com a data de criação mais recente que tenha imagem e não esteja fora de estoque
     const availableProducts = products.filter(p => !p.is_out_of_stock && p.image_url);
     if (availableProducts.length === 0) return null;
     
     return [...availableProducts].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
       return dateB - dateA;
     })[0];
   };
 
   const getCategoriesWithImages = () => {
-    const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
-    
-    // Add "Promoções da Semana" com prioridade (Destaque > Recente)
-    const promoProducts = [...getPromotionProducts()].sort((a, b) => {
-      if (a.is_featured && !b.is_featured) return -1;
-      if (!a.is_featured && b.is_featured) return 1;
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return dateB - dateA;
-    });
+    const categoriesWithData = new Map<string, { 
+      minWholesale: number; 
+      minRetail: number; 
+      imageUrl?: string;
+      manualCover?: string | null;
+    }>();
 
-    if (promoProducts.length > 0 && promoProducts[0].image_url) {
-      const minPromoWholesale = Math.min(...promoProducts.map(p => p.promotion_wholesale_price || p.wholesale_price || Infinity).filter(p => p !== Infinity));
-      const minPromoRetail = Math.min(...promoProducts.map(p => p.promotion_retail_price || p.retail_price || Infinity).filter(p => p !== Infinity));
-      
-      categoriesMap.set('Promoções da Semana 🔥', {
-        imageUrl: promoProducts[0].image_url,
-        minWholesale: minPromoWholesale === Infinity ? null : minPromoWholesale,
-        minRetail: minPromoRetail === Infinity ? null : minPromoRetail,
+    // First, populate from categoryOrders (manual configuration)
+    categoryOrders.forEach(cat => {
+      const name = cat.name.trim();
+      categoriesWithData.set(name, {
+        minWholesale: Infinity,
+        minRetail: Infinity,
+        manualCover: cat.cover_image_url,
+        imageUrl: cat.cover_image_url || undefined
       });
-    }
-    
-    // Add "Lançamentos" com prioridade (Destaque > Recente)
-    const launchProducts = [...getLaunchProducts()].sort((a, b) => {
-      if (a.is_featured && !b.is_featured) return -1;
-      if (!a.is_featured && b.is_featured) return 1;
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return dateB - dateA;
     });
 
-    if (launchProducts.length > 0 && launchProducts[0].image_url) {
-      const minLaunchWholesale = Math.min(...launchProducts.map(p => p.wholesale_price || Infinity).filter(p => p !== Infinity));
-      const minLaunchRetail = Math.min(...launchProducts.map(p => p.retail_price || Infinity).filter(p => p !== Infinity));
+    // Then, aggregate data from products
+    products.forEach((product) => {
+      const productCategory = product.category?.trim();
+      if (!productCategory) return;
       
-      categoriesMap.set('Lançamentos ✨', {
-        imageUrl: launchProducts[0].image_url,
-        minWholesale: minLaunchWholesale === Infinity ? null : minLaunchWholesale,
-        minRetail: minLaunchRetail === Infinity ? null : minLaunchRetail,
-      });
-    }
-    
-    // Adicionar categorias normais com lógica de prioridade (Destaque > Recente)
-    const sortedProducts = [...products].sort((a, b) => {
-      // Prioridade 1: Destaque (is_featured)
-      if (a.is_featured && !b.is_featured) return -1;
-      if (!a.is_featured && b.is_featured) return 1;
+      let data = categoriesWithData.get(productCategory);
       
-      // Prioridade 2: Mais recente (created_at)
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return dateB - dateA;
-    });
+      if (!data) {
+        data = { minWholesale: Infinity, minRetail: Infinity };
+        categoriesWithData.set(productCategory, data);
+      }
 
-    sortedProducts.forEach(product => {
-      const category = product.category;
-      if (!category || !product.image_url) return;
+      // Track prices
+      const wPrice = product.wholesale_price || 0;
+      const rPrice = product.retail_price || 0;
+      
+      if (wPrice > 0 && wPrice < data.minWholesale) data.minWholesale = wPrice;
+      if (rPrice > 0 && rPrice < data.minRetail) data.minRetail = rPrice;
 
-      if (!categoriesMap.has(category)) {
-        categoriesMap.set(category, {
-          imageUrl: product.image_url,
-          minWholesale: product.wholesale_price || null,
-          minRetail: product.retail_price || null
-        });
+      // If no manual cover, use the first product image found
+      if (!data.manualCover && !data.imageUrl && product.image_url) {
+        data.imageUrl = product.image_url;
       }
     });
-    
-    // Build result with special categories first, then sorted by display_order
-    const result: Array<{ category: string; imageUrl: string; minWholesalePrice: number | null; minRetailPrice: number | null }> = [];
-    
-    // Add special categories first (Promoções, Lançamentos)
-    const specialCategories = ['Promoções da Semana 🔥', 'Lançamentos ✨'];
-    specialCategories.forEach(cat => {
-      if (categoriesMap.has(cat)) {
-        const data = categoriesMap.get(cat)!;
-        result.push({
-          category: cat,
-          imageUrl: data.imageUrl,
-          minWholesalePrice: data.minWholesale,
-          minRetailPrice: data.minRetail
-        });
-        categoriesMap.delete(cat);
-      }
-    });
-    
-    // Sort remaining categories by display_order from the categories table
-    const remainingCategories = Array.from(categoriesMap.entries()).map(([category, data]) => ({
-      category,
-      imageUrl: data.imageUrl,
-      minWholesalePrice: data.minWholesale,
-      minRetailPrice: data.minRetail
-    }));
-    
-    remainingCategories.sort((a, b) => {
-      const orderA = categoryOrders.find(c => c.name.toLowerCase() === a.category.toLowerCase())?.display_order ?? 9999;
-      const orderB = categoryOrders.find(c => c.name.toLowerCase() === b.category.toLowerCase())?.display_order ?? 9999;
-      return orderA - orderB;
-    });
-    
-    return [...result, ...remainingCategories];
+
+    // Build the final list
+    const result = Array.from(categoriesWithData.entries())
+      .map(([category, data]) => ({
+        category,
+        minWholesalePrice: data.minWholesale === Infinity ? 0 : data.minWholesale,
+        minRetailPrice: data.minRetail === Infinity ? 0 : data.minRetail,
+        imageUrl: data.imageUrl || '/placeholder.svg',
+        displayOrder: categoryOrders.find(c => c.name.trim() === category)?.display_order ?? 999
+      }))
+      .sort((a, b) => a.displayOrder - b.displayOrder);
+
+    // Add Special Categories (Promotions and Launches)
+    const promoProducts = getPromotionProducts();
+    if (promoProducts.length > 0) {
+      const promoConfig = categoryOrders.find(c => ["promoções da semana", "promoções"].includes(c.name.trim().toLowerCase()));
+      result.unshift({
+        category: "Promoções da Semana",
+        minWholesalePrice: Math.min(...promoProducts.map(p => p.promotion_wholesale_price || p.wholesale_price || Infinity).filter(p => p !== Infinity)),
+        minRetailPrice: Math.min(...promoProducts.map(p => p.promotion_retail_price || p.retail_price || Infinity).filter(p => p !== Infinity)),
+        imageUrl: promoConfig?.cover_image_url || promoProducts[0].image_url || '/placeholder.svg',
+        displayOrder: -2
+      });
+    }
+
+    const launchProducts = getLaunchProducts();
+    if (launchProducts.length > 0) {
+      const launchConfig = categoryOrders.find(c => c.name.trim().toLowerCase() === "lançamentos");
+      result.unshift({
+        category: "Lançamentos",
+        minWholesalePrice: Math.min(...launchProducts.map(p => p.wholesale_price || Infinity).filter(p => p !== Infinity)),
+        minRetailPrice: Math.min(...launchProducts.map(p => p.retail_price || Infinity).filter(p => p !== Infinity)),
+        imageUrl: launchConfig?.cover_image_url || launchProducts[0].image_url || '/placeholder.svg',
+        displayOrder: -1
+      });
+    }
+
+    return result;
   };
 
   const getSubcategoriesWithData = (category: string) => {
@@ -250,11 +230,9 @@ export const useProducts = () => {
           });
         } else {
           const current = subcategoryMap.get(subcat)!;
-          // Atualizar com o menor preço de atacado
           if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
             current.minWholesale = product.wholesale_price;
           }
-          // Atualizar com o menor preço de varejo
           if (product.retail_price && (!current.minRetail || product.retail_price < current.minRetail)) {
             current.minRetail = product.retail_price;
           }
@@ -275,13 +253,10 @@ export const useProducts = () => {
 
   const categoryHasSubcategories = (category: string) => {
     const categoryProducts = getProductsByCategory(category);
-    const hasSubcats = categoryProducts.some(product => 
+    return categoryProducts.some(product => 
       product.subcategory && 
-      product.subcategory.trim() !== '' && 
-      product.subcategory !== null
+      product.subcategory.trim() !== ''
     );
-    console.log(`Category "${category}" has subcategories:`, hasSubcats, categoryProducts.length, 'products');
-    return hasSubcats;
   };
 
   const getProductById = async (id: string) => {

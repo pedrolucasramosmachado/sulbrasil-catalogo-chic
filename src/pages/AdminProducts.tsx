@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered, Sparkles, Flame, Star, PackageX } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,12 +34,6 @@ const productSchema = z.object({
   display_emoji: z.string().optional(),
   model_name: z.string().optional(),
   color_name: z.string().optional(),
-  is_featured: z.boolean().default(false),
-  is_promotion: z.boolean().default(false),
-  is_launch: z.boolean().default(false),
-  is_out_of_stock: z.boolean().default(false),
-  promotion_retail_price: z.string().optional(),
-  promotion_wholesale_price: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
@@ -65,16 +59,7 @@ const AdminProducts = () => {
     wholesale_price: '',
     category: '',
     subcategory: '',
-    is_featured: '' as '' | 'true' | 'false',
-    is_promotion: '' as '' | 'true' | 'false',
-    is_launch: '' as '' | 'true' | 'false',
-    is_out_of_stock: '' as '' | 'true' | 'false',
-    promotion_retail_price: '',
-    promotion_wholesale_price: '',
   });
-  const [isQuickPromoOpen, setIsQuickPromoOpen] = useState(false);
-  const [promoWholesalePrice, setPromoWholesalePrice] = useState('');
-  const [promoRetailPrice, setPromoRetailPrice] = useState('');
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
   // Size presets by category
@@ -112,12 +97,6 @@ const AdminProducts = () => {
       display_emoji: '',
       model_name: '',
       color_name: '',
-      is_featured: false,
-      is_promotion: false,
-      is_launch: false,
-      is_out_of_stock: false,
-      promotion_retail_price: '',
-      promotion_wholesale_price: '',
     },
 });
 
@@ -215,12 +194,6 @@ const AdminProducts = () => {
         color_name: data.color_name || null,
         image_url: imageUrl || null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
-        is_featured: data.is_featured,
-        is_promotion: data.is_promotion,
-        is_launch: data.is_launch,
-        is_out_of_stock: data.is_out_of_stock,
-        promotion_retail_price: data.promotion_retail_price ? parseFloat(data.promotion_retail_price.replace(',', '.')) : null,
-        promotion_wholesale_price: data.promotion_wholesale_price ? parseFloat(data.promotion_wholesale_price.replace(',', '.')) : null,
         display_order: 0,
       };
 
@@ -292,12 +265,6 @@ const AdminProducts = () => {
       display_emoji: (product as any).display_emoji || '',
       model_name: (product as any).model_name || '',
       color_name: (product as any).color_name || '',
-      is_featured: product.is_featured || false,
-      is_promotion: product.is_promotion || false,
-      is_launch: product.is_launch || false,
-      is_out_of_stock: product.is_out_of_stock || false,
-      promotion_retail_price: product.promotion_retail_price ? product.promotion_retail_price.toString() : '',
-      promotion_wholesale_price: product.promotion_wholesale_price ? product.promotion_wholesale_price.toString() : '',
     });
     setImagePreview(product.image_url || null);
     setSelectedSizes(product.sizes || []);
@@ -356,28 +323,6 @@ const AdminProducts = () => {
       if (bulkEditData.subcategory) {
         updates.subcategory = bulkEditData.subcategory;
       }
-      if (bulkEditData.is_featured !== '') {
-        updates.is_featured = bulkEditData.is_featured === 'true';
-      }
-      if (bulkEditData.is_promotion !== '') {
-        updates.is_promotion = bulkEditData.is_promotion === 'true';
-        if (bulkEditData.is_promotion === 'false') {
-          updates.promotion_retail_price = null;
-          updates.promotion_wholesale_price = null;
-        }
-      }
-      if (bulkEditData.is_launch !== '') {
-        updates.is_launch = bulkEditData.is_launch === 'true';
-      }
-      if (bulkEditData.is_out_of_stock !== '') {
-        updates.is_out_of_stock = bulkEditData.is_out_of_stock === 'true';
-      }
-      if (bulkEditData.promotion_retail_price) {
-        updates.promotion_retail_price = parseFloat(bulkEditData.promotion_retail_price.replace(',', '.'));
-      }
-      if (bulkEditData.promotion_wholesale_price) {
-        updates.promotion_wholesale_price = parseFloat(bulkEditData.promotion_wholesale_price.replace(',', '.'));
-      }
 
       if (Object.keys(updates).length === 0) {
         toast({
@@ -409,12 +354,6 @@ const AdminProducts = () => {
         wholesale_price: '',
         category: '',
         subcategory: '',
-        is_featured: '',
-        is_promotion: '',
-        is_launch: '',
-        is_out_of_stock: '',
-        promotion_retail_price: '',
-        promotion_wholesale_price: '',
       });
       fetchProducts();
     } catch (error) {
@@ -461,118 +400,9 @@ const AdminProducts = () => {
     }
   };
 
-  const handleToggleLaunch = async (setAsLaunch: boolean) => {
-    if (selectedProducts.size === 0) return;
+// Funções de toggle de status removidas
 
-    try {
-      for (const productId of Array.from(selectedProducts)) {
-        const { error } = await supabase
-          .from('products')
-          .update({ is_launch: setAsLaunch })
-          .eq('id', productId);
-        
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'Sucesso',
-        description: setAsLaunch 
-          ? `${selectedProducts.size} produto(s) marcado(s) como lançamento!`
-          : `Lançamento removido de ${selectedProducts.size} produto(s)!`,
-      });
-
-      setSelectedProducts(new Set());
-      fetchProducts();
-    } catch (error) {
-      console.error('Erro ao alterar lançamento:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao alterar lançamento',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleToggleOutOfStock = async (setAsOutOfStock: boolean) => {
-    if (selectedProducts.size === 0) return;
-
-    try {
-      for (const productId of Array.from(selectedProducts)) {
-        const { error } = await supabase
-          .from('products')
-          .update({ is_out_of_stock: setAsOutOfStock })
-          .eq('id', productId);
-        
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'Sucesso',
-        description: setAsOutOfStock 
-          ? `${selectedProducts.size} produto(s) marcado(s) como esgotado!`
-          : `Estoque restaurado para ${selectedProducts.size} produto(s)!`,
-      });
-
-      setSelectedProducts(new Set());
-      fetchProducts();
-    } catch (error) {
-      console.error('Erro ao alterar estoque:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao alterar estoque',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleQuickPromotion = async () => {
-    if (selectedProducts.size === 0 || (!promoWholesalePrice && !promoRetailPrice)) {
-      toast({
-        title: 'Atenção',
-        description: 'Selecione produtos e informe pelo menos um preço promocional',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const updates: any = { is_promotion: true };
-      
-      if (promoWholesalePrice) {
-        updates.promotion_wholesale_price = parseFloat(promoWholesalePrice.replace(',', '.'));
-      }
-      if (promoRetailPrice) {
-        updates.promotion_retail_price = parseFloat(promoRetailPrice.replace(',', '.'));
-      }
-      
-      for (const productId of Array.from(selectedProducts)) {
-        const { error } = await supabase
-          .from('products')
-          .update(updates)
-          .eq('id', productId);
-        
-        if (error) throw error;
-      }
-
-      toast({
-        title: 'Sucesso',
-        description: `${selectedProducts.size} produto(s) marcado(s) como promoção!`,
-      });
-
-      setIsQuickPromoOpen(false);
-      setSelectedProducts(new Set());
-      setPromoWholesalePrice('');
-      setPromoRetailPrice('');
-      fetchProducts();
-    } catch (error) {
-      console.error('Erro ao criar promoção:', error);
-      toast({
-        title: 'Erro',
-        description: 'Erro ao criar promoção rápida',
-        variant: 'destructive',
-      });
-    }
-  };
+// Lógica de promoção rápida removida
 
   const deleteProduct = async (productId: string) => {
     try {
@@ -663,55 +493,9 @@ const AdminProducts = () => {
               <div className="flex flex-wrap gap-2">
                 {selectedProducts.size > 0 && (
                   <>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsBulkEditOpen(true)}
-                      className="flex items-center gap-2"
-                    >
+                    <Button variant="outline" onClick={() => setIsBulkEditOpen(true)} className="flex items-center gap-2">
                       <Edit2 className="h-4 w-4" />
                       Editar {selectedProducts.size}
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      onClick={() => setIsQuickPromoOpen(true)}
-                      className="flex items-center gap-2 bg-gradient-to-r from-accent to-primary"
-                    >
-                      🔥 Promoção
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={handleRemovePromotion}
-                      className="flex items-center gap-2 text-orange-600 border-orange-300 hover:bg-orange-50"
-                    >
-                      ❌ Tirar Promo
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleToggleLaunch(true)}
-                      className="flex items-center gap-2 text-emerald-600 border-emerald-300 hover:bg-emerald-50"
-                    >
-                      ✨ Lançamento
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleToggleLaunch(false)}
-                      className="flex items-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50"
-                    >
-                      ❌ Tirar Lanç.
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleToggleOutOfStock(true)}
-                      className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      🚫 Esgotado
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => handleToggleOutOfStock(false)}
-                      className="flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50"
-                    >
-                      ✅ Em Estoque
                     </Button>
                   </>
                 )}
@@ -1042,128 +826,7 @@ const AdminProducts = () => {
                         </div>
                       </div>
 
-                      {/* Status do Produto */}
-                      <div className="border-t pt-4 mt-2">
-                        <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                          📌 Status e Destaques
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="is_featured"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-accent/5">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="flex items-center gap-2">
-                                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                    Destaque (Capa)
-                                  </FormLabel>
-                                  <p className="text-[10px] text-muted-foreground">Define se este produto será a capa da categoria.</p>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="is_launch"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-emerald-50/50">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="flex items-center gap-2 text-emerald-700">
-                                    <Sparkles className="h-4 w-4" />
-                                    Lançamento
-                                  </FormLabel>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="is_promotion"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-orange-50/50">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="flex items-center gap-2 text-orange-700">
-                                    <Flame className="h-4 w-4" />
-                                    Promoção
-                                  </FormLabel>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="is_out_of_stock"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-red-50/50">
-                                <div className="space-y-0.5">
-                                  <FormLabel className="flex items-center gap-2 text-red-700">
-                                    <PackageX className="h-4 w-4" />
-                                    Esgotado
-                                  </FormLabel>
-                                </div>
-                                <FormControl>
-                                  <Switch
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Campos de preço promocional condicionais */}
-                        {form.watch('is_promotion') && (
-                          <div className="grid grid-cols-2 gap-4 mt-4 animate-in slide-in-from-top-2 duration-300">
-                            <FormField
-                              control={form.control}
-                              name="promotion_retail_price"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Preço Promo Varejo</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} placeholder="Ex: 19.90" className="border-orange-200" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name="promotion_wholesale_price"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Preço Promo Atacado</FormLabel>
-                                  <FormControl>
-                                    <Input {...field} placeholder="Ex: 15.90" className="border-orange-200" />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-                        )}
-                      </div>
-
+                      {/* WhatsApp Display Fields */}
                       <div className="border-t pt-4 mt-2">
                         <p className="text-sm font-semibold text-foreground mb-3">📱 Campos para WhatsApp</p>
                         <div className="grid grid-cols-3 gap-4">
@@ -1295,90 +958,6 @@ const AdminProducts = () => {
                       </div>
                     </div>
 
-                    {/* Status Badges */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">⭐ Destaque</label>
-                        <Select 
-                          value={bulkEditData.is_featured || undefined} 
-                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_featured: value as '' | 'true' | 'false'})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Não alterar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Sim</SelectItem>
-                            <SelectItem value="false">Não</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">🔥 Promoção</label>
-                        <Select 
-                          value={bulkEditData.is_promotion || undefined} 
-                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_promotion: value as '' | 'true' | 'false'})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Não alterar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Sim</SelectItem>
-                            <SelectItem value="false">Não</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">✨ Lançamento</label>
-                        <Select 
-                          value={bulkEditData.is_launch || undefined} 
-                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_launch: value as '' | 'true' | 'false'})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Não alterar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Sim</SelectItem>
-                            <SelectItem value="false">Não</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">🚫 Esgotado</label>
-                        <Select 
-                          value={bulkEditData.is_out_of_stock || undefined} 
-                          onValueChange={(value) => setBulkEditData({...bulkEditData, is_out_of_stock: value as '' | 'true' | 'false'})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Não alterar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="true">Sim</SelectItem>
-                            <SelectItem value="false">Não</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Preços Promocionais */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">💸 Preço Promo Varejo</label>
-                        <Input
-                          value={bulkEditData.promotion_retail_price}
-                          onChange={(e) => setBulkEditData({...bulkEditData, promotion_retail_price: e.target.value})}
-                          placeholder="Ex: 19.90"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">💸 Preço Promo Atacado</label>
-                        <Input
-                          value={bulkEditData.promotion_wholesale_price}
-                          onChange={(e) => setBulkEditData({...bulkEditData, promotion_wholesale_price: e.target.value})}
-                          placeholder="Ex: 15.90"
-                        />
-                      </div>
-                    </div>
-
                     <div className="flex justify-end gap-2 pt-4">
                       <Button 
                         variant="outline" 
@@ -1477,33 +1056,7 @@ const AdminProducts = () => {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">
-                          <div className="flex flex-col gap-1">
-                            {product.name}
-                            <div className="flex flex-wrap gap-1">
-                              {product.is_featured && (
-                                <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
-                                  <Star className="h-2 w-2 fill-current" /> Capa
-                                </Badge>
-                              )}
-                              {product.is_promotion && (
-                                <Badge variant="default" className="bg-orange-500 hover:bg-orange-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
-                                  <Flame className="h-2 w-2" /> Promo
-                                </Badge>
-                              )}
-                              {product.is_launch && (
-                                <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600 text-[10px] h-4 px-1 flex items-center gap-0.5">
-                                  <Sparkles className="h-2 w-2" /> Novidade
-                                </Badge>
-                              )}
-                              {product.is_out_of_stock && (
-                                <Badge variant="destructive" className="text-[10px] h-4 px-1 flex items-center gap-0.5">
-                                  <PackageX className="h-2 w-2" /> Esgotado
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
+                        <TableCell className="font-medium">{product.name}</TableCell>
                         <TableCell>{product.category}</TableCell>
                         <TableCell>
                           {product.subcategory ? (
@@ -1559,46 +1112,6 @@ const AdminProducts = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Promotion Dialog */}
-        <Dialog open={isQuickPromoOpen} onOpenChange={setIsQuickPromoOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>🔥 Promoção Rápida</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                {selectedProducts.size} produto(s) selecionado(s)
-              </p>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Preço Promocional Atacado</label>
-                <Input
-                  placeholder="Ex: 19.90"
-                  value={promoWholesalePrice}
-                  onChange={(e) => setPromoWholesalePrice(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Preço Promocional Varejo</label>
-                <Input
-                  placeholder="Ex: 29.90"
-                  value={promoRetailPrice}
-                  onChange={(e) => setPromoRetailPrice(e.target.value)}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                * Preencha pelo menos um dos campos acima
-              </p>
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsQuickPromoOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleQuickPromotion} className="bg-gradient-to-r from-accent to-primary">
-                  Aplicar Promoção
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );

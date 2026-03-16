@@ -20,6 +20,12 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
           src={imageUrl}
           alt={category}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== "/placeholder.svg") {
+              target.src = "/placeholder.svg";
+            }
+          }}
         />
         
         {/* Gradient Overlay */}

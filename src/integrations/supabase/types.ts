@@ -55,6 +55,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           display_order: number
           id: string
@@ -62,6 +63,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           display_order?: number
           id?: string
@@ -69,6 +71,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           display_order?: number
           id?: string

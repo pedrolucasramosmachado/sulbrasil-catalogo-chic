@@ -1,19 +1,56 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Share2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Share2, MessageCircle, ShoppingCart, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts, type Product } from "@/hooks/useProducts";
+import { useCart } from "@/contexts/CartContext";
+import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 
 const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { products, loading } = useProducts();
+  const { getProductById } = useProducts();
+  const { addItem } = useCart();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string | undefined>();
+  const [justAdded, setJustAdded] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [fetchingDetails, setFetchingDetails] = useState(true);
 
-  const product = products.find(p => p.id === id);
+  useEffect(() => {
+    const fetchFullDetails = async () => {
+      if (id) {
+        setFetchingDetails(true);
+        const fullProduct = await getProductById(id);
+        setProduct(fullProduct);
+        setFetchingDetails(false);
+      }
+    };
+    fetchFullDetails();
+  }, [id]);
+
+  useEffect(() => {
+    if (product) {
+      setSelectedSize(product.sizes && product.sizes.length === 1 ? product.sizes[0] : undefined);
+    }
+  }, [product]);
+
+  const extraPrice = (selectedSize === 'G1' && product?.category?.toLowerCase() === 'conjuntos') ? 10 : 0;
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addItem(product, selectedSize);
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 2000);
+    toast({
+      title: "Adicionado ao carrinho",
+      description: `${product.name}${selectedSize ? ` - Tam: ${selectedSize}` : ""}`,
+    });
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -55,12 +92,12 @@ const ProductPage = () => {
     }
   };
 
-  if (loading) {
+  if (fetchingDetails) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-surface to-surface-elevated">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
-          <div className="text-2xl mb-4">Carregando produto...</div>
+          <div className="text-2xl mb-4">Carregando detalhes do produto...</div>
         </div>
       </div>
     );
@@ -151,67 +188,102 @@ const ProductPage = () => {
                 )}
               </div>
 
+              {/* Tamanhos */}
+              {product.sizes && product.sizes.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-foreground">Selecione o Tamanho:</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {product.sizes.map(size => (
+                      <div key={size} className="flex flex-col items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedSize(prev => prev === size ? undefined : size)}
+                          className={cn(
+                            "min-w-[50px] h-12 text-sm font-bold px-4 py-2 rounded-xl border-2 transition-all duration-300",
+                            selectedSize === size
+                              ? "bg-primary text-primary-foreground border-primary shadow-glow scale-105"
+                              : "bg-surface text-foreground border-card-border hover:border-primary/50"
+                          )}
+                        >
+                          {size}
+                        </button>
+                        {size === 'G1' && product.category?.toLowerCase() === 'conjuntos' && (
+                          <span className="text-xs text-accent font-bold">+ R$ 10,00</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Prices */}
-              {displayPrice && (
-                <div className="bg-white/60 rounded-xl border border-border-subtle p-6">
+              {displayPrice !== undefined && (
+                <div className="bg-white/60 rounded-xl border border-border-subtle p-6 shadow-soft">
                   <div className="space-y-4">
-                    {product.wholesale_price && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-semibold text-foreground-muted">💰 Atacado:</span>
-                        <span className="font-bold text-primary text-2xl">
-                          R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-semibold text-foreground-muted">💰 Valor Atacado (10+ pçs):</span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-bold text-primary text-2xl sm:text-3xl">
+                          {formatCurrency((product.is_promotion && product.promotion_wholesale_price ? product.promotion_wholesale_price : (product.wholesale_price || 0)) + extraPrice)}
                         </span>
+                        {extraPrice > 0 && <span className="text-xs text-accent font-medium">(Incluso +R$ 10 do tamanho G1)</span>}
                       </div>
-                    )}
-                    {product.retail_price && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-semibold text-foreground-muted">📦 Varejo:</span>
-                        <span className="font-bold text-accent text-2xl">
-                          R$ {product.retail_price.toFixed(2).replace('.', ',')}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-lg font-semibold text-foreground-muted">📦 Valor Varejo:</span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-bold text-accent text-2xl sm:text-3xl">
+                          {formatCurrency((product.is_promotion && product.promotion_retail_price ? product.promotion_retail_price : (product.retail_price || 0)) + extraPrice)}
                         </span>
+                        {extraPrice > 0 && <span className="text-xs text-accent font-medium">(Incluso +R$ 10 do tamanho G1)</span>}
                       </div>
-                    )}
-                    {product.is_promotion && (product.promotion_wholesale_price || product.promotion_retail_price) && (
-                      <div className="pt-4 border-t border-border-subtle space-y-3">
-                        {product.promotion_wholesale_price && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-semibold text-foreground-muted">🔥 Promoção Atacado:</span>
-                            <span className="font-bold text-primary text-3xl">
-                              R$ {product.promotion_wholesale_price.toFixed(2).replace('.', ',')}
-                            </span>
-                          </div>
-                        )}
-                        {product.promotion_retail_price && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-semibold text-foreground-muted">🔥 Promoção Varejo:</span>
-                            <span className="font-bold text-accent text-3xl">
-                              R$ {product.promotion_retail_price.toFixed(2).replace('.', ',')}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 mt-4">
                 <Button
                   size="lg"
-                  onClick={handleConsult}
-                  className="flex-1 text-base h-14 bg-gradient-to-r from-primary to-primary-hover hover:from-primary-hover hover:to-primary text-white font-semibold rounded-xl shadow-medium hover:shadow-glow transition-all duration-300 hover:scale-105"
+                  onClick={handleAddToCart}
+                  disabled={product.is_out_of_stock || (product.sizes && product.sizes.length > 0 && !selectedSize)}
+                  className={cn(
+                    "flex-1 text-base h-16 font-bold rounded-xl shadow-medium transition-all duration-300 hover:scale-105",
+                    justAdded 
+                      ? "bg-green-600 hover:bg-green-700 text-white" 
+                      : "bg-gradient-to-r from-primary to-primary-hover text-white hover:shadow-glow"
+                  )}
                 >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  💬 Consultar no WhatsApp
+                  {justAdded ? (
+                    <>
+                      <Check className="w-6 h-6 mr-2" />
+                      Adicionado ao Carrinho!
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-6 h-6 mr-2" />
+                      Adicionar ao Carrinho
+                    </>
+                  )}
                 </Button>
+                
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleConsult}
+                  className="h-16 px-6 rounded-xl border-2 hover:bg-surface-elevated transition-colors"
+                >
+                  <MessageCircle className="w-6 h-6 text-green-600" />
+                </Button>
+
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={handleShare}
-                  className="h-14 px-6 rounded-xl"
+                  className="h-16 px-6 rounded-xl border-2 hover:bg-surface-elevated transition-colors"
                 >
-                  <Share2 className="w-5 h-5" />
+                  <Share2 className="w-6 h-6 text-primary" />
                 </Button>
               </div>
 

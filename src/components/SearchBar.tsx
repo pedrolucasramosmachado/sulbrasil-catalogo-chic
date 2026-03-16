@@ -16,11 +16,12 @@ export const SearchBar = ({ onSearchResults }: SearchBarProps) => {
   const { products } = useProducts();
 
   const filteredProducts = query.length >= 2
-    ? products.filter((product) =>
-        removeAccents(product.name.toLowerCase()).includes(
-          removeAccents(query.toLowerCase())
-        )
-      )
+    ? products.filter((product) => {
+        const normalizedQuery = removeAccents(query.toLowerCase());
+        const nameMatch = removeAccents(product.name.toLowerCase()).includes(normalizedQuery);
+        const categoryMatch = removeAccents(product.category.toLowerCase()).includes(normalizedQuery);
+        return nameMatch || categoryMatch;
+      })
     : [];
 
   useEffect(() => {
