@@ -129,8 +129,15 @@ export const useProducts = () => {
   const getCategoriesWithImages = () => {
     const categoriesMap = new Map<string, { imageUrl: string; minWholesale: number | null; minRetail: number | null }>();
     
-    // Add "Promoções da Semana" if there are promotion products
-    const promoProducts = getPromotionProducts();
+    // Add "Promoções da Semana" com prioridade (Destaque > Recente)
+    const promoProducts = [...getPromotionProducts()].sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
+
     if (promoProducts.length > 0 && promoProducts[0].image_url) {
       const minPromoWholesale = Math.min(...promoProducts.map(p => p.promotion_wholesale_price || p.wholesale_price || Infinity).filter(p => p !== Infinity));
       const minPromoRetail = Math.min(...promoProducts.map(p => p.promotion_retail_price || p.retail_price || Infinity).filter(p => p !== Infinity));
@@ -142,8 +149,15 @@ export const useProducts = () => {
       });
     }
     
-    // Add "Lançamentos" if there are launch products
-    const launchProducts = getLaunchProducts();
+    // Add "Lançamentos" com prioridade (Destaque > Recente)
+    const launchProducts = [...getLaunchProducts()].sort((a, b) => {
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
+
     if (launchProducts.length > 0 && launchProducts[0].image_url) {
       const minLaunchWholesale = Math.min(...launchProducts.map(p => p.wholesale_price || Infinity).filter(p => p !== Infinity));
       const minLaunchRetail = Math.min(...launchProducts.map(p => p.retail_price || Infinity).filter(p => p !== Infinity));
@@ -155,33 +169,28 @@ export const useProducts = () => {
       });
     }
     
-    products.forEach(product => {
-      const category = product.category;
-      if (!category) return;
+    // Adicionar categorias normais com lógica de prioridade (Destaque > Recente)
+    const sortedProducts = [...products].sort((a, b) => {
+      // Prioridade 1: Destaque (is_featured)
+      if (a.is_featured && !b.is_featured) return -1;
+      if (!a.is_featured && b.is_featured) return 1;
+      
+      // Prioridade 2: Mais recente (created_at)
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
 
-      const imageUrl = product.image_url || '/placeholder.svg';
+    sortedProducts.forEach(product => {
+      const category = product.category;
+      if (!category || !product.image_url) return;
 
       if (!categoriesMap.has(category)) {
         categoriesMap.set(category, {
-          imageUrl: imageUrl,
+          imageUrl: product.image_url,
           minWholesale: product.wholesale_price || null,
           minRetail: product.retail_price || null
         });
-      } else {
-        const current = categoriesMap.get(category)!;
-        
-        // Prefer the first non-placeholder image
-        if (current.imageUrl === '/placeholder.svg' && imageUrl !== '/placeholder.svg') {
-          current.imageUrl = imageUrl;
-        }
-
-        // Keep lowest prices
-        if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
-          current.minWholesale = product.wholesale_price;
-        }
-        if (product.retail_price && (!current.minRetail || product.retail_price < current.minRetail)) {
-          current.minRetail = product.retail_price;
-        }
       }
     });
     
