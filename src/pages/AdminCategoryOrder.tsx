@@ -187,7 +187,6 @@ const AdminCategoryOrder = () => {
             ) : (
               <div className="space-y-2">
                 {categories.map((category, index) => {
-                  console.log('Category item:', category.name, category.cover_image_url);
                   return (
                     <div
                       key={category.id}
