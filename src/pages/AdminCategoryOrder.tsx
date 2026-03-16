@@ -186,69 +186,72 @@ const AdminCategoryOrder = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {categories.map((category, index) => (
-                  <div
-                    key={category.id}
-                    className="flex items-center gap-3 p-4 bg-surface rounded-lg border border-border hover:border-primary/50 transition-colors"
-                  >
-                    <GripVertical className="w-5 h-5 text-foreground-muted shrink-0" />
-                    
-                    <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border border-border">
-                      {category.cover_image_url ? (
-                        <img 
-                          src={category.cover_image_url} 
-                          alt={category.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                          <ImageIcon className="w-6 h-6" />
+                {categories.map((category, index) => {
+                  console.log('Category item:', category.name, category.cover_image_url);
+                  return (
+                    <div
+                      key={category.id}
+                      className="flex items-center gap-3 p-4 bg-surface rounded-lg border border-border hover:border-primary/50 transition-colors"
+                    >
+                      <GripVertical className="w-5 h-5 text-foreground-muted shrink-0" />
+                      
+                      <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0 border border-border">
+                        {category.cover_image_url ? (
+                          <img 
+                            src={category.cover_image_url} 
+                            alt={category.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <ImageIcon className="w-6 h-6" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-medium text-foreground truncate">
+                          {category.name}
+                        </span>
+                        <span className="text-xs text-foreground-muted">
+                          Posição: {index + 1}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCoverPicker(category)}
+                          className="text-xs flex items-center gap-2"
+                        >
+                          <ImageIcon className="w-4 h-4" />
+                          Escolher Capa
+                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => moveCategory(index, 'up')}
+                            disabled={index === 0}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => moveCategory(index, 'down')}
+                            disabled={index === categories.length - 1}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
                         </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <span className="block font-medium text-foreground truncate">
-                        {category.name}
-                      </span>
-                      <span className="text-xs text-foreground-muted">
-                        Posição: {index + 1}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openCoverPicker(category)}
-                        className="text-xs flex items-center gap-2"
-                      >
-                        <ImageIcon className="w-4 h-4" />
-                        Escolher Capa
-                      </Button>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => moveCategory(index, 'up')}
-                          disabled={index === 0}
-                          className="h-8 w-8 p-0"
-                        >
-                          <ArrowUp className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => moveCategory(index, 'down')}
-                          disabled={index === categories.length - 1}
-                          className="h-8 w-8 p-0"
-                        >
-                          <ArrowDown className="w-4 h-4" />
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
