@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminHeader } from '@/components/AdminHeader';
-import { ArrowUp, ArrowDown, GripVertical, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowUp, ArrowDown, GripVertical, Save, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useRef } from 'react';
 
 interface Category {
   id: string;
@@ -27,6 +28,8 @@ const AdminCategoryOrder = () => {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryProducts, setCategoryProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchCategories = async () => {
     try {
@@ -90,11 +93,42 @@ const AdminCategoryOrder = () => {
     }
   };
 
-  const selectCover = (imageUrl: string) => {
+  const selectCover = (imageUrl: string | null) => {
     if (!selectedCategory) return;
     setCategories(prev => prev.map(cat => cat.id === selectedCategory.id ? { ...cat, cover_image_url: imageUrl } : cat));
     setHasChanges(true);
     setIsCoverDialogOpen(false);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedCategory) return;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `category-covers/${selectedCategory.id}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('catalog')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('catalog')
+        .getPublicUrl(fileName);
+
+      if (data?.publicUrl) {
+        selectCover(data.publicUrl);
+        toast({ title: 'Sucesso', description: 'Imagem carregada com sucesso!' });
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      toast({ title: 'Erro', description: 'Falha ao carregar imagem', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -142,16 +176,52 @@ const AdminCategoryOrder = () => {
 
         <Dialog open={isCoverDialogOpen} onOpenChange={setIsCoverDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Capa para {selectedCategory?.name}</DialogTitle></DialogHeader>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4">
-              {categoryProducts.map(p => (
-                <button key={p.id} onClick={() => selectCover(p.image_url)} className="aspect-square relative group rounded-lg overflow-hidden border-2 hover:border-primary transition-all">
-                  <img src={p.image_url} alt="" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                    <span className="text-white text-[10px] font-bold bg-primary px-2 py-1 rounded">Usar esta</span>
-                  </div>
-                </button>
-              ))}
+            <DialogHeader>
+              <DialogTitle>Capa para {selectedCategory?.name}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="flex flex-wrap gap-4 mb-6 pt-4 border-t">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="flex-1"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploading ? 'Carregando...' : 'Fazer Upload de Foto Customizada'}
+              </Button>
+              
+              {selectedCategory?.cover_image_url && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => selectCover(null)}
+                  className="flex-1"
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Remover Capa Atual
+                </Button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold">Ou escolha uma foto de um produto desta categoria:</h4>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {categoryProducts.map(p => (
+                  <button key={p.id} onClick={() => selectCover(p.image_url)} className="aspect-square relative group rounded-lg overflow-hidden border-2 hover:border-primary transition-all">
+                    <img src={p.image_url} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <span className="text-white text-[10px] font-bold bg-primary px-2 py-1 rounded">Usar esta</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </DialogContent>
         </Dialog>
