@@ -102,7 +102,7 @@ const AdminCategoryOrder = () => {
       <AdminHeader title="Ordenar Categorias" description="Reorganize e escolha capas" />
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Categorias & Capas</h1>
+          <h1 className="text-2xl font-bold">Categorias & Capas (V3 - Oficial)</h1>
           <Button onClick={saveOrder} disabled={!hasChanges || saving}>
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Salvando...' : 'Salvar Alterações'}

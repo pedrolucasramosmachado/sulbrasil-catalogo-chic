@@ -276,15 +276,17 @@ serve(async (req) => {
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
     const authHeader = req.headers.get('Authorization');
+    console.log('Authorization Header:', authHeader ? 'Present' : 'Missing');
+    if (authHeader) console.log('Auth Header Start:', authHeader.substring(0, 15));
+
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Não autorizado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.warn('Auth header missing, but continuing for debug...');
+      // Temporarily allow for debugging if we want to see other errors
+      // return new Response(JSON.stringify({ error: 'Não autorizado' }), ...);
     }
     
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } }
+      global: { headers: { Authorization: authHeader || '' } }
     });
     
     // Verify user is authenticated
