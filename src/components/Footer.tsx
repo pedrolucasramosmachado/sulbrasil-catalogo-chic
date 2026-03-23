@@ -12,7 +12,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <img 
-                src="/lovable-uploads/0ad125b9-ae20-4c6e-b70e-540405cec607.png" 
+                src="/images/logo-sulbrasil.png" 
                 alt="Sulbrasil" 
                 className="h-8 w-auto"
               />

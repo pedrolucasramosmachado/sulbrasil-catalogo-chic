@@ -1,73 +1,59 @@
-# Welcome to your Lovable project
+# Sulbrasil Catálogo — Moda Feminina Premium
 
-## Project info
+Catálogo digital oficial da **Sulbrasil**, desenvolvido com React + Vite + TypeScript e integrado ao Supabase.
 
-**URL**: https://lovable.dev/projects/f737b5a7-c157-46f0-bc49-960bb85a93f1
+## Tecnologias
 
-## How can I edit this code?
+- **React 18** + **TypeScript**
+- **Vite 5**
+- **Tailwind CSS** + **shadcn/ui**
+- **Supabase** (banco de dados e storage de imagens)
+- **React Router DOM** (navegação)
+- **TanStack Query** (gerenciamento de estado assíncrono)
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/f737b5a7-c157-46f0-bc49-960bb85a93f1) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Como rodar localmente
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+git clone <URL_DO_REPO>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Entre na pasta
+cd sulbrasil-catalogo-chic
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Configure as variáveis de ambiente
+cp .env.example .env.local
+# Edite .env.local com suas credenciais do Supabase
+
+# 5. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O servidor sobe em `http://localhost:8082`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Variáveis de Ambiente
 
-**Use GitHub Codespaces**
+| Variável | Descrição |
+|---|---|
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Chave anon pública do Supabase |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Scripts disponíveis
 
-## What technologies are used for this project?
+```sh
+npm run dev       # Servidor de desenvolvimento
+npm run build     # Build de produção
+npm run preview   # Preview do build
+npm run lint      # Linting com ESLint
+```
 
-This project is built with:
+## Deploy
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+O projeto pode ser publicado em qualquer plataforma de hospedagem estática (Netlify, Vercel, Cloudflare Pages, etc.).
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f737b5a7-c157-46f0-bc49-960bb85a93f1) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```sh
+npm run build
+# Faça o deploy da pasta /dist
+```

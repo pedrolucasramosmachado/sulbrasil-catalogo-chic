@@ -15,7 +15,7 @@ export const Header = ({ onSearchResults }: HeaderProps) => {
         <div className="flex items-center justify-between h-14 sm:h-16 gap-3">
           <Link to="/catalogo" className="flex items-center gap-2 sm:gap-4 shrink-0">
             <img 
-              src="/lovable-uploads/0ad125b9-ae20-4c6e-b70e-540405cec607.png" 
+              src="/images/logo-sulbrasil.png" 
               alt="Sulbrasil" 
               className="h-8 sm:h-10 w-auto"
             />
