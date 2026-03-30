@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Product, useProducts } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
+import { optimizeImageUrl } from "@/lib/url";
 
 const VitrineCategory = () => {
   const { category, subcategory } = useParams();
@@ -219,7 +220,7 @@ const VitrineSubcategoryCard = ({
           !imageLoaded && "animate-pulse bg-surface"
         )}>
           <img
-            src={imageUrl || "/placeholder.svg"}
+            src={optimizeImageUrl(imageUrl) || "/placeholder.svg"}
             alt={subcategory}
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110",

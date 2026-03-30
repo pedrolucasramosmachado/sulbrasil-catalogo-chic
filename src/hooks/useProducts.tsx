@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { optimizeImageUrl } from '@/lib/url';
 
 export interface Product {
   id: string;
@@ -10,6 +11,7 @@ export interface Product {
   promotion_wholesale_price?: number | null;
   promotion_retail_price?: number | null;
   category: string;
+  category_id?: string | null;
   subcategory?: string | null;
   image_url?: string;
   sizes?: string[];
@@ -21,6 +23,8 @@ export interface Product {
   display_emoji?: string | null;
   model_name?: string | null;
   color_name?: string | null;
+  is_kit?: boolean | null;
+  kit_piece_count?: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -51,9 +55,9 @@ export const useProducts = () => {
       const [productsRes, categoriesRes] = await Promise.all([
         supabase
           .from('products')
-          .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at, weight_kg')
+          .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at, weight_kg, color_name, model_name, display_emoji, is_kit, kit_piece_count')
           .range(from, to)
-          .order('created_at', { ascending: true }),
+          .order('created_at', { ascending: false }),
         supabase
           .from('categories')
           .select('id, name, display_order, cover_image_url')
@@ -64,6 +68,8 @@ export const useProducts = () => {
       if (categoriesRes.error) throw categoriesRes.error;
 
       const newProducts = productsRes.data || [];
+      const newCategories = categoriesRes.data || [];
+
       if (isInitial) {
         setProducts(newProducts);
         setPage(0);
@@ -73,7 +79,7 @@ export const useProducts = () => {
       }
       
       setHasMore(newProducts.length === PAGE_SIZE);
-      setCategoryOrders(categoriesRes.data || []);
+      setCategoryOrders(newCategories);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar produtos');
     } finally {
@@ -91,11 +97,12 @@ export const useProducts = () => {
     }
   };
 
-  const getProductsByCategory = (category: string) => {
-    if (category === 'todos') return products;
-    return products.filter(product => 
-      product.category.toLowerCase() === category.toLowerCase()
+  const getProductsByCategory = (categoryOrId: string) => {
+    const categoryProducts = categoryOrId === 'todos' ? products : products.filter(p => 
+      p.category_id === categoryOrId || 
+      p.category.toLowerCase() === categoryOrId.toLowerCase()
     );
+    return categoryProducts.filter(p => !p.is_out_of_stock);
   };
 
   const getCategories = () => {
@@ -104,15 +111,15 @@ export const useProducts = () => {
   };
 
   const getFeaturedProducts = () => {
-    return products.filter(product => product.is_featured);
+    return products.filter(product => product.is_featured && !product.is_out_of_stock);
   };
 
   const getPromotionProducts = () => {
-    return products.filter(product => product.is_promotion === true);
+    return products.filter(product => product.is_promotion === true && !product.is_out_of_stock);
   };
 
   const getLaunchProducts = () => {
-    return products.filter(product => product.is_launch === true);
+    return products.filter(product => product.is_launch === true && !product.is_out_of_stock);
   };
 
   const getLatestProduct = () => {
@@ -148,7 +155,7 @@ export const useProducts = () => {
     // Then, aggregate data from products
     products.forEach((product) => {
       const productCategory = product.category?.trim();
-      if (!productCategory) return;
+      if (!productCategory || product.is_out_of_stock) return;
       
       let data = categoriesWithData.get(productCategory);
       
@@ -158,8 +165,8 @@ export const useProducts = () => {
       }
 
       // Track prices
-      const wPrice = product.wholesale_price || 0;
-      const rPrice = product.retail_price || 0;
+      const wPrice = (product.is_promotion && product.promotion_wholesale_price) ? product.promotion_wholesale_price : (product.wholesale_price || 0);
+      const rPrice = (product.is_promotion && product.promotion_retail_price) ? product.promotion_retail_price : (product.retail_price || 0);
       
       if (wPrice > 0 && wPrice < data.minWholesale) data.minWholesale = wPrice;
       if (rPrice > 0 && rPrice < data.minRetail) data.minRetail = rPrice;
@@ -172,6 +179,7 @@ export const useProducts = () => {
 
     // Build the final list
     const result = Array.from(categoriesWithData.entries())
+      .filter(([_, data]) => data.minWholesale !== Infinity || data.minRetail !== Infinity) // Only show if has products in stock
       .map(([category, data]) => ({
         category,
         minWholesalePrice: data.minWholesale === Infinity ? 0 : data.minWholesale,
@@ -209,8 +217,8 @@ export const useProducts = () => {
     return result;
   };
 
-  const getSubcategoriesWithData = (category: string) => {
-    const categoryProducts = getProductsByCategory(category);
+  const getSubcategoriesWithData = (categoryOrId: string) => {
+    const categoryProducts = getProductsByCategory(categoryOrId);
     const subcategoryMap = new Map<string, { 
       subcategory: string;
       imageUrl: string;
@@ -219,17 +227,24 @@ export const useProducts = () => {
     }>();
     
     categoryProducts.forEach(product => {
-      if (product.subcategory && product.subcategory !== '') {
-        const subcat = product.subcategory;
+      if (product.subcategory && product.subcategory.trim() !== '') {
+        const subcat = product.subcategory.trim();
+        const productImg = product.image_url;
+        const hasValidImage = productImg && productImg.trim() !== '' && productImg !== '/placeholder.svg';
+
         if (!subcategoryMap.has(subcat)) {
           subcategoryMap.set(subcat, {
             subcategory: subcat,
-            imageUrl: product.image_url || '/placeholder.svg',
+            imageUrl: hasValidImage ? productImg! : '/placeholder.svg',
             minWholesale: product.wholesale_price || null,
             minRetail: product.retail_price || null
           });
         } else {
           const current = subcategoryMap.get(subcat)!;
+          // Se a imagem atual for placeholder e o produto atual tiver uma imagem real, atualiza
+          if (current.imageUrl === '/placeholder.svg' && hasValidImage) {
+            current.imageUrl = productImg!;
+          }
           if (product.wholesale_price && (!current.minWholesale || product.wholesale_price < current.minWholesale)) {
             current.minWholesale = product.wholesale_price;
           }
@@ -239,23 +254,24 @@ export const useProducts = () => {
         }
       }
     });
-    
+
     return Array.from(subcategoryMap.values());
   };
 
-  const getProductsBySubcategory = (category: string, subcategory: string) => {
-    return products.filter(product => {
-      const categoryMatch = product.category.toLowerCase() === category.toLowerCase();
-      const subcategoryMatch = product.subcategory?.toLowerCase() === subcategory.toLowerCase();
-      return categoryMatch && subcategoryMatch;
-    });
+  const getProductsBySubcategory = (categoryOrId: string, subcategory: string) => {
+    return products.filter(p => 
+      (p.category_id === categoryOrId || p.category.toLowerCase() === categoryOrId.toLowerCase()) && 
+      p.subcategory === subcategory &&
+      !p.is_out_of_stock
+    );
   };
 
-  const categoryHasSubcategories = (category: string) => {
-    const categoryProducts = getProductsByCategory(category);
-    return categoryProducts.some(product => 
-      product.subcategory && 
-      product.subcategory.trim() !== ''
+  const categoryHasSubcategories = (categoryOrId: string) => {
+    return products.some(p => 
+      (p.category_id === categoryOrId || p.category.toLowerCase() === categoryOrId.toLowerCase()) && 
+      p.subcategory && 
+      p.subcategory.trim() !== '' &&
+      !p.is_out_of_stock
     );
   };
 
@@ -293,5 +309,6 @@ export const useProducts = () => {
     getSubcategoriesWithData,
     getProductsBySubcategory,
     categoryHasSubcategories,
+    categoryOrders,
   };
 };

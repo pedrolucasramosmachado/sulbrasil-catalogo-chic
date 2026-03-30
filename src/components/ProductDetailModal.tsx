@@ -6,6 +6,7 @@ import { MessageCircle, Share2, ZoomIn, X } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { optimizeImageUrl } from "@/lib/url";
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -59,7 +60,7 @@ export const ProductDetailModal = ({
                 onClick={() => setIsZoomed(true)}
               >
                 <img
-                  src={product.image_url || "/placeholder.svg"}
+                  src={optimizeImageUrl(product.image_url) || "/placeholder.svg"}
                   alt={product.name}
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                   onError={(e) => {
@@ -88,7 +89,7 @@ export const ProductDetailModal = ({
                     onClick={() => setIsZoomed(true)}
                   >
                     <img
-                      src={product.image_url || "/placeholder.svg"}
+                      src={optimizeImageUrl(product.image_url) || "/placeholder.svg"}
                       alt={`${product.name} - ${i}`}
                       className="w-full h-full object-cover rounded-lg opacity-70 hover:opacity-100 transition-opacity"
                       onError={(e) => {
@@ -111,10 +112,15 @@ export const ProductDetailModal = ({
                   <DialogTitle className="text-2xl font-bold text-foreground leading-tight">
                     {product.name}
                   </DialogTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Badge className="bg-accent-soft text-accent-foreground">
                       {product.category}
                     </Badge>
+                    {product.name.toLowerCase().match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid?|und?)/i) && (
+                      <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
+                        📦 {product.name.match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid?|und?)/i)?.[1] || "1"} PEÇAS
+                      </Badge>
+                    )}
                     {product.is_featured && (
                       <Badge className="bg-accent text-accent-foreground">
                         Destaque
@@ -135,22 +141,38 @@ export const ProductDetailModal = ({
             {(product.retail_price || product.wholesale_price) ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {product.retail_price && (
-                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                  {(product.retail_price || product.promotion_retail_price) && (
+                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg border border-border/20">
                       <div className="text-center">
-                        <p className="text-sm text-foreground-muted">Varejo</p>
-                        <p className="text-2xl font-bold text-primary">
-                          R$ {product.retail_price.toFixed(2).replace('.', ',')}
+                        <p className="text-xs text-foreground-muted mb-1">Varejo</p>
+                        {product.is_promotion && product.retail_price && (product.promotion_retail_price || product.promotion_wholesale_price) && (
+                          <p className="text-xs text-destructive line-through opacity-70">
+                            R$ {product.retail_price.toFixed(2).replace('.', ',')}
+                          </p>
+                        )}
+                        <p className={cn("text-2xl font-bold", product.is_promotion ? "text-destructive" : "text-primary")}>
+                          R$ {(product.is_promotion 
+                            ? (product.promotion_retail_price || product.promotion_wholesale_price || product.retail_price || 0)
+                            : (product.retail_price || product.wholesale_price || 0)
+                          ).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
                   )}
-                  {product.wholesale_price && (
-                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg">
+                  {(product.wholesale_price || product.promotion_wholesale_price) && (
+                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg border border-border/20">
                       <div className="text-center">
-                        <p className="text-sm text-foreground-muted">Atacado</p>
-                        <p className="text-2xl font-bold text-accent">
-                          R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
+                        <p className="text-xs text-foreground-muted mb-1">Atacado</p>
+                        {product.is_promotion && product.wholesale_price && (product.promotion_wholesale_price || product.promotion_retail_price) && (
+                          <p className="text-xs text-destructive line-through opacity-70">
+                            R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
+                          </p>
+                        )}
+                        <p className={cn("text-2xl font-bold", product.is_promotion ? "text-destructive" : "text-accent")}>
+                          R$ {(product.is_promotion 
+                            ? (product.promotion_wholesale_price || product.promotion_retail_price || product.wholesale_price || 0)
+                            : (product.wholesale_price || product.retail_price || 0)
+                          ).toFixed(2).replace('.', ',')}
                         </p>
                       </div>
                     </div>
@@ -181,6 +203,16 @@ export const ProductDetailModal = ({
                       {size}
                     </span>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Description */}
+            {product.description && (
+              <div className="space-y-2 pt-2">
+                <p className="text-sm font-medium text-foreground text-center sm:text-left">Descrição:</p>
+                <div className="text-sm text-foreground-muted bg-surface/50 p-3 rounded-lg border border-dashed border-border/50 text-center sm:text-left italic whitespace-pre-wrap">
+                  {product.description}
                 </div>
               </div>
             )}
@@ -227,7 +259,7 @@ export const ProductDetailModal = ({
         
         <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
           <img
-            src={product.image_url || "/placeholder.svg"}
+            src={optimizeImageUrl(product.image_url) || "/placeholder.svg"}
             alt={product.name}
             className="max-w-full max-h-full object-contain pointer-events-auto"
             onClick={(e) => e.stopPropagation()}

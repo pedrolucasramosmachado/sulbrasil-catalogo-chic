@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Product } from "@/hooks/useProducts";
+import { optimizeImageUrl } from "@/lib/url";
 
 interface ProductCardVitrineProps {
   product: Product;
@@ -26,7 +27,7 @@ export const ProductCardVitrine = ({
           onClick={() => onImageClick(product)}
         >
           <img
-            src={product.image_url || "/placeholder.svg"}
+            src={optimizeImageUrl(product.image_url) || "/placeholder.svg"}
             alt={product.name}
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:rotate-1",

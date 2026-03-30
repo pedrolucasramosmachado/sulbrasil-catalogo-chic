@@ -120,18 +120,24 @@ const AdminShipping = () => {
     setShippingResults(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('calculate-shipping', {
-        body: {
+      const response = await fetch('/api/calculate-shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           origin_cep: originCep.replace(/\D/g, ''),
           destination_cep: destinationCep.replace(/\D/g, ''),
-          product_ids: Array.from(selectedProducts),
-          product_quantities: productQuantities,
-          carrier: 'all',
-        },
+          total_weight_kg: getSelectedProductsWeight(),
+        }),
       });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erro ao calcular frete');
+      }
 
+      const data = await response.json();
       setShippingResults(data as ShippingResponse);
       
       toast({

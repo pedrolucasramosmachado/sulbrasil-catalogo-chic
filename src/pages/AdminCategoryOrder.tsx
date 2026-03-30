@@ -107,25 +107,31 @@ const AdminCategoryOrder = () => {
     try {
       setUploading(true);
       const fileExt = file.name.split('.').pop();
-      const fileName = `category-covers/${selectedCategory.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+      const filePath = `categories/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('catalog')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('catalog')
-        .getPublicUrl(fileName);
-
-      if (data?.publicUrl) {
-        selectCover(data.publicUrl);
-        toast({ title: 'Sucesso', description: 'Imagem carregada com sucesso!' });
+      if (uploadError) {
+        console.error('Erro detalhado Supabase Storage:', uploadError);
+        throw uploadError;
       }
-    } catch (error) {
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('catalog')
+        .getPublicUrl(filePath);
+
+      selectCover(publicUrl);
+      toast({ title: 'Sucesso', description: 'Imagem carregada com sucesso!' });
+    } catch (error: any) {
       console.error('Erro no upload:', error);
-      toast({ title: 'Erro', description: 'Falha ao carregar imagem', variant: 'destructive' });
+      toast({ 
+        title: 'Erro', 
+        description: `Falha ao carregar imagem no Supabase: ${error.message || 'Erro desconhecido'}`, 
+        variant: 'destructive' 
+      });
     } finally {
       setUploading(false);
     }

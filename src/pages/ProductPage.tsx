@@ -177,6 +177,11 @@ const ProductPage = () => {
                       {product.subcategory}
                     </Badge>
                   )}
+                  {product.name.toLowerCase().match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid?|und?)/i) && (
+                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 font-bold">
+                      📦 {product.name.match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid?|und?)/i)?.[1] || "1"} PEÇAS
+                    </Badge>
+                  )}
                 </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
                   {product.name}

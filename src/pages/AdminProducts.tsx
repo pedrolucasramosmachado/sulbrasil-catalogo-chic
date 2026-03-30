@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered } from 'lucide-react';
+import { LogOut, Plus, Edit2, Trash2, Search, ArrowLeft, Upload, CheckSquare, Square, ListOrdered, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,48 +34,75 @@ const productSchema = z.object({
   display_emoji: z.string().optional(),
   model_name: z.string().optional(),
   color_name: z.string().optional(),
+  is_launch: z.boolean().default(false),
+  is_promotion: z.boolean().default(false),
+  promotion_retail_price: z.string().optional(),
+  promotion_wholesale_price: z.string().optional(),
+  is_out_of_stock: z.boolean().default(false),
+  is_kit: z.boolean().default(false),
+  kit_piece_count: z.string().optional(),
 });
 
 type ProductForm = z.infer<typeof productSchema>;
 
 const AdminProducts = () => {
   const { user, signOut } = useAuth();
-  const { products, loading, error, fetchProducts, getCategories } = useProducts();
+  const { products, loading, error, fetchProducts, getCategories, categoryOrders } = useProducts();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('todos');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('todos');
+  const [filterLaunches, setFilterLaunches] = useState(false);
+  const [filterPromotions, setFilterPromotions] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isNewCategory, setIsNewCategory] = useState(false);
+  const [isNewSubcategory, setIsNewSubcategory] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [isBulkEditOpen, setIsBulkEditOpen] = useState(false);
   const [bulkEditData, setBulkEditData] = useState({
     retail_price: '',
     wholesale_price: '',
-    category: '',
+    category: 'keep',
     subcategory: '',
+    is_launch: 'keep' as 'keep' | 'yes' | 'no',
+    is_promotion: 'keep' as 'keep' | 'yes' | 'no',
+    promotion_retail_price: '',
+    promotion_wholesale_price: '',
+    display_emoji: '',
+    model_name: '',
+    color_name: '',
+    weight_kg: '',
+    sizes: [] as string[],
+    is_out_of_stock: 'keep' as 'keep' | 'yes' | 'no',
   });
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [customSize, setCustomSize] = useState('');
+  const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
+  // ── Estado específico para kits ──
+  const [kitColors, setKitColors] = useState<string[]>([]);
+  const [kitColorInput, setKitColorInput] = useState('');
 
   // Size presets by category
   const SIZE_PRESETS: Record<string, string[]> = {
-    'default': ['Tamanho Único (36 ao 44)'],
-    'plus_size': ['44', '46', '48', '50', '52', '54'],
-    'infantil': ['2', '4', '6', '8', '10', '12'],
-    'kit': ['Tamanho Único'],
+    'adult': ['P', 'M', 'G', 'GG', 'G1', 'G2', 'G3'],
+    'numeric': ['34', '36', '38', '40', '42', '44', '46', '48', '50', '52', '54'],
+    'plus_size': ['44', '46', '48', '50', '52', '54', 'G1', 'G2', 'G3'],
+    'infantil': ['2', '4', '6', '8', '10', '12', '14', '16'],
+    'unico': ['Tamanho Único', 'Tamanho Único (36 ao 44)'],
   };
 
   const getSizePresetForCategory = (category: string): string[] => {
     const lower = category.toLowerCase();
     if (lower.includes('plus') || lower.includes('plus size')) return SIZE_PRESETS.plus_size;
     if (lower.includes('infantil') || lower.includes('infantis') || lower.includes('kids')) return SIZE_PRESETS.infantil;
-    if (lower.includes('kit') || lower.includes('kits')) return SIZE_PRESETS.kit;
-    return SIZE_PRESETS.default;
+    if (lower.includes('kit') || lower.includes('kits') || lower.includes('acessórios')) return SIZE_PRESETS.unico;
+    return SIZE_PRESETS.adult;
   };
 
   const toggleSize = (size: string) => {
@@ -97,6 +124,13 @@ const AdminProducts = () => {
       display_emoji: '',
       model_name: '',
       color_name: '',
+      is_launch: false,
+      is_promotion: false,
+      promotion_retail_price: '',
+      promotion_wholesale_price: '',
+      is_out_of_stock: false,
+      is_kit: false,
+      kit_piece_count: '',
     },
 });
 
@@ -111,7 +145,7 @@ const AdminProducts = () => {
 
   // Atualizar nome quando categoria, subcategoria ou cor mudam
   const updateProductName = (category: string, subcategory: string, color: string) => {
-    if ((category || subcategory) && !editingProduct) {
+    if ((category || subcategory) && !editingProduct && !isNameManuallyEdited) {
       // Prioriza subcategoria se existir, senão usa categoria
       const baseName = subcategory || category;
       const fullName = color ? `${baseName} ${color}` : baseName;
@@ -124,8 +158,44 @@ const AdminProducts = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'todos' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesSubcategory = selectedSubcategory === 'todos' || product.subcategory === selectedSubcategory;
+    const matchesLaunch = !filterLaunches || product.is_launch;
+    const matchesPromotion = !filterPromotions || product.is_promotion;
+    
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesLaunch && matchesPromotion;
   });
+
+  // Sync kit colors with color_name form field
+  useEffect(() => {
+    const isKit = form.watch('is_kit');
+    if (isKit && kitColors.length > 0) {
+      const colorsString = kitColors.join(', ');
+      form.setValue('color_name', colorsString);
+      
+      // Auto-update name for kits if not manually edited
+      const category = form.watch('category');
+      const subcategory = form.watch('subcategory');
+      const pieceCount = form.watch('kit_piece_count');
+      const baseName = subcategory || category;
+      
+      if (!isNameManuallyEdited && baseName) {
+        const kitPrefix = pieceCount ? `Kit ${pieceCount} Peças` : 'Kit';
+        form.setValue('name', `${kitPrefix} ${baseName}`);
+      }
+    }
+  }, [kitColors, form.watch('is_kit'), form.watch('kit_piece_count'), form.watch('category'), form.watch('subcategory'), isNameManuallyEdited]);
+
+  const addKitColor = (color: string) => {
+    const trimmed = color.trim();
+    if (trimmed && !kitColors.includes(trimmed)) {
+      setKitColors([...kitColors, trimmed]);
+      setKitColorInput('');
+    }
+  };
+
+  const removeKitColor = (index: number) => {
+    setKitColors(kitColors.filter((_, i) => i !== index));
+  };
 
   const handleLogout = async () => {
     await signOut();
@@ -145,24 +215,31 @@ const AdminProducts = () => {
   const uploadImage = async (file: File): Promise<string | null> => {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      console.log('Tentando upload para Supabase no bucket "catalog":', filePath);
+
       const { error: uploadError } = await supabase.storage
         .from('catalog')
-        .upload(fileName, file);
+        .upload(filePath, file);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Erro detalhado Supabase Storage:', uploadError);
+        throw uploadError;
+      }
 
-      const { data } = supabase.storage
+      const { data: { publicUrl } } = supabase.storage
         .from('catalog')
-        .getPublicUrl(fileName);
+        .getPublicUrl(filePath);
 
-      return data.publicUrl;
-    } catch (error) {
+      console.log('Upload bem-sucedido. URL:', publicUrl);
+      return publicUrl;
+    } catch (error: any) {
       console.error('Erro ao fazer upload da imagem:', error);
       toast({
-        title: 'Erro',
-        description: 'Erro ao fazer upload da imagem',
+        title: 'Erro no Upload',
+        description: `Não foi possível salvar a imagem no Supabase: ${error.message || 'Erro desconhecido'}`,
         variant: 'destructive',
       });
       return null;
@@ -182,9 +259,12 @@ const AdminProducts = () => {
         }
       }
 
+      const categoryObj = categoryOrders.find(c => c.name.toLowerCase() === data.category.toLowerCase());
+
       const productData = {
         name: data.name,
         category: data.category,
+        category_id: categoryObj ? categoryObj.id : null,
         subcategory: data.subcategory || null,
         retail_price: data.retail_price ? parseFloat(data.retail_price.replace(',', '.')) : null,
         wholesale_price: data.wholesale_price ? parseFloat(data.wholesale_price.replace(',', '.')) : null,
@@ -195,6 +275,13 @@ const AdminProducts = () => {
         image_url: imageUrl || null,
         sizes: selectedSizes.length > 0 ? selectedSizes : null,
         display_order: 0,
+        is_launch: data.is_launch,
+        is_promotion: data.is_promotion,
+        is_out_of_stock: data.is_out_of_stock,
+        is_kit: data.is_kit,
+        kit_piece_count: data.is_kit && data.kit_piece_count ? parseInt(data.kit_piece_count) : null,
+        promotion_retail_price: data.is_promotion && data.promotion_retail_price ? parseFloat(data.promotion_retail_price.replace(',', '.')) : null,
+        promotion_wholesale_price: data.is_promotion && data.promotion_wholesale_price ? parseFloat(data.promotion_wholesale_price.replace(',', '.')) : null,
       };
 
       if (editingProduct) {
@@ -243,11 +330,19 @@ const AdminProducts = () => {
     setImageFile(null);
     setImagePreview(null);
     setIsNewCategory(false);
+    setIsNewSubcategory(false);
     setSelectedSizes([]);
+    setKitColors([]);
+    setKitColorInput('');
+    form.setValue('is_launch', false);
+    form.setValue('is_promotion', false);
+    form.setValue('is_out_of_stock', false);
+    form.setValue('is_kit', false);
   };
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
+    setIsNameManuallyEdited(true);
     
     // Tentar extrair a cor do nome do produto
     const categoryRegex = new RegExp(`^${product.category}\\s*(.*)$`, 'i');
@@ -265,7 +360,20 @@ const AdminProducts = () => {
       display_emoji: (product as any).display_emoji || '',
       model_name: (product as any).model_name || '',
       color_name: (product as any).color_name || '',
+      is_launch: product.is_launch || false,
+      is_promotion: product.is_promotion || false,
+      is_out_of_stock: product.is_out_of_stock || false,
+      is_kit: product.is_kit || false,
+      kit_piece_count: product.kit_piece_count ? product.kit_piece_count.toString() : '',
+      promotion_retail_price: product.promotion_retail_price ? product.promotion_retail_price.toString() : '',
+      promotion_wholesale_price: product.promotion_wholesale_price ? product.promotion_wholesale_price.toString() : '',
     });
+
+    if (product.is_kit && product.color_name) {
+      setKitColors(product.color_name.split(',').map(c => c.trim()).filter(Boolean));
+    } else {
+      setKitColors([]);
+    }
     setImagePreview(product.image_url || null);
     setSelectedSizes(product.sizes || []);
     setIsDialogOpen(true);
@@ -273,6 +381,7 @@ const AdminProducts = () => {
 
   const openCreateDialog = () => {
     resetForm();
+    setIsNameManuallyEdited(false);
     form.reset({
       name: '',
       category: '',
@@ -284,7 +393,16 @@ const AdminProducts = () => {
       display_emoji: '',
       model_name: '',
       color_name: '',
+      is_launch: false,
+      is_promotion: false,
+      is_out_of_stock: false,
+      is_kit: false,
+      kit_piece_count: '',
+      promotion_retail_price: '',
+      promotion_wholesale_price: '',
     });
+    setKitColors([]);
+    setKitColorInput('');
     setIsDialogOpen(true);
   };
 
@@ -310,6 +428,7 @@ const AdminProducts = () => {
     if (selectedProducts.size === 0) return;
 
     try {
+      setIsSubmitting(true);
       const updates: any = {};
       if (bulkEditData.retail_price) {
         updates.retail_price = parseFloat(bulkEditData.retail_price.replace(',', '.'));
@@ -317,12 +436,40 @@ const AdminProducts = () => {
       if (bulkEditData.wholesale_price) {
         updates.wholesale_price = parseFloat(bulkEditData.wholesale_price.replace(',', '.'));
       }
-      if (bulkEditData.category) {
+      if (bulkEditData.category && bulkEditData.category !== 'keep') {
         updates.category = bulkEditData.category;
+        const categoryObj = categoryOrders.find(c => c.name.toLowerCase() === bulkEditData.category.toLowerCase());
+        if (categoryObj) updates.category_id = categoryObj.id;
       }
       if (bulkEditData.subcategory) {
         updates.subcategory = bulkEditData.subcategory;
       }
+      
+      // Boolean fields
+      if (bulkEditData.is_launch !== 'keep') {
+        updates.is_launch = bulkEditData.is_launch === 'yes';
+      }
+      if (bulkEditData.is_promotion !== 'keep') {
+        updates.is_promotion = bulkEditData.is_promotion === 'yes';
+      }
+      if (bulkEditData.is_out_of_stock !== 'keep') {
+        updates.is_out_of_stock = bulkEditData.is_out_of_stock === 'yes';
+      }
+
+      // Promotion prices
+      if (bulkEditData.promotion_retail_price) {
+        updates.promotion_retail_price = parseFloat(bulkEditData.promotion_retail_price.replace(',', '.'));
+      }
+      if (bulkEditData.promotion_wholesale_price) {
+        updates.promotion_wholesale_price = parseFloat(bulkEditData.promotion_wholesale_price.replace(',', '.'));
+      }
+
+      // Other fields
+      if (bulkEditData.display_emoji) updates.display_emoji = bulkEditData.display_emoji;
+      if (bulkEditData.model_name) updates.model_name = bulkEditData.model_name;
+      if (bulkEditData.color_name) updates.color_name = bulkEditData.color_name;
+      if (bulkEditData.weight_kg) updates.weight_kg = parseFloat(bulkEditData.weight_kg.replace(',', '.'));
+      if (bulkEditData.sizes.length > 0) updates.sizes = bulkEditData.sizes;
 
       if (Object.keys(updates).length === 0) {
         toast({
@@ -330,17 +477,16 @@ const AdminProducts = () => {
           description: 'Nenhum campo foi preenchido para edição',
           variant: 'destructive',
         });
+        setIsSubmitting(false);
         return;
       }
 
-      for (const productId of Array.from(selectedProducts)) {
-        const { error } = await supabase
-          .from('products')
-          .update(updates)
-          .eq('id', productId);
-        
-        if (error) throw error;
-      }
+      const { error } = await supabase
+        .from('products')
+        .update(updates)
+        .in('id', Array.from(selectedProducts));
+      
+      if (error) throw error;
 
       toast({
         title: 'Sucesso',
@@ -352,8 +498,18 @@ const AdminProducts = () => {
       setBulkEditData({
         retail_price: '',
         wholesale_price: '',
-        category: '',
+        category: 'keep',
         subcategory: '',
+        is_launch: 'keep',
+        is_promotion: 'keep',
+        promotion_retail_price: '',
+        promotion_wholesale_price: '',
+        display_emoji: '',
+        model_name: '',
+        color_name: '',
+        weight_kg: '',
+        sizes: [],
+        is_out_of_stock: 'keep',
       });
       fetchProducts();
     } catch (error) {
@@ -363,6 +519,32 @@ const AdminProducts = () => {
         description: 'Erro ao atualizar produtos em massa',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleStock = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_out_of_stock: !currentStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: 'Estoque atualizado',
+        description: !currentStatus ? 'Produto marcado como esgotado' : 'Produto agora está em estoque!',
+      });
+      fetchProducts();
+    } catch (error) {
+      console.error('Error toggling stock:', error);
+      toast({
+        title: 'Erro',
+        description: 'Erro ao atualizar estoque',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -370,18 +552,17 @@ const AdminProducts = () => {
     if (selectedProducts.size === 0) return;
 
     try {
-      for (const productId of Array.from(selectedProducts)) {
-        const { error } = await supabase
-          .from('products')
-          .update({
-            is_promotion: false,
-            promotion_retail_price: null,
-            promotion_wholesale_price: null,
-          })
-          .eq('id', productId);
-        
-        if (error) throw error;
-      }
+      setIsSubmitting(true);
+      const { error } = await supabase
+        .from('products')
+        .update({
+          is_promotion: false,
+          promotion_retail_price: null,
+          promotion_wholesale_price: null,
+        })
+        .in('id', Array.from(selectedProducts));
+      
+      if (error) throw error;
 
       toast({
         title: 'Sucesso',
@@ -397,6 +578,8 @@ const AdminProducts = () => {
         description: 'Erro ao remover promoção',
         variant: 'destructive',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -477,7 +660,10 @@ const AdminProducts = () => {
                     className="pl-10"
                   />
                 </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <Select value={selectedCategory} onValueChange={(val) => {
+                  setSelectedCategory(val);
+                  setSelectedSubcategory('todos');
+                }}>
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
@@ -489,16 +675,53 @@ const AdminProducts = () => {
                     ))}
                   </SelectContent>
                 </Select>
+
+                {selectedCategory !== 'todos' && (
+                  <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="Subcategoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todas as subcategorias</SelectItem>
+                      {[...new Set(products
+                        .filter(p => p.category === selectedCategory)
+                        .map(p => p.subcategory)
+                        .filter(Boolean))].map(sub => (
+                        <SelectItem key={sub!} value={sub!}>
+                          {sub}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <div className="flex items-center gap-4 px-2">
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="filter-launches" 
+                      checked={filterLaunches} 
+                      onCheckedChange={setFilterLaunches} 
+                    />
+                    <label htmlFor="filter-launches" className="text-sm font-medium cursor-pointer">Lançamentos</label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      id="filter-promotions" 
+                      checked={filterPromotions} 
+                      onCheckedChange={setFilterPromotions} 
+                    />
+                    <label htmlFor="filter-promotions" className="text-sm font-medium cursor-pointer">Promoções</label>
+                  </div>
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {selectedProducts.size > 0 && (
-                  <>
-                    <Button variant="outline" onClick={() => setIsBulkEditOpen(true)} className="flex items-center gap-2">
-                      <Edit2 className="h-4 w-4" />
-                      Editar {selectedProducts.size}
-                    </Button>
-                  </>
-                )}
+                <Link to="/admin/categories">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <ListOrdered className="h-4 w-4" />
+                    Ordenar Categorias
+                  </Button>
+                </Link>
+
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={openCreateDialog} className="flex items-center gap-2">
@@ -506,13 +729,7 @@ const AdminProducts = () => {
                       Novo Produto
                     </Button>
                   </DialogTrigger>
-                <Link to="/admin/categories">
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <ListOrdered className="h-4 w-4" />
-                    Ordenar Categorias
-                  </Button>
-                </Link>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>
                       {editingProduct ? 'Editar Produto' : 'Novo Produto'}
@@ -636,39 +853,55 @@ const AdminProducts = () => {
                             <FormItem>
                               <FormLabel>Subcategoria (Modelo)</FormLabel>
                               <FormControl>
-                                <Select 
-                                  value={field.value || undefined} 
-                                  onValueChange={(value) => {
-                                    if (value === '__new__') {
-                                      // Switch to input mode - clear and let user type
-                                      field.onChange('');
-                                    } else {
-                                      field.onChange(value);
-                                      updateProductName(form.getValues('category'), value, form.getValues('color') || '');
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Selecione ou crie nova" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__new__">+ Nova Subcategoria</SelectItem>
-                                    {existingSubcategories.map(sub => (
-                                      <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                {isNewSubcategory ? (
+                                  <div className="space-y-2">
+                                    <Input 
+                                      {...field} 
+                                      placeholder="Digite a nova subcategoria"
+                                      onChange={(e) => {
+                                        field.onChange(e);
+                                        updateProductName(form.getValues('category'), e.target.value, form.getValues('color') || '');
+                                      }}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setIsNewSubcategory(false);
+                                        form.setValue('subcategory', '');
+                                        updateProductName(form.getValues('category'), '', form.getValues('color') || '');
+                                      }}
+                                      className="text-xs"
+                                    >
+                                      Selecionar subcategoria existente
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Select 
+                                    value={field.value || undefined} 
+                                    onValueChange={(value) => {
+                                      if (value === '__new__') {
+                                        setIsNewSubcategory(true);
+                                        field.onChange('');
+                                      } else {
+                                        field.onChange(value);
+                                        updateProductName(form.getValues('category'), value, form.getValues('color') || '');
+                                      }
+                                    }}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Selecione ou crie nova" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__new__">+ Nova Subcategoria</SelectItem>
+                                      {existingSubcategories.map(sub => (
+                                        <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                               </FormControl>
-                              {field.value === '' && (
-                                <Input 
-                                  placeholder="Digite a nova subcategoria"
-                                  onChange={(e) => {
-                                    field.onChange(e.target.value);
-                                    updateProductName(form.getValues('category'), e.target.value, form.getValues('color') || '');
-                                  }}
-                                  className="mt-2"
-                                />
-                              )}
                               <FormMessage />
                             </FormItem>
                           );
@@ -705,8 +938,10 @@ const AdminProducts = () => {
                               <FormControl>
                                 <Input 
                                   {...field} 
-                                  disabled={!editingProduct}
-                                  className="bg-muted"
+                                  onChange={(e) => {
+                                    field.onChange(e);
+                                    setIsNameManuallyEdited(true);
+                                  }}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -714,6 +949,99 @@ const AdminProducts = () => {
                           )}
                         />
                       </div>
+
+                      {/* Configuração de Kit */}
+                      <div className="space-y-4 border p-4 rounded-xl bg-muted/20 shadow-sm border-dashed">
+                        <FormField
+                          control={form.control}
+                          name="is_kit"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-background">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base font-semibold">Este produto é um Kit? 🎁</FormLabel>
+                                <p className="text-xs text-muted-foreground">
+                                  Ative para listar as cores peça por peça na separação do pedido.
+                                </p>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+
+                        {form.watch('is_kit') && (
+                          <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                            <FormField
+                              control={form.control}
+                              name="kit_piece_count"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Qtd. de peças no Kit</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      {...field} 
+                                      placeholder="Ex: 6" 
+                                      type="number" 
+                                      className="max-w-[120px]"
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <div className="space-y-3">
+                              <FormLabel>Cores do Kit (Adicione uma por uma)</FormLabel>
+                              <div className="flex gap-2">
+                                <Input 
+                                  value={kitColorInput} 
+                                  onChange={(e) => setKitColorInput(e.target.value)}
+                                  placeholder="Digite uma cor e dê Enter"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      addKitColor(kitColorInput);
+                                    }
+                                  }}
+                                />
+                                <Button 
+                                  type="button" 
+                                  onClick={() => addKitColor(kitColorInput)} 
+                                  variant="secondary"
+                                >
+                                  <Plus className="h-4 w-4 mr-1" /> Adicionar
+                                </Button>
+                              </div>
+                              
+                              <div className="flex flex-wrap gap-2 pt-1">
+                                {kitColors.length === 0 ? (
+                                  <p className="text-xs italic text-muted-foreground">Nenhuma cor adicionada ainda.</p>
+                                ) : (
+                                  kitColors.map((color, index) => (
+                                    <Badge key={index} variant="outline" className="pl-3 pr-1 py-1 gap-1 bg-background text-sm">
+                                      {color}
+                                      <Button 
+                                        type="button" 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-5 w-5 p-0 hover:bg-destructive hover:text-destructive-foreground rounded-full" 
+                                        onClick={() => removeKitColor(index)}
+                                      >
+                                        <X className="h-3 w-3" />
+                                      </Button>
+                                    </Badge>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -775,29 +1103,74 @@ const AdminProducts = () => {
                       {/* Tamanhos */}
                       <div className="border-t pt-4 mt-2">
                         <p className="text-sm font-semibold text-foreground mb-3">📏 Tamanhos</p>
-                        <div className="space-y-3">
-                          <div className="flex flex-wrap gap-2">
-                            {(() => {
-                              const category = form.getValues('category') || '';
-                              const preset = getSizePresetForCategory(category);
-                              const allSizes = [...new Set([...preset, ...selectedSizes])];
-                              return allSizes.map(size => (
-                                <button
-                                  key={size}
-                                  type="button"
-                                  onClick={() => toggleSize(size)}
-                                  className={cn(
-                                    "px-3 py-1.5 rounded-full text-sm font-medium border transition-all",
-                                    selectedSizes.includes(size)
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "bg-muted text-muted-foreground border-border hover:border-primary/50"
-                                  )}
-                                >
-                                  {size}
-                                </button>
-                              ));
-                            })()}
+                        <div className="space-y-4">
+                          {/* Categorias de Tamanhos */}
+                          <div className="space-y-3">
+                            {Object.entries(SIZE_PRESETS).map(([key, sizes]) => (
+                                <div key={key} className="space-y-1">
+                                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">
+                                      {key === 'adult' ? 'Adulto' : 
+                                       key === 'numeric' ? 'Numérico' : 
+                                       key === 'plus_size' ? 'Plus Size' : 
+                                       key === 'infantil' ? 'Infantil' : 'Único'}
+                                    </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {sizes.map(size => (
+                                            <button
+                                                key={size}
+                                                type="button"
+                                                onClick={() => toggleSize(size)}
+                                                className={cn(
+                                                    "px-2.5 py-1 rounded-md text-xs font-medium border transition-all",
+                                                    selectedSizes.includes(size)
+                                                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                                        : "bg-muted text-muted-foreground border-border hover:border-primary/50"
+                                                )}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                           </div>
+
+                          {/* Tamanho Personalizado */}
+                          <div className="flex gap-2 items-end">
+                              <div className="flex-1 space-y-1">
+                                  <label className="text-[10px] uppercase font-bold text-muted-foreground">Personalizado</label>
+                                  <Input 
+                                    value={customSize}
+                                    onChange={(e) => setCustomSize(e.target.value)}
+                                    placeholder="Ex: PP, XG, 56"
+                                    className="h-8 text-xs"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (customSize.trim()) {
+                                                toggleSize(customSize.trim());
+                                                setCustomSize('');
+                                            }
+                                        }
+                                    }}
+                                  />
+                              </div>
+                              <Button 
+                                type="button"
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                    if (customSize.trim()) {
+                                        toggleSize(customSize.trim());
+                                        setCustomSize('');
+                                    }
+                                }}
+                                className="h-8"
+                              >
+                                  Add
+                              </Button>
+                          </div>
+
                           <div className="flex gap-2">
                             <Button
                               type="button"
@@ -806,7 +1179,7 @@ const AdminProducts = () => {
                               onClick={() => setSelectedSizes(getSizePresetForCategory(form.getValues('category') || ''))}
                               className="text-xs"
                             >
-                              Resetar padrão
+                              Sugerir p/ Categoria
                             </Button>
                             <Button
                               type="button"
@@ -882,6 +1255,104 @@ const AdminProducts = () => {
                           />
                         </div>
                       </div>
+
+                      {/* Configurações de Status */}
+                      <div className="border-t pt-4 mt-2">
+                        <p className="text-sm font-semibold text-foreground mb-3">⚙️ Status do Produto</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="is_launch"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Lançamento</FormLabel>
+                                  <p className="text-xs text-muted-foreground">Novidade no catálogo</p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="is_promotion"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                  <FormLabel>Promoção</FormLabel>
+                                  <p className="text-xs text-muted-foreground">Produto em oferta</p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="is_out_of_stock"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-accent/5">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2">
+                                    {field.value ? "❌ Sem Estoque" : "✅ Em Estoque"}
+                                  </FormLabel>
+                                  <p className="text-xs text-muted-foreground">
+                                    {field.value 
+                                      ? "Oculto do catálogo público" 
+                                      : "Visível no catálogo público"}
+                                  </p>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={!field.value}
+                                    onCheckedChange={(checked) => field.onChange(!checked)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
+                          {form.watch('is_promotion') && (
+                            <div className="grid grid-cols-2 gap-4 col-span-1 md:col-span-2 bg-destructive/5 p-4 rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-2">
+                              <FormField
+                                control={form.control}
+                                name="promotion_retail_price"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-destructive font-bold">Preço Varejo PROMO</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ex: 19.90" className="border-destructive/30" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="promotion_wholesale_price"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel className="text-destructive font-bold">Preço Atacado PROMO</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} placeholder="Ex: 15.90" className="border-destructive/30" />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       
                       <div className="flex justify-end gap-2 pt-4">
                         <Button 
@@ -901,74 +1372,272 @@ const AdminProducts = () => {
                 </DialogContent>
               </Dialog>
 
+              {selectedProducts.size > 0 && (
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsBulkEditOpen(true)} 
+                    className="flex items-center gap-2 bg-primary/10 border-primary/20 hover:bg-primary/20 transition-colors"
+                  >
+                    <Edit2 className="h-4 w-4 text-primary" />
+                    <span className="font-bold text-primary">Editar {selectedProducts.size}</span>
+                  </Button>
+
+                  {products.some(p => selectedProducts.has(p.id) && p.is_promotion) && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleRemovePromotion}
+                      disabled={isSubmitting}
+                      className="flex items-center gap-2 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                      <span className="font-bold">Remover Promoção</span>
+                    </Button>
+                  )}
+                </div>
+              )}
+
               {/* Dialog de Edição em Massa */}
               <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Editar {selectedProducts.size} produto(s) selecionado(s)</DialogTitle>
+                    <p className="text-sm text-muted-foreground italic">Preencha apenas o que deseja alterar em massa. Os campos vazios serão mantidos.</p>
                   </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Categoria (deixe vazio para não alterar)</label>
-                      <Select 
-                        value={bulkEditData.category || undefined} 
-                        onValueChange={(value) => setBulkEditData({...bulkEditData, category: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Não alterar" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {categories
-                            .filter(cat => cat !== 'todos')
-                            .map(category => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))
-                          }
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Subcategoria</label>
-                      <Input
-                        value={bulkEditData.subcategory}
-                        onChange={(e) => setBulkEditData({...bulkEditData, subcategory: e.target.value})}
-                        placeholder="Ex: Blusas (deixe vazio para não alterar)"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                    {/* Coluna 1: Localização */}
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-sm font-medium">Preço Varejo</label>
+                        <label className="text-sm font-bold flex items-center gap-1">📂 Categoria</label>
+                        <Select 
+                          value={bulkEditData.category} 
+                          onValueChange={(value) => setBulkEditData({...bulkEditData, category: value})}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Não alterar" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="keep">Não alterar</SelectItem>
+                            {categories
+                              .filter(cat => cat !== 'todos')
+                              .map(category => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))
+                            }
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold flex items-center gap-1">🏷️ Subcategoria</label>
                         <Input
-                          value={bulkEditData.retail_price}
-                          onChange={(e) => setBulkEditData({...bulkEditData, retail_price: e.target.value})}
-                          placeholder="Ex: 29.90"
+                          value={bulkEditData.subcategory}
+                          onChange={(e) => setBulkEditData({...bulkEditData, subcategory: e.target.value})}
+                          placeholder="Ex: Blusas"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Preço Atacado</label>
+
+                      <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold">💰 Preço Varejo</label>
+                          <Input
+                            value={bulkEditData.retail_price}
+                            onChange={(e) => setBulkEditData({...bulkEditData, retail_price: e.target.value})}
+                            placeholder="Ex: 29.90"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold">💰 Preço Atacado</label>
+                          <Input
+                            value={bulkEditData.wholesale_price}
+                            onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
+                            placeholder="Ex: 25.90"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Coluna 2: Status e Promo */}
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold truncate">✨ Lançamento?</label>
+                          <Select 
+                            value={bulkEditData.is_launch} 
+                            onValueChange={(value: any) => setBulkEditData({...bulkEditData, is_launch: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="keep">Não alterar</SelectItem>
+                              <SelectItem value="yes">Sim</SelectItem>
+                              <SelectItem value="no">Não</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold truncate">🔥 Promoção?</label>
+                          <Select 
+                            value={bulkEditData.is_promotion} 
+                            onValueChange={(value: any) => setBulkEditData({...bulkEditData, is_promotion: value})}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="keep">Não alterar</SelectItem>
+                              <SelectItem value="yes">Sim</SelectItem>
+                              <SelectItem value="no">Não</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold truncate">📦 Em Estoque?</label>
+                          <Select 
+                            value={bulkEditData.is_out_of_stock === 'keep' ? 'keep' : (bulkEditData.is_out_of_stock === 'no' ? 'yes' : 'no')} 
+                            onValueChange={(value: any) => {
+                              let stockValue: 'keep' | 'yes' | 'no' = 'keep';
+                              if (value === 'yes') stockValue = 'no'; // Em estoque YES -> is_out_of_stock NO
+                              if (value === 'no') stockValue = 'yes'; // Em estoque NO -> is_out_of_stock YES
+                              setBulkEditData({...bulkEditData, is_out_of_stock: stockValue});
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="keep">Não alterar</SelectItem>
+                              <SelectItem value="yes">Sim</SelectItem>
+                              <SelectItem value="no">Não</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 border-l-2 border-destructive/20 pl-4 bg-destructive/5 rounded-r-md py-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-destructive underline">Varejo Promo</label>
+                          <Input
+                            value={bulkEditData.promotion_retail_price}
+                            onChange={(e) => setBulkEditData({...bulkEditData, promotion_retail_price: e.target.value})}
+                            placeholder="Ex: 19.90"
+                            className="border-destructive/30"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-bold text-destructive underline">Atacado Promo</label>
+                          <Input
+                            value={bulkEditData.promotion_wholesale_price}
+                            onChange={(e) => setBulkEditData({...bulkEditData, promotion_wholesale_price: e.target.value})}
+                            placeholder="Ex: 15.90"
+                            className="border-destructive/30"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 border-t pt-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase font-bold">Emoji</label>
+                          <Input
+                            value={bulkEditData.display_emoji}
+                            onChange={(e) => setBulkEditData({...bulkEditData, display_emoji: e.target.value})}
+                            placeholder="👗"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase font-bold">Modelo (WhatsApp)</label>
+                          <Input
+                            value={bulkEditData.model_name}
+                            onChange={(e) => setBulkEditData({...bulkEditData, model_name: e.target.value})}
+                            placeholder="Jade..."
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] uppercase font-bold">Cor (Exibição)</label>
+                          <Input
+                            value={bulkEditData.color_name}
+                            onChange={(e) => setBulkEditData({...bulkEditData, color_name: e.target.value})}
+                            placeholder="Preto..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-2">
+                        <label className="text-sm font-bold">⚖️ Peso (Kg)</label>
                         <Input
-                          value={bulkEditData.wholesale_price}
-                          onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
-                          placeholder="Ex: 25.90"
+                          value={bulkEditData.weight_kg}
+                          onChange={(e) => setBulkEditData({...bulkEditData, weight_kg: e.target.value})}
+                          placeholder="Ex: 0.5 (deixe vazio para manter)"
                         />
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setIsBulkEditOpen(false)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button onClick={handleBulkEdit}>
-                        Aplicar Alterações
-                      </Button>
+                    {/* Tamanhos em Massa */}
+                    <div className="col-span-1 md:col-span-2 border-t pt-6">
+                      <label className="text-sm font-bold flex items-center gap-1 mb-4">📏 Alterar Tamanhos (deixe vazio para não alterar)</label>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                          {Object.entries(SIZE_PRESETS).map(([key, sizes]) => (
+                            <div key={key} className="space-y-2">
+                              <p className="text-[10px] uppercase font-bold text-muted-foreground">{key}</p>
+                              <div className="flex flex-wrap gap-1">
+                                {sizes.map(size => (
+                                  <button
+                                    key={size}
+                                    type="button"
+                                    onClick={() => {
+                                      setBulkEditData(prev => ({
+                                        ...prev,
+                                        sizes: prev.sizes.includes(size) 
+                                          ? prev.sizes.filter(s => s !== size) 
+                                          : [...prev.sizes, size]
+                                      }));
+                                    }}
+                                    className={cn(
+                                      "px-2 py-0.5 rounded text-[10px] border transition-all",
+                                      bulkEditData.sizes.includes(size)
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-muted text-muted-foreground border-border hover:border-primary/40"
+                                    )}
+                                  >
+                                    {size}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {bulkEditData.sizes.length > 0 && (
+                          <div className="flex justify-between items-center bg-muted/30 p-2 rounded">
+                            <p className="text-xs font-medium">Novos tamanhos: {bulkEditData.sizes.join(', ')}</p>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-6 text-[10px]"
+                              onClick={() => setBulkEditData({...bulkEditData, sizes: []})}
+                            >
+                              Limpar
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-6 border-t mt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsBulkEditOpen(false)}
+                      disabled={isSubmitting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleBulkEdit} disabled={isSubmitting}>
+                      {isSubmitting ? 'Salvando...' : 'Aplicar em Massa'}
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
@@ -1006,6 +1675,7 @@ const AdminProducts = () => {
                     <TableHead>Subcategoria</TableHead>
                     <TableHead>Varejo</TableHead>
                     <TableHead>Atacado</TableHead>
+                    <TableHead>Estoque</TableHead>
                     <TableHead>Criado em</TableHead>
                     <TableHead className="w-32">Ações</TableHead>
                   </TableRow>
@@ -1013,7 +1683,7 @@ const AdminProducts = () => {
                 <TableBody>
                   {filteredProducts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         {searchTerm || selectedCategory !== 'todos' 
                           ? 'Nenhum produto encontrado com os filtros aplicados.'
                           : 'Nenhum produto cadastrado ainda.'
@@ -1023,20 +1693,21 @@ const AdminProducts = () => {
                   ) : (
                     filteredProducts.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleProductSelection(product.id)}
-                            className="h-8 w-8 p-0"
-                          >
-                            {selectedProducts.has(product.id) ? (
-                              <CheckSquare className="h-4 w-4" />
-                            ) : (
-                              <Square className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
+                    <TableCell 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleProductSelection(product.id);
+                      }}
+                    >
+                      <div className="flex items-center justify-center h-full w-full">
+                        {selectedProducts.has(product.id) ? (
+                          <CheckSquare className="h-4 w-4 text-primary" />
+                        ) : (
+                          <Square className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </TableCell>
                         <TableCell>
                           {product.image_url ? (
                             <img
@@ -1056,7 +1727,19 @@ const AdminProducts = () => {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            {product.name}
+                            <div className="flex flex-wrap gap-1">
+                              {product.is_launch && (
+                                <Badge variant="default" className="bg-purple-600 hover:bg-purple-700 text-[10px] h-4 py-0">Lançamento</Badge>
+                              )}
+                              {product.is_promotion && (
+                                <Badge variant="destructive" className="text-[10px] h-4 py-0">Promoção</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell>{product.category}</TableCell>
                         <TableCell>
                           {product.subcategory ? (
@@ -1067,6 +1750,20 @@ const AdminProducts = () => {
                         </TableCell>
                         <TableCell>{formatPrice(product.retail_price)}</TableCell>
                         <TableCell>{formatPrice(product.wholesale_price)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={!product.is_out_of_stock}
+                              onCheckedChange={() => toggleStock(product.id, !!product.is_out_of_stock)}
+                            />
+                            <span className={cn(
+                              "text-xs font-medium",
+                              !product.is_out_of_stock ? "text-green-600" : "text-destructive"
+                            )}>
+                              {!product.is_out_of_stock ? "Em estoque" : "Esgotado"}
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell>{formatDate(product.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">

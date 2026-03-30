@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
+import { ProductSkeleton } from "@/components/ProductSkeleton";
+
 
 const CategoryPage = () => {
   const { category, subcategory } = useParams();
@@ -58,14 +60,14 @@ const CategoryPage = () => {
     if (subcategory) {
       return getProductsBySubcategory(category || '', subcategory);
     }
-    if (category && !categoryHasSubcategories(category)) {
+    if (category) {
       return getProductsByCategory(category);
     }
     return [];
   };
 
   const displaySubcategories = () => {
-    if (category && !subcategory && categoryHasSubcategories(category)) {
+    if (category && categoryHasSubcategories(category) && category !== 'promocoes' && category !== 'lancamentos') {
       return getSubcategoriesWithData(category);
     }
     return [];
@@ -122,34 +124,48 @@ const CategoryPage = () => {
         </div>
       </section>
 
-      {/* Products/Subcategories Section */}
+      {/* Subcategories Horizontal Filter (Pills) */}
+      {showSubcategories && (
+        <section className="border-b border-border/50 bg-surface/95 backdrop-blur-md sticky top-[106px] sm:top-[116px] z-30 shadow-none">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-1 snap-x">
+              <Button
+                variant={!subcategory ? "default" : "outline"}
+                size="sm"
+                className="rounded-full whitespace-nowrap snap-start shadow-sm"
+                onClick={() => navigate(`/catalogo/${category}`)}
+              >
+                Todos
+              </Button>
+              {currentSubcategories.map((subcat) => (
+                <Button
+                  key={subcat.subcategory}
+                  variant={subcategory === subcat.subcategory ? "default" : "outline"}
+                  size="sm"
+                  className="rounded-full whitespace-nowrap snap-start shadow-sm"
+                  onClick={() => handleSubcategorySelect(subcat.subcategory)}
+                >
+                  {subcat.subcategory}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Products Section */}
       <section className="py-8 sm:py-12 md:py-16 relative">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="text-center py-16">
-              <div className="text-2xl mb-4">Carregando...</div>
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+              {[...Array(8)].map((_, i) => (
+                <ProductSkeleton key={i} />
+              ))}
             </div>
           ) : error ? (
+
             <div className="text-center py-16">
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
-            </div>
-          ) : showSubcategories ? (
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
-              {currentSubcategories.map((subcat, index) => (
-                <div 
-                  key={subcat.subcategory} 
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <CategoryCard
-                    category={subcat.subcategory}
-                    imageUrl={subcat.imageUrl}
-                    minWholesalePrice={subcat.minWholesale}
-                    minRetailPrice={subcat.minRetail}
-                    onSelect={() => handleSubcategorySelect(subcat.subcategory)}
-                  />
-                </div>
-              ))}
             </div>
           ) : showProducts ? (
             <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
@@ -157,7 +173,7 @@ const CategoryPage = () => {
                 <div 
                   key={product.id} 
                   className="flex animate-fade-in"
-                  style={{ animationDelay: `${index * 0.1}s` }}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <ProductCard
                     product={product}
@@ -174,7 +190,7 @@ const CategoryPage = () => {
                 Nenhum produto encontrado
               </h3>
               <p className="text-foreground-muted">
-                Em breve teremos produtos disponíveis
+                Pode não haver itens selecionados no momento.
               </p>
             </div>
           )}

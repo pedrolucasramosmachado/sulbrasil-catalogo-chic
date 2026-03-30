@@ -7,6 +7,8 @@ import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { toast } from "@/hooks/use-toast";
 import { BannerCarousel } from "@/components/BannerCarousel";
+import { CategorySkeleton } from "@/components/CategorySkeleton";
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -95,21 +97,24 @@ const Index = () => {
         <section className="relative py-8 sm:py-12 md:py-16 overflow-hidden min-h-[40vh] flex items-center">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
           <div className="container mx-auto px-4 relative z-10">
-            <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-12 md:mb-16">
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2">
-                Qual categoria deseja visualizar?
-              </h1>
-              <p className="text-base sm:text-lg md:text-xl text-foreground-muted leading-relaxed px-4 mb-6">
-                Clique para ver os modelos e cores disponíveis 👇
-              </p>
-              <div className="w-16 sm:w-24 h-1 bg-gradient-to-r from-primary to-accent mx-auto rounded-full"></div>
-            </div>
+          <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-12 md:mb-16 bg-white/10 backdrop-blur-md p-8 rounded-3xl border border-white/20 shadow-2xl animate-fade-in">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4 sm:mb-6 px-2 drop-shadow-sm">
+              Qual categoria deseja visualizar?
+            </h1>
+            <p className="text-base sm:text-lg md:text-xl text-foreground font-medium leading-relaxed px-4 mb-6">
+              Toque para explorar nossas coleções exclusivas ✨
+            </p>
+            <div className="w-24 sm:w-32 h-1.5 bg-gradient-to-r from-primary via-accent to-primary mx-auto rounded-full shadow-inner"></div>
+          </div>
 
             {loading ? (
-              <div className="text-center py-16">
-                <div className="text-2xl mb-4">Carregando categorias...</div>
+              <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+                {[...Array(6)].map((_, i) => (
+                  <CategorySkeleton key={i} />
+                ))}
               </div>
             ) : error ? (
+
               <div className="text-center py-16">
                 <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
               </div>

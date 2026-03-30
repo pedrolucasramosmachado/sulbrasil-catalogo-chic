@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { BannerCarousel } from "@/components/BannerCarousel";
+import { optimizeImageUrl } from "@/lib/url";
 
 const Vitrine = () => {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ const VitrineCategoryCard = ({
           !imageLoaded && "animate-pulse bg-surface"
         )}>
           <img
-            src={imageUrl || "/placeholder.svg"}
+            src={optimizeImageUrl(imageUrl) || "/placeholder.svg"}
             alt={category}
             className={cn(
               "w-full h-full object-cover transition-all duration-700 group-hover:scale-110",

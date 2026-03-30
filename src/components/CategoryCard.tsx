@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { optimizeImageUrl } from "@/lib/url";
 
 interface CategoryCardProps {
   category: string;
@@ -17,7 +18,7 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
       <div className="aspect-[3/4] sm:aspect-[3/4] relative overflow-hidden">
         {/* Image */}
         <img
-          src={imageUrl}
+          src={optimizeImageUrl(imageUrl) || "/placeholder.svg"}
           alt={category}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           onError={(e) => {

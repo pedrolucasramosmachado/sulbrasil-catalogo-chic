@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.4"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -53,6 +53,27 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias: {
+        Row: {
+          created_at: string | null
+          icone: string
+          id: number
+          nome: string
+        }
+        Insert: {
+          created_at?: string | null
+          icone: string
+          id?: never
+          nome: string
+        }
+        Update: {
+          created_at?: string | null
+          icone?: string
+          id?: never
+          nome?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           cover_image_url: string | null
@@ -87,6 +108,8 @@ export type Database = {
           id: string
           is_wholesale: boolean
           items: Json
+          shipping_cost: number | null
+          shipping_method: string | null
           status: string
           total: number
           total_pieces: number
@@ -99,6 +122,8 @@ export type Database = {
           id?: string
           is_wholesale?: boolean
           items: Json
+          shipping_cost?: number | null
+          shipping_method?: string | null
           status?: string
           total?: number
           total_pieces?: number
@@ -111,6 +136,8 @@ export type Database = {
           id?: string
           is_wholesale?: boolean
           items?: Json
+          shipping_cost?: number | null
+          shipping_method?: string | null
           status?: string
           total?: number
           total_pieces?: number
@@ -122,17 +149,20 @@ export type Database = {
       products: {
         Row: {
           category: string
+          category_id: string | null
           color_name: string | null
           created_at: string
           description: string | null
           display_emoji: string | null
-          display_order: number
+          display_order: number | null
           id: string
           image_url: string | null
           is_featured: boolean | null
+          is_kit: boolean | null
           is_launch: boolean | null
           is_out_of_stock: boolean | null
           is_promotion: boolean | null
+          kit_piece_count: number | null
           model_name: string | null
           name: string
           promotion_retail_price: number | null
@@ -146,17 +176,20 @@ export type Database = {
         }
         Insert: {
           category: string
+          category_id?: string | null
           color_name?: string | null
           created_at?: string
           description?: string | null
           display_emoji?: string | null
-          display_order: number
+          display_order?: number | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
+          is_kit?: boolean | null
           is_launch?: boolean | null
           is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
+          kit_piece_count?: number | null
           model_name?: string | null
           name: string
           promotion_retail_price?: number | null
@@ -170,17 +203,20 @@ export type Database = {
         }
         Update: {
           category?: string
+          category_id?: string | null
           color_name?: string | null
           created_at?: string
           description?: string | null
           display_emoji?: string | null
-          display_order?: number
+          display_order?: number | null
           id?: string
           image_url?: string | null
           is_featured?: boolean | null
+          is_kit?: boolean | null
           is_launch?: boolean | null
           is_out_of_stock?: boolean | null
           is_promotion?: boolean | null
+          kit_piece_count?: number | null
           model_name?: string | null
           name?: string
           promotion_retail_price?: number | null
@@ -192,7 +228,53 @@ export type Database = {
           weight_kg?: number | null
           wholesale_price?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transacoes: {
+        Row: {
+          categoria_id: number | null
+          created_at: string | null
+          data: string | null
+          descricao: string
+          id: number
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          categoria_id?: number | null
+          created_at?: string | null
+          data?: string | null
+          descricao: string
+          id?: never
+          tipo: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: number | null
+          created_at?: string | null
+          data?: string | null
+          descricao?: string
+          id?: never
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transacoes_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -235,13 +317,13 @@ export type Tables<
     : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
-    ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R
-      }
-      ? R
-      : never
+  ? (DefaultSchema["Tables"] &
+      DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+    ? R
     : never
+  : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
@@ -261,12 +343,12 @@ export type TablesInsert<
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I
-      }
-      ? I
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Insert: infer I
+    }
+    ? I
     : never
+  : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
@@ -286,12 +368,12 @@ export type TablesUpdate<
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U
-      }
-      ? U
-      : never
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+      Update: infer U
+    }
+    ? U
     : never
+  : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
@@ -307,8 +389,8 @@ export type Enums<
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
@@ -324,8 +406,8 @@ export type CompositeTypes<
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
 
 export const Constants = {
   public: {
