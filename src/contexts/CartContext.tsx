@@ -198,21 +198,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   /**
    * Gera a mensagem do pedido para o WhatsApp.
    *
-   * Kits: cores exibidas uma abaixo da outra para facilitar separação física.
-   *   Fonte (prioridade): color_name do banco → parte após " - " no nome → genérico.
-   * Produtos normais: nome, tamanho, quantidade e preço em linha única.
-   * Quebra de linha: apenas \n (compatível com WhatsApp).
+   * Formato:
+   * - Emoji contextual por produto (display_emoji do banco ou inferido pelo nome/categoria)
+   * - Kits: título em negrito, peças e valor em linha, cores em linha dedicada (🎨)
+   * - Produtos normais: nome em negrito, tamanho/qtd/valor compactos em linha única
+   * - Rodapé com total, peso real e frete a calcular
    */
   const generateWhatsAppMessage = useCallback(() => {
     const priceType = isWholesale ? "ATACADO" : "VAREJO";
-    const div = "\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550";
+    const div = "════════════════════";
 
     let msg = "";
+
     // ── Cabeçalho ──────────────────────────────────
-    msg += `*NOVO PEDIDO \u2014 ${priceType}*\n`;
+    msg += `🛍️ *NOVO PEDIDO — ${priceType}*\n`;
     msg += div + "\n";
-    if (customerName.trim()) msg += `*Cliente:* ${customerName.trim()}\n`;
-        msg += `*Total de peças:* ${totalPieces} | *Peso Est:* ${totalWeightKg.toFixed(2)}kg\n`;
+    if (customerName.trim()) msg += `👤 *Cliente:* ${customerName.trim()}\n`;
+    msg += `📦 *Total:* ${totalPieces} peças · ${totalWeightKg.toFixed(2)}kg\n`;
     msg += div + "\n\n";
 
     // ── Listagem ────────────────────────────────────
@@ -221,72 +223,41 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const unitPrice = getItemPrice(item);
       const itemTotal = unitPrice * quantity;
       const pieceCount = getPieceCount(product);
+      const emoji = product.display_emoji || getProductEmoji(product);
 
       const isKit =
         product.is_kit === true ||
         product.name.toLowerCase().includes("kit") ||
         (product.category || "").toLowerCase().includes("kit");
 
-      const emoji = product.display_emoji || getProductEmoji(product);
-
       if (isKit) {
-        // Título do kit: parte antes do " - " (ou nome completo)
+        // Título: parte antes do " - " no nome, ou nome completo
         const kitTitle = product.name.includes(" - ")
           ? product.name.split(" - ")[0].trim()
           : product.name;
         const qtyTag = quantity > 1 ? ` (x${quantity})` : "";
-        msg += `*${index + 1}.* *${kitTitle}${qtyTag}*\n`;
+        const totalPiecesItem = pieceCount * quantity;
+        const piecesLabel = totalPiecesItem > 1 ? `${totalPiecesItem} peças` : `${totalPiecesItem} peça`;
 
-        // ── Cores do kit ── uma por linha ──
-        let kitColors: string[] = [];
+        msg += `${emoji} *${index + 1}. ${kitTitle}${qtyTag}*\n`;
+        msg += `   ${piecesLabel} · ${formatCurrency(unitPrice)}/kit = *${formatCurrency(itemTotal)}*\n`;
 
-        // Prioridade 1: campo color_name do banco (ex: "Rosa, Bege, Off White")
-        // Prioridade 1: campo color_name do banco (que agora é gerenciado pela lista de cores no admin)
+        // Cores do kit — só exibe se houver color_name cadastrado no banco
         if (product.color_name && product.color_name.trim()) {
-          // Se for kit, o color_name já vem como "Cor1, Cor2, Cor3"
-          kitColors = product.color_name.split(",").map((c) => c.trim()).filter(Boolean);
-        }
-        // Prioridade 2: Fallback para parsing do nome (produtos legado)
-        else if (product.name.includes(" - ")) {
-          const afterDash = product.name.split(" - ").slice(1).join(" - ").replace(/[()]/g, "").trim();
-          const commaParts = afterDash.split(",").map((c) => c.trim()).filter(Boolean);
-          if (commaParts.length > 1) {
-            const last = commaParts[commaParts.length - 1].replace(/^e\s+/i, "").trim();
-            kitColors = [...commaParts.slice(0, -1), last].filter(Boolean);
-          } else {
-            const andParts = afterDash.split(/ e /i).map((c) => c.trim()).filter(Boolean);
-            kitColors = andParts.length > 1 ? andParts : [afterDash];
+          const colors = product.color_name
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean);
+          if (colors.length > 0) {
+            msg += `   🎨 ${colors.join(" | ")}\n`;
           }
         }
-
-        if (kitColors.length > 0) {
-          kitColors.forEach((cor) => {
-            const numberMatch = cor.match(/^(\d+)([xX\s]*)(.*)/);
-            
-            if (numberMatch) {
-              const baseQty = parseInt(numberMatch[1], 10);
-              const colorName = numberMatch[3].trim();
-              const finalQty = baseQty * quantity;
-              const qtyDisplay = finalQty > 1 ? `${finalQty} ` : "";
-              msg += `   - ${qtyDisplay}${colorName}\n`;
-            } else {
-              const qtyDisplay = quantity > 1 ? `${quantity} ` : "";
-              msg += `   - ${qtyDisplay}${cor}\n`;
-            }
-          });
-        } else {
-          const totalPiecesItem = pieceCount * quantity;
-          const qtyDisplay = totalPiecesItem > 1 ? `${totalPiecesItem} ` : "";
-          msg += `   - ${qtyDisplay}peças\n`;
-        }
-
-        msg += `   ${formatCurrency(unitPrice)}/kit = *${formatCurrency(itemTotal)}*\n\n`;
+        msg += "\n";
 
       } else {
-        // ── Produto normal ──
-        msg += `*${index + 1}.* ${product.name}\n`;
-
+        // ── Produto normal — compacto em duas linhas ──
         const parts: string[] = [];
+
         if (selectedSize) {
           const norm = selectedSize.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
           if (!norm.includes("unico") && norm !== "u") {
@@ -295,20 +266,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
         if (quantity > 1) parts.push(`Qtd: *${quantity}*`);
         parts.push(`${formatCurrency(unitPrice)}/un = *${formatCurrency(itemTotal)}*`);
-        msg += `   ${parts.join(" | ")}\n\n`;
+
+        msg += `${emoji} *${index + 1}. ${product.name}*\n`;
+        msg += `   ${parts.join(" · ")}\n\n`;
       }
     });
 
     // ── Rodapé ──────────────────────────────────────
-    const totalWeight = totalPieces * 0.150; // 150g por peça
     msg += div + "\n";
     msg += `*TOTAL: ${formatCurrency(getTotal())}*\n`;
-    msg += `*Peso Est.:* ${totalWeight.toFixed(2)}kg\n`;
-    msg += `*Frete:* (A calcular)\n`;
+    msg += `*FRETE:* A calcular · *Peso:* ${totalWeightKg.toFixed(2)}kg\n`;
     msg += div + "\n";
 
     return msg;
-  }, [items, isWholesale, totalPieces, totalItems, customerName, getItemPrice, getTotal]);
+  }, [items, isWholesale, totalPieces, totalWeightKg, customerName, getItemPrice, getTotal]);
 
   const saveOrderToDb = useCallback(async (message: string) => {
     try {

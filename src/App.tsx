@@ -12,6 +12,7 @@ import AdminHome from "./pages/AdminHome";
 import AdminProducts from "./pages/AdminProducts";
 import AdminCategoryOrder from "./pages/AdminCategoryOrder";
 import AdminShipping from "./pages/AdminShipping";
+import AdminPhotoRecovery from "./pages/AdminPhotoRecovery";
 import Vitrine from "./pages/Vitrine";
 import VitrineCategory from "./pages/VitrineCategory";
 import { RequireAuth } from "./components/RequireAuth";
@@ -50,6 +51,7 @@ const App = () => (
             <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
             <Route path="/admin/categories" element={<RequireAuth><AdminCategoryOrder /></RequireAuth>} />
             <Route path="/admin/shipping" element={<RequireAuth><AdminShipping /></RequireAuth>} />
+            <Route path="/admin/photo-recovery" element={<RequireAuth><AdminPhotoRecovery /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
