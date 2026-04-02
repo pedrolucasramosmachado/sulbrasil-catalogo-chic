@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts, Product } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
@@ -56,8 +56,10 @@ const AdminProducts = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState('todos');
   const [filterLaunches, setFilterLaunches] = useState(false);
   const [filterPromotions, setFilterPromotions] = useState(false);
+  const scrollPosRef = useRef<number>(0);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -185,6 +187,17 @@ const AdminProducts = () => {
     }
   }, [kitColors, form.watch('is_kit'), form.watch('kit_piece_count'), form.watch('category'), form.watch('subcategory'), isNameManuallyEdited]);
 
+  // Restauração de Scroll reativa
+  useEffect(() => {
+    if (shouldRestoreScroll && !loading && products.length > 0) {
+      const timer = setTimeout(() => {
+        window.scrollTo(0, scrollPosRef.current);
+        setShouldRestoreScroll(false);
+      }, 50); // Delay mínimo apenas para garantir render do DOM
+      return () => clearTimeout(timer);
+    }
+  }, [products, shouldRestoreScroll, loading]);
+
   const addKitColor = (color: string) => {
     const trimmed = color.trim();
     if (trimmed && !kitColors.includes(trimmed)) {
@@ -222,7 +235,10 @@ const AdminProducts = () => {
 
       const { error: uploadError } = await supabase.storage
         .from('catalog')
-        .upload(filePath, file);
+        .upload(filePath, file, { 
+          cacheControl: '3600',
+          upsert: true 
+        });
 
       if (uploadError) {
         console.error('Erro detalhado Supabase Storage:', uploadError);
@@ -309,9 +325,12 @@ const AdminProducts = () => {
         });
       }
 
+      scrollPosRef.current = window.scrollY;
+      setShouldRestoreScroll(true);
+      
       setIsDialogOpen(false);
       resetForm();
-      fetchProducts();
+      await fetchProducts(true, true);
     } catch (error) {
       console.error('Erro ao salvar produto:', error);
       toast({
@@ -493,6 +512,9 @@ const AdminProducts = () => {
         description: `${selectedProducts.size} produto(s) atualizado(s) com sucesso!`,
       });
 
+      scrollPosRef.current = window.scrollY;
+      setShouldRestoreScroll(true);
+      
       setIsBulkEditOpen(false);
       setSelectedProducts(new Set());
       setBulkEditData({
@@ -511,7 +533,7 @@ const AdminProducts = () => {
         sizes: [],
         is_out_of_stock: 'keep',
       });
-      fetchProducts();
+      await fetchProducts(true, true);
     } catch (error) {
       console.error('Erro ao atualizar produtos:', error);
       toast({
@@ -526,6 +548,9 @@ const AdminProducts = () => {
 
   const toggleStock = async (id: string, currentStatus: boolean) => {
     try {
+      scrollPosRef.current = window.scrollY;
+      setShouldRestoreScroll(true);
+      
       const { error } = await supabase
         .from('products')
         .update({ is_out_of_stock: !currentStatus })
@@ -537,7 +562,7 @@ const AdminProducts = () => {
         title: 'Estoque atualizado',
         description: !currentStatus ? 'Produto marcado como esgotado' : 'Produto agora está em estoque!',
       });
-      fetchProducts();
+      await fetchProducts(true, true);
     } catch (error) {
       console.error('Error toggling stock:', error);
       toast({
@@ -553,6 +578,9 @@ const AdminProducts = () => {
 
     try {
       setIsSubmitting(true);
+      scrollPosRef.current = window.scrollY;
+      setShouldRestoreScroll(true);
+      
       const { error } = await supabase
         .from('products')
         .update({
@@ -570,7 +598,7 @@ const AdminProducts = () => {
       });
 
       setSelectedProducts(new Set());
-      fetchProducts();
+      await fetchProducts(true, true);
     } catch (error) {
       console.error('Erro ao remover promoção:', error);
       toast({
@@ -589,6 +617,9 @@ const AdminProducts = () => {
 
   const deleteProduct = async (productId: string) => {
     try {
+      scrollPosRef.current = window.scrollY;
+      setShouldRestoreScroll(true);
+      
       const { error } = await supabase
         .from('products')
         .delete()
@@ -601,7 +632,7 @@ const AdminProducts = () => {
         description: 'Produto excluído com sucesso!',
       });
       
-      fetchProducts();
+      await fetchProducts(true, true);
     } catch (error) {
       console.error('Erro ao excluir produto:', error);
       toast({
@@ -729,7 +760,10 @@ const AdminProducts = () => {
                       Novo Produto
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent 
+                    className="max-w-2xl max-h-[90vh] overflow-y-auto"
+                    onCloseAutoFocus={(e) => e.preventDefault()}
+                  >
                   <DialogHeader>
                     <DialogTitle>
                       {editingProduct ? 'Editar Produto' : 'Novo Produto'}
@@ -1082,22 +1116,32 @@ const AdminProducts = () => {
                       <FormField
                         control={form.control}
                         name="weight_kg"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Peso (kg)</FormLabel>
-                            <FormControl>
-                              <Input 
-                                {...field} 
-                                placeholder="Ex: 0.5"
-                                type="text"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                            <p className="text-xs text-muted-foreground">
-                              Usado para cálculo de frete. Deixe vazio para usar 0.5kg padrão.
-                            </p>
-                          </FormItem>
-                        )}
+                        render={({ field }) => {
+                          const weightValue = parseFloat(field.value?.replace(',', '.') || '0');
+                          const isSuspicious = weightValue > 5;
+                          
+                          return (
+                            <FormItem>
+                              <FormLabel className={isSuspicious ? "text-destructive font-bold" : ""}>
+                                Peso (kg) {isSuspicious && "⚠️ VALOR ALTO"}
+                              </FormLabel>
+                              <FormControl>
+                                <Input 
+                                  {...field} 
+                                  placeholder="Ex: 0.250"
+                                  type="text"
+                                  className={isSuspicious ? "border-destructive bg-destructive/5" : ""}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                              <p className={cn("text-xs", isSuspicious ? "text-destructive font-semibold animate-pulse" : "text-muted-foreground")}>
+                                {isSuspicious 
+                                  ? "Atenção: Pesos acima de 5kg são incomuns para roupas. Verifique se não digitou gramas (ex: 350) em vez de kg (0.350)." 
+                                  : "Usado para cálculo de frete. Deixe vazio para usar o padrão de 0.15kg por peça."}
+                              </p>
+                            </FormItem>
+                          );
+                        }}
                       />
 
                       {/* Tamanhos */}
@@ -1399,7 +1443,10 @@ const AdminProducts = () => {
 
               {/* Dialog de Edição em Massa */}
               <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent 
+                  className="max-w-3xl max-h-[90vh] overflow-y-auto"
+                  onCloseAutoFocus={(e) => e.preventDefault()}
+                >
                   <DialogHeader>
                     <DialogTitle>Editar {selectedProducts.size} produto(s) selecionado(s)</DialogTitle>
                     <p className="text-sm text-muted-foreground italic">Preencha apenas o que deseja alterar em massa. Os campos vazios serão mantidos.</p>
@@ -1780,7 +1827,7 @@ const AdminProducts = () => {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent>
+                              <AlertDialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
                                   <AlertDialogDescription>

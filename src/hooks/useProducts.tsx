@@ -45,9 +45,9 @@ export const useProducts = () => {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 1000;
 
-  const fetchProducts = async (isInitial = true) => {
+  const fetchProducts = async (isInitial = true, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const currentPage = isInitial ? 0 : page + 1;
       const from = currentPage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
@@ -83,7 +83,7 @@ export const useProducts = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar produtos');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

@@ -25,6 +25,7 @@ export const CartDrawer = () => {
     getTotal,
     getCartKey,
     sendToWhatsApp,
+    totalWeightKg,
   } = useCart();
 
 
@@ -198,7 +199,7 @@ export const CartDrawer = () => {
                 </span>
                 <span className="flex items-center gap-1 text-primary/80">
                   <Truck className="w-2.5 h-2.5" />
-                  Frete p/ separar
+                  Peso Est. *{totalWeightKg.toFixed(2)}kg*
                 </span>
                 <Badge className="text-[8px] h-3.5 px-1.5 uppercase font-bold" variant={isWholesale ? "default" : "secondary"}>
                   {isWholesale ? "Atacado" : "Varejo"}

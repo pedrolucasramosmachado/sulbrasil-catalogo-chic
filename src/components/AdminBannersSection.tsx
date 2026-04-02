@@ -49,7 +49,10 @@ export const AdminBannersSection = () => {
 
       const { error: uploadErr } = await supabase.storage
         .from('catalog')
-        .upload(fileName, newFile);
+        .upload(fileName, newFile, { 
+          cacheControl: '3600',
+          upsert: true 
+        });
 
       if (uploadErr) throw uploadErr;
 

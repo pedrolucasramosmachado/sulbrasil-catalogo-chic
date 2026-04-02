@@ -112,7 +112,10 @@ const AdminCategoryOrder = () => {
 
       const { error: uploadError } = await supabase.storage
         .from('catalog')
-        .upload(filePath, file);
+        .upload(filePath, file, { 
+          cacheControl: '3600',
+          upsert: true 
+        });
 
       if (uploadError) {
         console.error('Erro detalhado Supabase Storage:', uploadError);

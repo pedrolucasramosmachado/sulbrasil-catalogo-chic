@@ -45,6 +45,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const WHOLESALE_THRESHOLD = 10;
 const WHATSAPP_NUMBER = "5511961890347";
+const DEFAULT_WEIGHT_PER_PIECE = 0.15; // 150g por peça
 
 /** Chave única para um item do carrinho (produto + tamanho) */
 const buildCartKey = (productId: string, size?: string): string => {
@@ -56,15 +57,16 @@ const buildCartKey = (productId: string, size?: string): string => {
  * Ex: "Kit 6 Blusas" → 6, "Kit com 3" → 3, padrão → 1
  */
 const getPieceCount = (product: Product): number => {
+  if (!product) return 1;
   // Prioridade 1: Campo estruturado do banco
   if (product.kit_piece_count) return product.kit_piece_count;
   
   // Prioridade 2: Fallback para o parsing do nome (produtos antigos)
-  const name = product.name.toLowerCase();
+  const name = (product.name || "").toLowerCase();
   const matchPieces = name.match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid(ades?)?|und?|itens)/i);
-  if (matchPieces) return parseInt(matchPieces[1], 10);
+  if (matchPieces) return Math.max(1, parseInt(matchPieces[1], 10));
   const matchKit = name.match(/(?:kit|combo|conjunto|conj)\s*(?:com\s*|de\s*)?(\d+)/i);
-  if (matchKit) return parseInt(matchKit[1], 10);
+  if (matchKit) return Math.max(1, parseInt(matchKit[1], 10));
   return 1;
 };
 
@@ -123,10 +125,33 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const totalPieces = items.reduce((sum, item) => sum + getPieceCount(item.product) * item.quantity, 0);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalWeightKg = items.reduce((sum, item) => {
-    const weight = item.product.weight_kg || 0.15;
-    return sum + weight * item.quantity;
-  }, 0);
+  
+  const totalWeightKg = Number(items.reduce((sum, item) => {
+    let weight = item.product.weight_kg;
+    const pieces = getPieceCount(item.product);
+    
+    // Identifica se é um conjunto
+    const combined = [item.product.name, item.product.category, item.product.subcategory]
+      .join(" ")
+      .toLowerCase();
+    const isConjunto = combined.includes("conjunto") || combined.includes("conj.");
+    
+    // Peso padrão: 1kg para conjuntos, 0.15kg por peça para outros
+    const fallbackWeight = isConjunto ? 1.0 : (DEFAULT_WEIGHT_PER_PIECE * pieces);
+
+    // Proteção contra pesos absurdos ou ausentes
+    // Se for conjunto, o limite é maior (10kg por kit/conjunto)
+    const maxLimit = isConjunto ? 10 : (5 * pieces);
+
+    if (!weight || weight > maxLimit) {
+      if (weight && weight > maxLimit) {
+        console.warn(`Peso anômalo detectado para o produto ${item.product.name}: ${weight}kg. Usando fallback de ${fallbackWeight}kg.`);
+      }
+      weight = fallbackWeight;
+    }
+    
+    return sum + (weight * item.quantity);
+  }, 0).toFixed(2));
   const isWholesale = totalPieces >= WHOLESALE_THRESHOLD;
 
   const getCartKey = useCallback((item: CartItem) => buildCartKey(item.product.id, item.selectedSize), []);
@@ -192,7 +217,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const getTotal = useCallback(() => {
     const subtotal = items.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
-    return subtotal + (selectedShipping?.price || 0);
+    return Number((subtotal + (selectedShipping?.price || 0)).toFixed(2));
   }, [items, getItemPrice, selectedShipping]);
 
   /**
@@ -214,68 +239,78 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     msg += `🛍️ *NOVO PEDIDO — ${priceType}*\n`;
     msg += div + "\n";
     if (customerName.trim()) msg += `👤 *Cliente:* ${customerName.trim()}\n`;
-    msg += `📦 *Total:* ${totalPieces} peças · ${totalWeightKg.toFixed(2)}kg\n`;
+    msg += `📦 *Total:* ${totalPieces} peças | *Peso Est:* ${totalWeightKg.toFixed(2)}kg\n`;
     msg += div + "\n\n";
 
     // ── Listagem ────────────────────────────────────
     items.forEach((item, index) => {
-      const { product, quantity, selectedSize } = item;
-      const unitPrice = getItemPrice(item);
-      const itemTotal = unitPrice * quantity;
-      const pieceCount = getPieceCount(product);
-      const emoji = product.display_emoji || getProductEmoji(product);
+      try {
+        const { product, quantity, selectedSize } = item;
+        if (!product) return; // Segurança extra contra itens corrompidos
 
-      const isKit =
-        product.is_kit === true ||
-        product.name.toLowerCase().includes("kit") ||
-        (product.category || "").toLowerCase().includes("kit");
+        const unitPrice = getItemPrice(item);
+        const itemTotal = unitPrice * quantity;
+        const pieceCount = getPieceCount(product);
+        const emoji = product.display_emoji || getProductEmoji(product);
+        const productName = product.name || "Produto sem nome";
 
-      if (isKit) {
-        // Título: parte antes do " - " no nome, ou nome completo
-        const kitTitle = product.name.includes(" - ")
-          ? product.name.split(" - ")[0].trim()
-          : product.name;
-        const qtyTag = quantity > 1 ? ` (x${quantity})` : "";
-        const totalPiecesItem = pieceCount * quantity;
-        const piecesLabel = totalPiecesItem > 1 ? `${totalPiecesItem} peças` : `${totalPiecesItem} peça`;
+        const isKit =
+          product.is_kit === true ||
+          productName.toLowerCase().includes("kit") ||
+          (product.category || "").toLowerCase().includes("kit");
 
-        msg += `${emoji} *${index + 1}. ${kitTitle}${qtyTag}*\n`;
-        msg += `   ${piecesLabel} · ${formatCurrency(unitPrice)}/kit = *${formatCurrency(itemTotal)}*\n`;
+        if (isKit) {
+          // Título: parte antes do " - " no nome, ou nome completo
+          const kitTitle = productName.includes(" - ")
+            ? productName.split(" - ")[0].trim()
+            : productName;
+          const qtyTag = quantity > 1 ? ` (x${quantity})` : "";
+          const totalPiecesItem = pieceCount * quantity;
+          const piecesLabel = totalPiecesItem > 1 ? `${totalPiecesItem} peças` : `${totalPiecesItem} peça`;
 
-        // Cores do kit — só exibe se houver color_name cadastrado no banco
-        if (product.color_name && product.color_name.trim()) {
-          const colors = product.color_name
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean);
-          if (colors.length > 0) {
-            msg += `   🎨 ${colors.join(" | ")}\n`;
+          msg += `${emoji} *${index + 1}. ${kitTitle}${qtyTag}*\n`;
+          msg += `   ${piecesLabel} · ${formatCurrency(unitPrice)}/kit = *${formatCurrency(itemTotal)}*\n`;
+
+          // Cores do kit — só exibe se houver color_name cadastrado no banco
+          if (product.color_name && product.color_name.trim()) {
+            const colors = product.color_name
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean);
+            if (colors.length > 0) {
+              msg += `   🎨 ${colors.join(" | ")}\n`;
+            }
           }
-        }
-        msg += "\n";
+          msg += "\n";
 
-      } else {
-        // ── Produto normal — compacto em duas linhas ──
-        const parts: string[] = [];
+        } else {
+          // ── Produto normal — compacto em duas linhas ──
+          const parts: string[] = [];
 
-        if (selectedSize) {
-          const norm = selectedSize.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-          if (!norm.includes("unico") && norm !== "u") {
-            parts.push(`Tam: *${selectedSize}*`);
+          if (selectedSize) {
+            const norm = selectedSize.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+            if (!norm.includes("unico") && norm !== "u") {
+              parts.push(`Tam: *${selectedSize}*`);
+            }
           }
-        }
-        if (quantity > 1) parts.push(`Qtd: *${quantity}*`);
-        parts.push(`${formatCurrency(unitPrice)}/un = *${formatCurrency(itemTotal)}*`);
+          if (quantity > 1) parts.push(`Qtd: *${quantity}*`);
+          parts.push(`${formatCurrency(unitPrice)}/un = *${formatCurrency(itemTotal)}*`);
 
-        msg += `${emoji} *${index + 1}. ${product.name}*\n`;
-        msg += `   ${parts.join(" · ")}\n\n`;
+          msg += `${emoji} *${index + 1}. ${productName}*\n`;
+          msg += `   ${parts.join(" · ")}\n\n`;
+        }
+      } catch (err) {
+        console.error(`Erro ao processar item ${index + 1}:`, err);
+        // Se houver erro, tenta ao menos incluir o nome básico se existir
+        msg += `⚠️ *${index + 1}. Erro ao processar este item*\n\n`;
       }
     });
 
     // ── Rodapé ──────────────────────────────────────
     msg += div + "\n";
     msg += `*TOTAL: ${formatCurrency(getTotal())}*\n`;
-    msg += `*FRETE:* A calcular · *Peso:* ${totalWeightKg.toFixed(2)}kg\n`;
+    msg += `*Peso Est.:* ${totalWeightKg.toFixed(2)}kg\n`;
+    msg += `*FRETE:* A calcular\n`;
     msg += div + "\n";
 
     return msg;
