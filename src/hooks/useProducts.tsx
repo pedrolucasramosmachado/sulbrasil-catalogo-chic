@@ -102,7 +102,16 @@ export const useProducts = () => {
       p.category_id === categoryOrId || 
       p.category.toLowerCase() === categoryOrId.toLowerCase()
     );
-    return categoryProducts.filter(p => !p.is_out_of_stock);
+    
+    // Sort logic to prioritize "Diana" as requested
+    const filtered = categoryProducts.filter(p => !p.is_out_of_stock);
+    return [...filtered].sort((a, b) => {
+      const isADiana = a.name.toLowerCase().includes('diana');
+      const isBDiana = b.name.toLowerCase().includes('diana');
+      if (isADiana && !isBDiana) return -1;
+      if (!isADiana && isBDiana) return 1;
+      return 0;
+    });
   };
 
   const getCategories = () => {
@@ -119,7 +128,15 @@ export const useProducts = () => {
   };
 
   const getLaunchProducts = () => {
-    return products.filter(product => product.is_launch === true && !product.is_out_of_stock);
+    const launchItems = products.filter(product => product.is_launch === true && !product.is_out_of_stock);
+    // Prioritize "Diana" products as requested by user
+    return [...launchItems].sort((a, b) => {
+      const isADiana = a.name.toLowerCase().includes('diana');
+      const isBDiana = b.name.toLowerCase().includes('diana');
+      if (isADiana && !isBDiana) return -1;
+      if (!isADiana && isBDiana) return 1;
+      return 0;
+    });
   };
 
   const getLatestProduct = () => {
@@ -171,9 +188,18 @@ export const useProducts = () => {
       if (wPrice > 0 && wPrice < data.minWholesale) data.minWholesale = wPrice;
       if (rPrice > 0 && rPrice < data.minRetail) data.minRetail = rPrice;
 
-      // If no manual cover, use the first product image found
-      if (!data.manualCover && !data.imageUrl && product.image_url) {
-        data.imageUrl = product.image_url;
+      // If no manual cover, select image. Prioritize "Diana" as requested.
+      if (!data.manualCover && product.image_url) {
+        const isDiana = product.name.toLowerCase().includes('diana');
+        if (!data.imageUrl || isDiana) {
+          // If we find a "Diana" product, it becomes the priority cover
+          if (isDiana) {
+            data.imageUrl = product.image_url;
+          } else if (!data.imageUrl) {
+            // Otherwise, only set if no image has been set yet
+            data.imageUrl = product.image_url;
+          }
+        }
       }
     });
 

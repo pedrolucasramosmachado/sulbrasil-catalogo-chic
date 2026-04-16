@@ -231,90 +231,121 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
    */
   const generateWhatsAppMessage = useCallback(() => {
     const priceType = isWholesale ? "ATACADO" : "VAREJO";
-    const div = "════════════════════";
+    const divider = "--------------------------------";
 
     let msg = "";
-
-    // ── Cabeçalho ──────────────────────────────────
-    msg += `🛍️ *NOVO PEDIDO — ${priceType}*\n`;
-    msg += div + "\n";
+    msg += `🛍️ *PEDIDO - ${priceType}*\n`;
     if (customerName.trim()) msg += `👤 *Cliente:* ${customerName.trim()}\n`;
-    msg += `📦 *Total:* ${totalPieces} peças | *Peso Est:* ${totalWeightKg.toFixed(2)}kg\n`;
-    msg += div + "\n\n";
+    msg += `📦 *Total de itens:* ${totalPieces} peças\n`;
+    msg += divider + "\n\n";
 
-    // ── Listagem ────────────────────────────────────
-    items.forEach((item, index) => {
-      try {
-        const { product, quantity, selectedSize } = item;
-        if (!product) return; // Segurança extra contra itens corrompidos
-
-        const unitPrice = getItemPrice(item);
-        const itemTotal = unitPrice * quantity;
-        const pieceCount = getPieceCount(product);
-        const emoji = product.display_emoji || getProductEmoji(product);
-        const productName = product.name || "Produto sem nome";
-
-        const isKit =
-          product.is_kit === true ||
-          productName.toLowerCase().includes("kit") ||
-          (product.category || "").toLowerCase().includes("kit");
-
-        if (isKit) {
-          // Título: parte antes do " - " no nome, ou nome completo
-          const kitTitle = productName.includes(" - ")
-            ? productName.split(" - ")[0].trim()
-            : productName;
-          const qtyTag = quantity > 1 ? ` (x${quantity})` : "";
-          const totalPiecesItem = pieceCount * quantity;
-          const piecesLabel = totalPiecesItem > 1 ? `${totalPiecesItem} peças` : `${totalPiecesItem} peça`;
-
-          msg += `${emoji} *${index + 1}. ${kitTitle}${qtyTag}*\n`;
-          msg += `   ${piecesLabel} · ${formatCurrency(unitPrice)}/kit = *${formatCurrency(itemTotal)}*\n`;
-
-          // Cores do kit — só exibe se houver color_name cadastrado no banco
-          if (product.color_name && product.color_name.trim()) {
-            const colors = product.color_name
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean);
-            if (colors.length > 0) {
-              msg += `   🎨 ${colors.join(" | ")}\n`;
-            }
-          }
-          msg += "\n";
-
-        } else {
-          // ── Produto normal — compacto em duas linhas ──
-          const parts: string[] = [];
-
-          if (selectedSize) {
-            const norm = selectedSize.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-            if (!norm.includes("unico") && norm !== "u") {
-              parts.push(`Tam: *${selectedSize}*`);
-            }
-          }
-          if (quantity > 1) parts.push(`Qtd: *${quantity}*`);
-          parts.push(`${formatCurrency(unitPrice)}/un = *${formatCurrency(itemTotal)}*`);
-
-          msg += `${emoji} *${index + 1}. ${productName}*\n`;
-          msg += `   ${parts.join(" · ")}\n\n`;
-        }
-      } catch (err) {
-        console.error(`Erro ao processar item ${index + 1}:`, err);
-        // Se houver erro, tenta ao menos incluir o nome básico se existir
-        msg += `⚠️ *${index + 1}. Erro ao processar este item*\n\n`;
-      }
+    // Agrupar itens por categoria
+    const groups: Record<string, any[]> = {};
+    items.forEach((item) => {
+      const cat = item.product?.category || "Outros";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
     });
 
-    // ── Rodapé ──────────────────────────────────────
-    msg += div + "\n";
-    msg += `*TOTAL: ${formatCurrency(getTotal())}*\n`;
-    msg += `*Peso Est.:* ${totalWeightKg.toFixed(2)}kg\n`;
-    msg += `*FRETE:* A calcular\n`;
-    msg += div + "\n";
+    // Helper para emoji de categoria
+    const getCategoryEmoji = (cat: string) => {
+      const c = cat.toLowerCase();
+      if (c.includes("copa")) return "👒";
+      if (c.includes("baby")) return "🎀";
+      if (c.includes("sarah")) return "👒";
+      if (c.includes("laço") || c.includes("tiara")) return "🎀";
+      return "📦";
+    };
+
+    // Helper para limpar nome redundante
+    const cleanItemName = (itemName: string, categoryName: string) => {
+      let cleaned = itemName;
+      
+      // Lista de prefixos redundantes para remover
+      const prefixesToClean = [
+        categoryName, 
+        "Copa Brasil (BRA)", 
+        "Copa Brasil", 
+        "Kit com", 
+        "Kit", 
+        "Combo", 
+        "Conjunto"
+      ];
+      
+      // Remove cada prefixo se encontrado no início do nome
+      prefixesToClean.forEach(p => {
+        // Escapa caracteres especiais para a regex
+        const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`^${escaped}\\s*[-\\s▫️•]*`, 'gi');
+        cleaned = cleaned.replace(regex, "");
+      });
+
+      return cleaned.trim() || itemName;
+    };
+
+    Object.entries(groups).forEach(([category, groupItems]) => {
+      const c = category.toLowerCase();
+      // O usuário solicitou que apenas a categoria 'Kits' oficial (ou variações diretas) seja tratada como Kit
+      const isKitGroup = c === "kits" || c === "kit" || c === "kit atacado" || c === "combos";
+      
+      const emoji = isKitGroup ? "🎁" : getCategoryEmoji(category);
+      
+      // Título: Apenas as categorias de kit reais recebem o prefixo especial no WhatsApp
+      let headerLabel = category.toUpperCase();
+      if (isKitGroup) {
+        // Remove 'KIT' do início se já existir para evitar "KIT: KIT" e padroniza como "KIT: [NOME]"
+        const cleanName = headerLabel.replace(/^KIT\s*[:\-]?\s*/, "");
+        headerLabel = `KIT: ${cleanName || "KITS"}`;
+      }
+      
+      msg += `${emoji} *${headerLabel}*\n`;
+
+      let groupPieces = 0;
+      let groupValue = 0;
+
+      groupItems.forEach((item) => {
+        const unitPrice = getItemPrice(item);
+        const itemTotal = unitPrice * item.quantity;
+        const piecesPerItem = getPieceCount(item.product);
+        const totalPiecesItem = piecesPerItem * item.quantity;
+        
+        const itemName = cleanItemName(item.product?.name || "Sem nome", category);
+        const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
+        
+        // Formato: ▫️ [Qtd]x [Nome/Cor] (Peças se kit)
+        msg += `▫️ ${item.quantity}x ${itemName}${piecesInfo}\n`;
+        
+        // Detalhar as cores/peças se houver conteúdo entre parênteses com vírgulas (comum em kits de cores fixas)
+        const itemNameRaw = item.product?.name || "";
+        const componentsMatch = itemNameRaw.match(/\(([^)]+)\)/);
+        if (componentsMatch) {
+          const content = componentsMatch[1];
+          // Se tiver vírgulas, é uma lista de cores/peças detalhadas
+          if (content.includes(",")) {
+            const components = content.split(",").map(c => c.trim());
+            components.forEach(comp => {
+              // Ignora se for apenas a contagem de peças (já mostrada no piecesInfo)
+              if (!comp.toLowerCase().includes("pçs") && !comp.toLowerCase().includes("peças")) {
+                msg += `    ▪️ ${comp}\n`;
+              }
+            });
+          }
+        }
+        
+        groupPieces += totalPiecesItem;
+        groupValue += itemTotal;
+      });
+
+      msg += `📦 Subtotal: ${groupPieces} peças\n`;
+      msg += `💰 Valor: ${formatCurrency(groupValue)}\n\n`;
+    });
+
+    msg += divider + "\n";
+    msg += `💰 *TOTAL FINAL: ${formatCurrency(getTotal())}*`;
 
     return msg;
-  }, [items, isWholesale, totalPieces, totalWeightKg, customerName, getItemPrice, getTotal]);
+  }, [items, isWholesale, totalPieces, customerName, getItemPrice, getTotal]);
+
 
   const saveOrderToDb = useCallback(async (message: string) => {
     try {

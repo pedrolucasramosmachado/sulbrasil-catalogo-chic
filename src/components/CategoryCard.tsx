@@ -15,12 +15,12 @@ export const CategoryCard = ({ category, imageUrl, minWholesalePrice, minRetailP
       onClick={onSelect}
       className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-strong active:scale-95 sm:hover:-translate-y-2 bg-gradient-to-br from-white via-surface to-surface-elevated border-2 border-border-subtle hover:border-primary"
     >
-      <div className="aspect-[3/4] sm:aspect-[3/4] relative overflow-hidden">
+      <div className="aspect-[3/4] relative overflow-hidden">
         {/* Image */}
         <img
           src={optimizeImageUrl(imageUrl) || "/placeholder.svg"}
           alt={category}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-110"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             if (target.src !== "/placeholder.svg") {
