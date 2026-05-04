@@ -12,14 +12,12 @@ import { optimizeImageUrl } from "@/lib/url";
 
 interface ProductCardProps {
   product: Product;
-  onConsult: (product: Product) => void;
   onImageClick: (product: Product) => void;
   isSubcategoryView?: boolean;
 }
 
 export const ProductCard = ({ 
   product, 
-  onConsult,
   onImageClick,
   isSubcategoryView = false
 }: ProductCardProps) => {
@@ -140,83 +138,90 @@ export const ProductCard = ({
             {product.name}
           </h3>
 
-          {/* Prices Stacked */}
-          <div className="space-y-2">
-            {/* Retail Price */}
+          {/* Preços com Design Elegante e Minimalista */}
+          {/* Preços com Destaque Equilibrado */}
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {/* Varejo - Agora com Destaque */}
             {product.retail_price && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs font-bold text-gray-500 uppercase tracking-tight">
-                  <span className="text-[10px] sm:text-xs">🔥</span>
-                  <span>Varejo:</span>
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#E91E63]">
-                  {formatCurrency(getPrice('retail'))}
+              <div className="bg-gray-50/80 border border-gray-200/50 rounded-2xl p-3 flex flex-col items-center gap-1.5 group-hover:bg-gray-100 transition-colors duration-500">
+                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Varejo</span>
+                <div className="flex items-baseline text-gray-800">
+                  <span className="text-xl sm:text-2xl font-black tracking-tighter">
+                    {formatCurrency(getPrice('retail'))}
+                  </span>
                 </div>
               </div>
             )}
 
-            {/* Wholesale Price */}
+            {/* Atacado - Destaque Sofisticado */}
             {product.wholesale_price && (
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-xs font-bold text-gray-500 uppercase tracking-tight">
-                  <span className="text-[10px] sm:text-xs">💎</span>
-                  <span>Atacado:</span>
-                </div>
-                <div className="text-xs sm:text-sm font-bold text-[#9C27B0]">
-                  {formatCurrency(getPrice('wholesale'))}
+              <div className="bg-[#fdf2f8]/60 border border-primary/10 rounded-2xl p-3 flex flex-col items-center gap-1.5 group-hover:bg-[#fdf2f8] transition-colors duration-500">
+                <span className="text-[9px] font-bold text-primary uppercase tracking-widest">Atacado Premium</span>
+                <div className="flex items-baseline text-primary">
+                  <span className="text-xl sm:text-2xl font-black tracking-tighter">
+                    {formatCurrency(getPrice('wholesale'))}
+                  </span>
                 </div>
               </div>
             )}
+          </div>
             
             {/* Piece Count Badge for Kits */}
             {product.name.toLowerCase().includes('kit') && (
               <div className="flex items-center justify-center pt-1">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200 text-[10px] sm:text-xs font-black px-3 py-1 rounded-full">
                   📦 {product.name.match(/(\d+)\s*(pe[cç]as?|p[cç]s?|unid?|und?)/i)?.[1] || "1"} PEÇAS
                 </Badge>
               </div>
             )}
-          </div>
+
+            {/* Size selector - MOVED HERE to eliminate gap, right after prices */}
+          {hasSizes && (
+            <div className="w-full flex flex-col items-center gap-2 pt-1">
+              <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-widest">
+                Escolha seu Tamanho:
+              </span>
+              <div className={cn(
+                "flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 w-full transition-all duration-300",
+                showSizeWarning && "ring-4 ring-destructive/20 ring-offset-2 rounded-2xl p-2 bg-destructive/5"
+              )}>
+                {product.sizes!.map(size => (
+                <div key={size} className="flex flex-col items-center">
+                  {/* Single size: show as info chip (not selectable CTA style) */}
+                  {!needsSizeSelection ? (
+                    <span className="text-xs sm:text-sm font-bold px-4 py-1.5 rounded-full border-2 border-primary/30 bg-primary/8 text-primary">
+                      {size}
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSize(prev => prev === size && needsSizeSelection ? undefined : size);
+                        if (showSizeWarning) setShowSizeWarning(false);
+                      }}
+                      className={cn(
+                        "text-xs sm:text-base font-black px-3 sm:px-5 py-2 sm:py-2.5 rounded-full border-2 transition-all duration-300 min-w-[3.5rem] shadow-sm",
+                        selectedSize === size
+                          ? "bg-primary text-white border-primary scale-110 shadow-lg ring-4 ring-primary/20"
+                          : "bg-white text-foreground border-gray-200 hover:border-primary/50 hover:bg-primary/5"
+                      )}
+                    >
+                      {size}
+                    </button>
+                  )}
+                  {size === 'G1' && product.category?.toLowerCase() === 'conjuntos' && (
+                    <span className="text-[9px] sm:text-[10px] text-accent font-black leading-none mt-1 bg-accent/10 px-1.5 rounded-full">+ R$ 10</span>
+                  )}
+                </div>
+              ))}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
 
-      <CardFooter className="p-2.5 sm:p-5 pt-0 flex flex-col gap-1.5 sm:gap-2">
-        {/* Size selector */}
-        {hasSizes && (
-          <div className="w-full flex flex-col items-center gap-1">
-            <span className="text-[9px] sm:text-xs font-semibold text-foreground-muted uppercase tracking-wider">
-              Tamanhos:
-            </span>
-            <div className={cn(
-              "flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 w-full transition-all duration-300",
-              showSizeWarning && "ring-2 ring-destructive ring-offset-1 sm:ring-offset-2 rounded-lg p-1 bg-destructive/10"
-            )}>
-              {product.sizes!.map(size => (
-              <div key={size} className="flex flex-col items-center gap-1">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedSize(prev => prev === size && needsSizeSelection ? undefined : size);
-                    if (showSizeWarning) setShowSizeWarning(false);
-                  }}
-                  className={cn(
-                    "text-xs sm:text-sm font-semibold px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border transition-all duration-200 min-w-8",
-                    selectedSize === size
-                      ? "bg-primary text-primary-foreground border-primary shadow-md"
-                      : "bg-muted text-foreground border-border/50 hover:border-primary/50"
-                  )}
-                >
-                  {size}
-                </button>
-                {size === 'G1' && product.category?.toLowerCase() === 'conjuntos' && (
-                  <span className="text-[9px] sm:text-[10px] text-accent font-bold leading-none mt-0.5">+ R$ 10</span>
-                )}
-              </div>
-            ))}
-            </div>
-          </div>
-        )}
+      <CardFooter className="p-2.5 sm:p-5 pt-0 flex flex-col gap-3 sm:gap-4">
 
         {/* Add to cart hint */}
         {needsSizeSelection && !selectedSize && (
@@ -252,18 +257,6 @@ export const ProductCard = ({
                 <span className="truncate">Adicionar</span>
               </>
             )}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              onConsult(product);
-            }}
-            className="w-9 h-9 sm:w-11 sm:h-11 flex-shrink-0 rounded-lg border-border/50 text-muted-foreground hover:text-green-600 hover:border-green-600 transition-colors bg-white shadow-sm"
-            title="Dúvidas? Consultar no WhatsApp"
-          >
-            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
         </div>
       </CardFooter>

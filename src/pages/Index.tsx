@@ -37,16 +37,6 @@ const Index = () => {
     setSearchQuery(query);
   };
 
-  const handleConsult = (product: Product) => {
-    const productUrl = `${window.location.origin}/produto/${product.id}`;
-    const message = `Olá! Tenho interesse no produto: ${product.name}. Link: ${productUrl}`;
-    const whatsappUrl = `https://wa.me/5511961890347?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    toast({
-      title: "Redirecionando para WhatsApp",
-      description: `Consulta sobre: ${product.name}`,
-    });
-  };
 
   const handleImageClick = (product: Product) => {
     navigate(`/produto/${product.id}`);
@@ -86,7 +76,6 @@ const Index = () => {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onConsult={handleConsult}
                     onImageClick={handleImageClick}
                   />
                 ))}
@@ -102,7 +91,7 @@ const Index = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5"></div>
           <div className="container mx-auto px-4 relative z-10">
             {loading ? (
-              <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+              <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
                 {[...Array(6)].map((_, i) => (
                   <CategorySkeleton key={i} />
                 ))}

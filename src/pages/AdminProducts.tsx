@@ -56,6 +56,7 @@ const AdminProducts = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState('todos');
   const [filterLaunches, setFilterLaunches] = useState(false);
   const [filterPromotions, setFilterPromotions] = useState(false);
+  const [filterDataHealth, setFilterDataHealth] = useState(false);
   const scrollPosRef = useRef<number>(0);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -164,7 +165,16 @@ const AdminProducts = () => {
     const matchesLaunch = !filterLaunches || product.is_launch;
     const matchesPromotion = !filterPromotions || product.is_promotion;
     
-    return matchesSearch && matchesCategory && matchesSubcategory && matchesLaunch && matchesPromotion;
+    const isProblematic = (
+      product.name.toLowerCase().includes('test') || 
+      product.model_name?.toLowerCase().includes('test') || 
+      product.color_name?.toLowerCase().includes('test') ||
+      product.name.toLowerCase().includes('placeholder')
+    );
+    
+    const matchesDataHealth = !filterDataHealth || isProblematic;
+    
+    return matchesSearch && matchesCategory && matchesSubcategory && matchesLaunch && matchesPromotion && matchesDataHealth;
   });
 
   // Sync kit colors with color_name form field
@@ -265,6 +275,24 @@ const AdminProducts = () => {
   const onSubmit = async (data: ProductForm) => {
     try {
       setIsSubmitting(true);
+
+      // Validação de termos de teste
+      const forbiddenTerms = ['final test', 'teste', 'placeholder'];
+      const fieldsToWatch = [data.name, data.model_name, data.color_name, data.category, data.subcategory];
+      
+      const hasForbiddenTerm = forbiddenTerms.some(term => 
+        fieldsToWatch.some(field => field?.toLowerCase().includes(term))
+      );
+
+      if (hasForbiddenTerm) {
+        toast({
+          title: "Dados Inválidos",
+          description: "Os termos 'final test', 'teste' ou 'placeholder' não são permitidos nos dados do produto.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
       
       let imageUrl = editingProduct?.image_url || '';
       
@@ -448,6 +476,24 @@ const AdminProducts = () => {
 
     try {
       setIsSubmitting(true);
+
+      // Validação de termos de teste na edição em massa
+      const forbiddenTerms = ['final test', 'teste', 'placeholder'];
+      const bulkFields = [bulkEditData.model_name, bulkEditData.color_name, bulkEditData.subcategory];
+      const hasForbiddenTerm = forbiddenTerms.some(term => 
+        bulkFields.some(field => field?.toLowerCase().includes(term))
+      );
+
+      if (hasForbiddenTerm) {
+        toast({
+          title: "Dados Inválidos",
+          description: "Não é permitido usar termos de teste ('final test', 'teste', etc) na edição em massa.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       const updates: any = {};
       if (bulkEditData.retail_price) {
         updates.retail_price = parseFloat(bulkEditData.retail_price.replace(',', '.'));
@@ -726,25 +772,36 @@ const AdminProducts = () => {
                   </Select>
                 )}
 
-                <div className="flex items-center gap-4 px-2">
                   <div className="flex items-center gap-2">
                     <Switch 
-                      id="filter-launches" 
-                      checked={filterLaunches} 
-                      onCheckedChange={setFilterLaunches} 
+                      id="filter-data-health" 
+                      checked={filterDataHealth} 
+                      onCheckedChange={setFilterDataHealth} 
                     />
-                    <label htmlFor="filter-launches" className="text-sm font-medium cursor-pointer">Lançamentos</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      id="filter-promotions" 
-                      checked={filterPromotions} 
-                      onCheckedChange={setFilterPromotions} 
-                    />
-                    <label htmlFor="filter-promotions" className="text-sm font-medium cursor-pointer">Promoções</label>
+                    <label htmlFor="filter-data-health" className="text-sm font-medium cursor-pointer text-destructive">Saúde dos Dados</label>
                   </div>
                 </div>
               </div>
+
+              {/* Data Health Warning */}
+              {products.some(p => (
+                p.name.toLowerCase().includes('test') || 
+                (p as any).model_name?.toLowerCase().includes('test') || 
+                (p as any).color_name?.toLowerCase().includes('test')
+              )) && (
+                <div className="w-full mt-4 p-4 bg-red-100 border-2 border-red-200 rounded-lg flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-red-500 rounded-full">
+                      <X className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-red-900">Atenção: Dados de Teste Detectados!</p>
+                      <p className="text-sm text-red-700">Existem produtos com "final test" ou outros termos de teste. Use o filtro <span className="font-bold underline cursor-pointer" onClick={() => setFilterDataHealth(true)}>Saúde dos Dados</span> para corrigi-los.</p>
+                    </div>
+                  </div>
+                  <Button variant="destructive" size="sm" onClick={() => setFilterDataHealth(true)}>Ver Problemas</Button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Link to="/admin/categories">
                   <Button variant="outline" className="flex items-center gap-2">
@@ -1414,284 +1471,10 @@ const AdminProducts = () => {
                     </form>
                   </Form>
                 </DialogContent>
-              </Dialog>
-
-              {selectedProducts.size > 0 && (
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsBulkEditOpen(true)} 
-                    className="flex items-center gap-2 bg-primary/10 border-primary/20 hover:bg-primary/20 transition-colors"
-                  >
-                    <Edit2 className="h-4 w-4 text-primary" />
-                    <span className="font-bold text-primary">Editar {selectedProducts.size}</span>
-                  </Button>
-
-                  {products.some(p => selectedProducts.has(p.id) && p.is_promotion) && (
-                    <Button 
-                      variant="outline" 
-                      onClick={handleRemovePromotion}
-                      disabled={isSubmitting}
-                      className="flex items-center gap-2 bg-red-50 border-red-200 text-red-600 hover:bg-red-100 transition-colors"
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="font-bold">Remover Promoção</span>
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              {/* Dialog de Edição em Massa */}
-              <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
-                <DialogContent 
-                  className="max-w-3xl max-h-[90vh] overflow-y-auto"
-                  onCloseAutoFocus={(e) => e.preventDefault()}
-                >
-                  <DialogHeader>
-                    <DialogTitle>Editar {selectedProducts.size} produto(s) selecionado(s)</DialogTitle>
-                    <p className="text-sm text-muted-foreground italic">Preencha apenas o que deseja alterar em massa. Os campos vazios serão mantidos.</p>
-                  </DialogHeader>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                    {/* Coluna 1: Localização */}
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold flex items-center gap-1">📂 Categoria</label>
-                        <Select 
-                          value={bulkEditData.category} 
-                          onValueChange={(value) => setBulkEditData({...bulkEditData, category: value})}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Não alterar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="keep">Não alterar</SelectItem>
-                            {categories
-                              .filter(cat => cat !== 'todos')
-                              .map(category => (
-                                <SelectItem key={category} value={category}>
-                                  {category}
-                                </SelectItem>
-                              ))
-                            }
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold flex items-center gap-1">🏷️ Subcategoria</label>
-                        <Input
-                          value={bulkEditData.subcategory}
-                          onChange={(e) => setBulkEditData({...bulkEditData, subcategory: e.target.value})}
-                          placeholder="Ex: Blusas"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold">💰 Preço Varejo</label>
-                          <Input
-                            value={bulkEditData.retail_price}
-                            onChange={(e) => setBulkEditData({...bulkEditData, retail_price: e.target.value})}
-                            placeholder="Ex: 29.90"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold">💰 Preço Atacado</label>
-                          <Input
-                            value={bulkEditData.wholesale_price}
-                            onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
-                            placeholder="Ex: 25.90"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Coluna 2: Status e Promo */}
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold truncate">✨ Lançamento?</label>
-                          <Select 
-                            value={bulkEditData.is_launch} 
-                            onValueChange={(value: any) => setBulkEditData({...bulkEditData, is_launch: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="keep">Não alterar</SelectItem>
-                              <SelectItem value="yes">Sim</SelectItem>
-                              <SelectItem value="no">Não</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold truncate">🔥 Promoção?</label>
-                          <Select 
-                            value={bulkEditData.is_promotion} 
-                            onValueChange={(value: any) => setBulkEditData({...bulkEditData, is_promotion: value})}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="keep">Não alterar</SelectItem>
-                              <SelectItem value="yes">Sim</SelectItem>
-                              <SelectItem value="no">Não</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold truncate">📦 Em Estoque?</label>
-                          <Select 
-                            value={bulkEditData.is_out_of_stock === 'keep' ? 'keep' : (bulkEditData.is_out_of_stock === 'no' ? 'yes' : 'no')} 
-                            onValueChange={(value: any) => {
-                              let stockValue: 'keep' | 'yes' | 'no' = 'keep';
-                              if (value === 'yes') stockValue = 'no'; // Em estoque YES -> is_out_of_stock NO
-                              if (value === 'no') stockValue = 'yes'; // Em estoque NO -> is_out_of_stock YES
-                              setBulkEditData({...bulkEditData, is_out_of_stock: stockValue});
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="keep">Não alterar</SelectItem>
-                              <SelectItem value="yes">Sim</SelectItem>
-                              <SelectItem value="no">Não</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 border-l-2 border-destructive/20 pl-4 bg-destructive/5 rounded-r-md py-2">
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-destructive underline">Varejo Promo</label>
-                          <Input
-                            value={bulkEditData.promotion_retail_price}
-                            onChange={(e) => setBulkEditData({...bulkEditData, promotion_retail_price: e.target.value})}
-                            placeholder="Ex: 19.90"
-                            className="border-destructive/30"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-bold text-destructive underline">Atacado Promo</label>
-                          <Input
-                            value={bulkEditData.promotion_wholesale_price}
-                            onChange={(e) => setBulkEditData({...bulkEditData, promotion_wholesale_price: e.target.value})}
-                            placeholder="Ex: 15.90"
-                            className="border-destructive/30"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 border-t pt-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase font-bold">Emoji</label>
-                          <Input
-                            value={bulkEditData.display_emoji}
-                            onChange={(e) => setBulkEditData({...bulkEditData, display_emoji: e.target.value})}
-                            placeholder="👗"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase font-bold">Modelo (WhatsApp)</label>
-                          <Input
-                            value={bulkEditData.model_name}
-                            onChange={(e) => setBulkEditData({...bulkEditData, model_name: e.target.value})}
-                            placeholder="Jade..."
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] uppercase font-bold">Cor (Exibição)</label>
-                          <Input
-                            value={bulkEditData.color_name}
-                            onChange={(e) => setBulkEditData({...bulkEditData, color_name: e.target.value})}
-                            placeholder="Preto..."
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 pt-2">
-                        <label className="text-sm font-bold">⚖️ Peso (Kg)</label>
-                        <Input
-                          value={bulkEditData.weight_kg}
-                          onChange={(e) => setBulkEditData({...bulkEditData, weight_kg: e.target.value})}
-                          placeholder="Ex: 0.5 (deixe vazio para manter)"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Tamanhos em Massa */}
-                    <div className="col-span-1 md:col-span-2 border-t pt-6">
-                      <label className="text-sm font-bold flex items-center gap-1 mb-4">📏 Alterar Tamanhos (deixe vazio para não alterar)</label>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-                          {Object.entries(SIZE_PRESETS).map(([key, sizes]) => (
-                            <div key={key} className="space-y-2">
-                              <p className="text-[10px] uppercase font-bold text-muted-foreground">{key}</p>
-                              <div className="flex flex-wrap gap-1">
-                                {sizes.map(size => (
-                                  <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => {
-                                      setBulkEditData(prev => ({
-                                        ...prev,
-                                        sizes: prev.sizes.includes(size) 
-                                          ? prev.sizes.filter(s => s !== size) 
-                                          : [...prev.sizes, size]
-                                      }));
-                                    }}
-                                    className={cn(
-                                      "px-2 py-0.5 rounded text-[10px] border transition-all",
-                                      bulkEditData.sizes.includes(size)
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-muted text-muted-foreground border-border hover:border-primary/40"
-                                    )}
-                                  >
-                                    {size}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {bulkEditData.sizes.length > 0 && (
-                          <div className="flex justify-between items-center bg-muted/30 p-2 rounded">
-                            <p className="text-xs font-medium">Novos tamanhos: {bulkEditData.sizes.join(', ')}</p>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-6 text-[10px]"
-                              onClick={() => setBulkEditData({...bulkEditData, sizes: []})}
-                            >
-                              Limpar
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end gap-2 pt-6 border-t mt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setIsBulkEditOpen(false)}
-                      disabled={isSubmitting}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button onClick={handleBulkEdit} disabled={isSubmitting}>
-                      {isSubmitting ? 'Salvando...' : 'Aplicar em Massa'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                </Dialog>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             {error && (
               <div className="bg-destructive/10 text-destructive p-4 rounded-md mb-4">
                 Erro ao carregar produtos: {error}

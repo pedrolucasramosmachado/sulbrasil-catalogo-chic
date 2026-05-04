@@ -29,17 +29,6 @@ const CategoryPage = () => {
     setIsZoomOpen(true);
   };
 
-  const handleConsult = (product: Product) => {
-    const productUrl = `${window.location.origin}/produto/${product.id}`;
-    const message = `Olá! Tenho interesse no produto: ${product.name}. Link do produto: ${productUrl}. Gostaria de mais informações sobre disponibilidade, cores e condições de compra.`;
-    const whatsappUrl = `https://wa.me/5511961890347?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    
-    toast({
-      title: "Redirecionando para WhatsApp",
-      description: `Consulta sobre: ${product.name}`,
-    });
-  };
 
   const handleSubcategorySelect = (subcat: string) => {
     navigate(`/catalogo/${category}/${encodeURIComponent(subcat)}`);
@@ -157,7 +146,7 @@ const CategoryPage = () => {
       <section className="py-8 sm:py-12 md:py-16 relative">
         <div className="container mx-auto px-4">
           {loading ? (
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
               {[...Array(8)].map((_, i) => (
                 <ProductSkeleton key={i} />
               ))}
@@ -168,7 +157,7 @@ const CategoryPage = () => {
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
             </div>
           ) : showProducts ? (
-            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
               {currentProducts.map((product, index) => (
                 <div 
                   key={product.id} 
@@ -177,7 +166,6 @@ const CategoryPage = () => {
                 >
                   <ProductCard
                     product={product}
-                    onConsult={handleConsult}
                     onImageClick={handleImageClick}
                   />
                 </div>

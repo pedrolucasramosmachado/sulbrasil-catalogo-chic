@@ -44,7 +44,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const WHOLESALE_THRESHOLD = 10;
-const WHATSAPP_NUMBER = "5511961890347";
+const DEFAULT_WHATSAPP_NUMBER = "5511961890347";
 const DEFAULT_WEIGHT_PER_PIECE = 0.15; // 150g por peça
 
 /** Chave única para um item do carrinho (produto + tamanho) */
@@ -97,6 +97,19 @@ const getProductEmoji = (product: Product): string => {
   return "\uD83D\uDC57"; // 👗 (fallback)
 };
 
+/**
+ * Limpa o texto removendo termos de teste e trims excessivos.
+ */
+const cleanLabel = (text: string | null | undefined): string => {
+  if (!text) return "";
+  return text
+    .replace(/final test/gi, "")
+    .replace(/teste/gi, "")
+    .replace(/placeholder/gi, "")
+    .replace(/  +/g, " ")
+    .trim();
+};
+
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(() => {
     const saved = localStorage.getItem("sulbrasil_cart");
@@ -110,6 +123,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return localStorage.getItem("sulbrasil_customer_zip") || "";
   });
   const [selectedShipping, setSelectedShipping] = useState<ShippingResult | null>(null);
+  const [whatsappSettings, setWhatsappSettings] = useState<{
+    phone_number: string;
+    header_text: string;
+    footer_text: string | null;
+    show_prices: boolean;
+    show_total: boolean;
+  }>({
+    phone_number: DEFAULT_WHATSAPP_NUMBER,
+    header_text: "🛍️ *PEDIDO*",
+    footer_text: null,
+    show_prices: true,
+    show_total: true,
+  });
+  const [categoryEmojis, setCategoryEmojis] = useState<Record<string, string>>({});
 
   useEffect(() => {
     localStorage.setItem("sulbrasil_cart", JSON.stringify(items));
@@ -122,6 +149,38 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem("sulbrasil_customer_zip", customerZipCode);
   }, [customerZipCode]);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data: settingsData } = await supabase
+          .from('whatsapp_settings')
+          .select('*')
+          .maybeSingle();
+        
+        if (settingsData) {
+          setWhatsappSettings(settingsData);
+        }
+
+        const { data: categories } = await supabase
+          .from('categories')
+          .select('name, whatsapp_emoji');
+        
+        if (categories) {
+          const emojiMap: Record<string, string> = {};
+          categories.forEach(cat => {
+            if (cat.whatsapp_emoji) {
+              emojiMap[cat.name] = cat.whatsapp_emoji;
+            }
+          });
+          setCategoryEmojis(emojiMap);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar configs do WhatsApp:", err);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   const totalPieces = items.reduce((sum, item) => sum + getPieceCount(item.product) * item.quantity, 0);
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -234,7 +293,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const divider = "--------------------------------";
 
     let msg = "";
-    msg += `🛍️ *PEDIDO - ${priceType}*\n`;
+    msg += `${whatsappSettings.header_text} - ${priceType}\n`;
     if (customerName.trim()) msg += `👤 *Cliente:* ${customerName.trim()}\n`;
     msg += `📦 *Total de itens:* ${totalPieces} peças\n`;
     msg += divider + "\n\n";
@@ -249,6 +308,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     // Helper para emoji de categoria
     const getCategoryEmoji = (cat: string) => {
+      // Prioridade 1: Emoji configurado no banco por categoria
+      if (categoryEmojis[cat]) return categoryEmojis[cat];
+
       const c = cat.toLowerCase();
       if (c.includes("copa")) return "👒";
       if (c.includes("baby")) return "🎀";
@@ -257,94 +319,123 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return "📦";
     };
 
-    // Helper para limpar nome redundante
-    const cleanItemName = (itemName: string, categoryName: string) => {
-      let cleaned = itemName;
-      
-      // Lista de prefixos redundantes para remover
-      const prefixesToClean = [
-        categoryName, 
-        "Copa Brasil (BRA)", 
-        "Copa Brasil", 
-        "Kit com", 
-        "Kit", 
-        "Combo", 
-        "Conjunto"
-      ];
-      
-      // Remove cada prefixo se encontrado no início do nome
-      prefixesToClean.forEach(p => {
-        // Escapa caracteres especiais para a regex
-        const escaped = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`^${escaped}\\s*[-\\s▫️•]*`, 'gi');
-        cleaned = cleaned.replace(regex, "");
-      });
-
-      return cleaned.trim() || itemName;
-    };
-
     Object.entries(groups).forEach(([category, groupItems]) => {
       const c = category.toLowerCase();
-      // O usuário solicitou que apenas a categoria 'Kits' oficial (ou variações diretas) seja tratada como Kit
       const isKitGroup = c === "kits" || c === "kit" || c === "kit atacado" || c === "combos";
-      
+
       const emoji = isKitGroup ? "🎁" : getCategoryEmoji(category);
-      
-      // Título: Apenas as categorias de kit reais recebem o prefixo especial no WhatsApp
+
       let headerLabel = category.toUpperCase();
       if (isKitGroup) {
-        // Remove 'KIT' do início se já existir para evitar "KIT: KIT" e padroniza como "KIT: [NOME]"
         const cleanName = headerLabel.replace(/^KIT\s*[:\-]?\s*/, "");
         headerLabel = `KIT: ${cleanName || "KITS"}`;
       }
-      
-      msg += `${emoji} *${headerLabel}*\n`;
 
       let groupPieces = 0;
       let groupValue = 0;
+
+      // ─── Sub-agrupamento por model_name ───────────────────────────────────
+      type SubItem = { item: typeof groupItems[0]; displayColor: string };
+      const subGroupMap: Record<string, { modelLabel: string | null; items: SubItem[] }> = {};
 
       groupItems.forEach((item) => {
         const unitPrice = getItemPrice(item);
         const itemTotal = unitPrice * item.quantity;
         const piecesPerItem = getPieceCount(item.product);
         const totalPiecesItem = piecesPerItem * item.quantity;
+
+        groupPieces += totalPiecesItem;
+        groupValue += itemTotal;
+
+        // Limpeza e Fallback de Nomes/Cores
+        const modelLabel = cleanLabel(item.product.model_name) || null;
+        let displayColor = cleanLabel(item.product.color_name);
         
-        const itemName = cleanItemName(item.product?.name || "Sem nome", category);
-        const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
+        // Fallback: Se a cor ficou vazia após a limpeza, usa o nome do produto limpo
+        if (!displayColor) {
+          displayColor = cleanLabel(item.product.name);
+        }
         
-        // Formato: ▫️ [Qtd]x [Nome/Cor] (Peças se kit)
-        msg += `▫️ ${item.quantity}x ${itemName}${piecesInfo}\n`;
-        
-        // Detalhar as cores/peças se houver conteúdo entre parênteses com vírgulas (comum em kits de cores fixas)
-        const itemNameRaw = item.product?.name || "";
-        const componentsMatch = itemNameRaw.match(/\(([^)]+)\)/);
-        if (componentsMatch) {
-          const content = componentsMatch[1];
-          // Se tiver vírgulas, é uma lista de cores/peças detalhadas
-          if (content.includes(",")) {
-            const components = content.split(",").map(c => c.trim());
-            components.forEach(comp => {
-              // Ignora se for apenas a contagem de peças (já mostrada no piecesInfo)
+        const key = modelLabel ?? `__solo__${item.product.id}`;
+
+        if (!subGroupMap[key]) {
+          subGroupMap[key] = { modelLabel, items: [] };
+        }
+        subGroupMap[key].items.push({ item, displayColor });
+      });
+
+      // Separa itens standalone (sem model_name ou com apenas 1 item no grupo)
+      // de sub-grupos nomeados (model_name + múltiplos itens)
+      const standaloneGroups = Object.values(subGroupMap).filter(g => !g.modelLabel || g.items.length === 1);
+      const namedSubGroups   = Object.values(subGroupMap).filter(g => g.modelLabel && g.items.length > 1);
+
+      // ── Itens standalone: usa cabeçalho da categoria ──
+      if (standaloneGroups.length > 0) {
+        let sPieces = 0, sValue = 0;
+        msg += `${emoji} *${headerLabel}*\n`;
+        standaloneGroups.forEach(({ modelLabel, items }) => {
+          const { item, displayColor } = items[0];
+          const piecesPerItem = getPieceCount(item.product);
+          const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
+          const cleanModel = cleanLabel(item.product.model_name);
+          const cleanColor = cleanLabel(item.product.color_name);
+          const showName = (cleanModel && cleanColor)
+            ? `${cleanModel} ${cleanColor}`
+            : cleanLabel(item.product.name);
+          msg += `▫️ ${item.quantity}x ${showName}${piecesInfo}\n`;
+
+          const itemNameRaw = item.product?.name || "";
+          const componentsMatch = itemNameRaw.match(/\(([^)]+)\)/);
+          if (componentsMatch?.length && componentsMatch[1].includes(",")) {
+            componentsMatch[1].split(",").map(c => c.trim()).forEach(comp => {
               if (!comp.toLowerCase().includes("pçs") && !comp.toLowerCase().includes("peças")) {
                 msg += `    ▪️ ${comp}\n`;
               }
             });
           }
-        }
-        
-        groupPieces += totalPiecesItem;
-        groupValue += itemTotal;
-      });
 
-      msg += `📦 Subtotal: ${groupPieces} peças\n`;
-      msg += `💰 Valor: ${formatCurrency(groupValue)}\n\n`;
+          sPieces += getPieceCount(item.product) * item.quantity;
+          sValue  += getItemPrice(item) * item.quantity;
+        });
+        msg += `📦 Subtotal: ${sPieces} peças\n`;
+        if (whatsappSettings.show_prices) {
+          msg += `💰 Valor: ${formatCurrency(sValue)}\n`;
+        }
+        msg += "\n";
+      }
+
+      // ── Sub-grupos nomeados: cada um com seu próprio emoji + header ──
+      namedSubGroups.forEach(({ modelLabel, items }) => {
+        let sgPieces = 0, sgValue = 0;
+        // Header = emoji + model_name (sem cabeçalho de categoria separado)
+        msg += `${emoji} *${modelLabel}*\n`;
+        items.forEach(({ item, displayColor }) => {
+          const piecesPerItem = getPieceCount(item.product);
+          const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
+          msg += `▫️ ${item.quantity}x ${displayColor}${piecesInfo}\n`;
+          sgPieces += piecesPerItem * item.quantity;
+          sgValue  += getItemPrice(item) * item.quantity;
+        });
+        msg += `📦 Subtotal: ${sgPieces} peças\n`;
+        if (whatsappSettings.show_prices) {
+          msg += `💰 Valor: ${formatCurrency(sgValue)}\n`;
+        }
+        msg += "\n";
+      });
     });
 
     msg += divider + "\n";
-    msg += `💰 *TOTAL FINAL: ${formatCurrency(getTotal())}*`;
+    if (whatsappSettings.show_prices) {
+      msg += `💰 *TOTAL FINAL: ${formatCurrency(getTotal())}*\n`;
+    }
+    msg += `⚖️ *Peso estimado: ${totalWeightKg.toFixed(2)}kg*\n`;
+    msg += `🚚 _Frete a calcular pelo atendente_`;
+    if (whatsappSettings.footer_text) {
+      msg += `\n\n${whatsappSettings.footer_text}`;
+    }
 
     return msg;
-  }, [items, isWholesale, totalPieces, customerName, getItemPrice, getTotal]);
+  }, [items, isWholesale, totalPieces, customerName, getItemPrice, getTotal, totalWeightKg]);
 
 
   const saveOrderToDb = useCallback(async (message: string) => {
@@ -377,7 +468,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const sendToWhatsApp = useCallback(() => {
     const message = generateWhatsAppMessage();
     saveOrderToDb(message);
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${whatsappSettings.phone_number}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   }, [generateWhatsAppMessage, saveOrderToDb]);
 

@@ -12,9 +12,10 @@ import AdminHome from "./pages/AdminHome";
 import AdminProducts from "./pages/AdminProducts";
 import AdminCategoryOrder from "./pages/AdminCategoryOrder";
 import AdminShipping from "./pages/AdminShipping";
-import AdminPhotoRecovery from "./pages/AdminPhotoRecovery";
+import AdminWhatsApp from "./pages/AdminWhatsApp";
 import Vitrine from "./pages/Vitrine";
 import VitrineCategory from "./pages/VitrineCategory";
+import AdminPhotoRecovery from "./pages/AdminPhotoRecovery";
 import { RequireAuth } from "./components/RequireAuth";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { CartProvider } from "./contexts/CartContext";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/admin/products" element={<RequireAuth><AdminProducts /></RequireAuth>} />
             <Route path="/admin/categories" element={<RequireAuth><AdminCategoryOrder /></RequireAuth>} />
             <Route path="/admin/shipping" element={<RequireAuth><AdminShipping /></RequireAuth>} />
+            <Route path="/admin/whatsapp" element={<RequireAuth><AdminWhatsApp /></RequireAuth>} />
             <Route path="/admin/photo-recovery" element={<RequireAuth><AdminPhotoRecovery /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

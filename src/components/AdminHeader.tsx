@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, LogOut, Package, Truck, ListOrdered } from 'lucide-react';
+import { Home, LogOut, Package, Truck, ListOrdered, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 interface AdminHeaderProps {
@@ -64,6 +64,15 @@ export const AdminHeader = ({ title, description }: AdminHeaderProps) => {
           >
             <ListOrdered className="h-4 w-4" />
             Categorias
+          </Button>
+          <Button 
+            variant={isActive('/admin/whatsapp') ? 'default' : 'outline'} 
+            size="sm"
+            onClick={() => navigate('/admin/whatsapp')}
+            className="flex items-center gap-2"
+          >
+            <MessageSquare className="h-4 w-4" />
+            WhatsApp
           </Button>
           <Button 
             variant={isActive('/admin/shipping') ? 'default' : 'outline'} 

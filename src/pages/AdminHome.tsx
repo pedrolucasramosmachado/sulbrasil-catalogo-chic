@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate, Link } from 'react-router-dom';
-import { Package, Upload } from 'lucide-react';
+import { Package, Upload, MessageSquare } from 'lucide-react';
 import { AdminHeader } from '@/components/AdminHeader';
 
 const AdminHome = () => {
@@ -35,6 +35,28 @@ const AdminHome = () => {
               </p>
               <Button className="mt-4 w-full" asChild>
                 <Link to="/admin/products">Gerenciar Produtos</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow border-emerald-200 bg-emerald-50/30">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <MessageSquare className="h-8 w-8 text-emerald-600" />
+                <div>
+                  <CardTitle className="text-emerald-800">Canais de Venda</CardTitle>
+                  <CardDescription className="text-emerald-700">
+                    Configurações do WhatsApp e Pedidos
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-emerald-700">
+                Personalize o número de destino, cabeçalhos e emojis das mensagens de pedido.
+              </p>
+              <Button className="mt-4 w-full bg-emerald-600 hover:bg-emerald-700 text-white border-none" asChild>
+                <Link to="/admin/whatsapp">Configurar WhatsApp</Link>
               </Button>
             </CardContent>
           </Card>

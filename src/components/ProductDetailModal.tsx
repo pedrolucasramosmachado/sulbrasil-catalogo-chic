@@ -12,23 +12,17 @@ interface ProductDetailModalProps {
   product: Product | null;
   isOpen: boolean;
   onClose: () => void;
-  onConsult: (product: Product) => void;
 }
 
 export const ProductDetailModal = ({ 
   product, 
   isOpen, 
-  onClose, 
-  onConsult 
+  onClose
 }: ProductDetailModalProps) => {
   const [isZoomed, setIsZoomed] = useState(false);
   
   if (!product) return null;
 
-  const handleConsult = () => {
-    onConsult(product);
-    onClose();
-  };
 
   const handleShare = async () => {
     const productUrl = `${window.location.origin}/?produto=${product.id}`;
@@ -219,16 +213,7 @@ export const ProductDetailModal = ({
 
             <Separator />
 
-            {/* Action Buttons */}
             <div className="space-y-3 pt-4">
-              <Button
-                onClick={handleConsult}
-                className="w-full h-12 text-base font-semibold"
-              >
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Consultar Produto
-              </Button>
-              
               <Button variant="outline" className="w-full h-12" onClick={handleShare}>
                 <Share2 className="w-4 h-4 mr-2" />
                 Compartilhar
