@@ -298,13 +298,13 @@ const ProductPage = () => {
                       <h3 className="text-xl font-black text-[#1A1A1A] uppercase tracking-wider">Confira o Valor:</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Varejo - Rosa claro */}
-                      <div className="bg-[#fff0f5] border border-primary/20 rounded-3xl p-6 flex flex-col items-center justify-center gap-2">
-                        <span className="text-[10px] font-semibold text-primary/50 uppercase tracking-widest">Varejo</span>
+                      {/* Varejo - Rosa claro visível */}
+                      <div className="bg-pink-100 border border-pink-200 rounded-3xl p-6 flex flex-col items-center justify-center gap-2">
+                        <span className="text-[10px] font-semibold text-pink-400 uppercase tracking-widest">Varejo</span>
                         <div className="text-2xl font-bold text-gray-700 tracking-tighter">
                           {formatCurrency(getPrice('retail'))}
                         </div>
-                        <span className="text-[10px] font-medium text-primary/40 uppercase">Por peça avulsa</span>
+                        <span className="text-[10px] font-medium text-pink-300 uppercase">Por peça avulsa</span>
                       </div>
 
                       {/* Atacado - Destaque vantajoso, sem badge de desconto */}

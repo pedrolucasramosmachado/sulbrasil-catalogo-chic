@@ -136,9 +136,9 @@ export const ProductDetailModal = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(product.retail_price || product.promotion_retail_price) && (
-                    <div className="flex items-center justify-center p-4 bg-[#fff0f5] rounded-lg border border-primary/20">
+                    <div className="flex items-center justify-center p-4 bg-pink-100 rounded-lg border border-pink-200">
                       <div className="text-center">
-                        <p className="text-xs font-semibold text-primary/50 uppercase tracking-widest mb-1">Varejo</p>
+                        <p className="text-xs font-semibold text-pink-400 uppercase tracking-widest mb-1">Varejo</p>
                         {product.is_promotion && product.retail_price && (product.promotion_retail_price || product.promotion_wholesale_price) && (
                           <p className="text-xs text-destructive line-through opacity-70">
                             R$ {product.retail_price.toFixed(2).replace('.', ',')}
