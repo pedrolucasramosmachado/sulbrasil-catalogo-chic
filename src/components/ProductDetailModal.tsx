@@ -136,15 +136,15 @@ export const ProductDetailModal = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(product.retail_price || product.promotion_retail_price) && (
-                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg border border-border/20">
+                    <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg border border-gray-100">
                       <div className="text-center">
-                        <p className="text-xs text-foreground-muted mb-1">Varejo</p>
+                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Varejo</p>
                         {product.is_promotion && product.retail_price && (product.promotion_retail_price || product.promotion_wholesale_price) && (
                           <p className="text-xs text-destructive line-through opacity-70">
                             R$ {product.retail_price.toFixed(2).replace('.', ',')}
                           </p>
                         )}
-                        <p className={cn("text-2xl font-bold", product.is_promotion ? "text-destructive" : "text-primary")}>
+                        <p className={cn("text-xl font-bold text-gray-400", product.is_promotion && "text-destructive")}>
                           R$ {(product.is_promotion 
                             ? (product.promotion_retail_price || product.promotion_wholesale_price || product.retail_price || 0)
                             : (product.retail_price || product.wholesale_price || 0)
@@ -154,15 +154,18 @@ export const ProductDetailModal = ({
                     </div>
                   )}
                   {(product.wholesale_price || product.promotion_wholesale_price) && (
-                    <div className="flex items-center justify-center p-4 bg-surface rounded-lg border border-border/20">
+                    <div className="flex items-center justify-center p-4 bg-gradient-to-br from-[#fce4ec] to-[#fdf2f8] rounded-lg border-2 border-primary/40">
                       <div className="text-center">
-                        <p className="text-xs text-foreground-muted mb-1">Atacado</p>
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <p className="text-xs font-black text-primary uppercase tracking-widest">Atacado</p>
+                          <span className="text-primary text-[11px] leading-none">✦</span>
+                        </div>
                         {product.is_promotion && product.wholesale_price && (product.promotion_wholesale_price || product.promotion_retail_price) && (
                           <p className="text-xs text-destructive line-through opacity-70">
                             R$ {product.wholesale_price.toFixed(2).replace('.', ',')}
                           </p>
                         )}
-                        <p className={cn("text-2xl font-bold", product.is_promotion ? "text-destructive" : "text-accent")}>
+                        <p className={cn("text-2xl font-black text-primary", product.is_promotion && "text-destructive")}>
                           R$ {(product.is_promotion 
                             ? (product.promotion_wholesale_price || product.promotion_retail_price || product.wholesale_price || 0)
                             : (product.wholesale_price || product.retail_price || 0)

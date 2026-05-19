@@ -138,25 +138,27 @@ export const ProductCard = ({
             {product.name}
           </h3>
 
-          {/* Preços com Design Elegante e Minimalista */}
-          {/* Preços com Destaque Equilibrado */}
+          {/* Preços: Varejo discreto | Atacado em destaque */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {/* Varejo - Agora com Destaque */}
+            {/* Varejo - Neutro */}
             {product.retail_price && (
-              <div className="bg-gray-50/80 border border-gray-200/50 rounded-2xl p-3 flex flex-col items-center gap-1.5 group-hover:bg-gray-100 transition-colors duration-500">
-                <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Varejo</span>
-                <div className="flex items-baseline text-gray-800">
-                  <span className="text-xl sm:text-2xl font-black tracking-tighter">
+              <div className="bg-gray-50 border border-gray-200/60 rounded-2xl p-3 flex flex-col items-center gap-1 transition-colors duration-300">
+                <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest">Varejo</span>
+                <div className="flex items-baseline text-gray-500">
+                  <span className="text-lg sm:text-xl font-bold tracking-tighter">
                     {formatCurrency(getPrice('retail'))}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Atacado - Destaque Sofisticado */}
+            {/* Atacado - Destaque claro */}
             {product.wholesale_price && (
-              <div className="bg-[#fdf2f8]/60 border border-primary/10 rounded-2xl p-3 flex flex-col items-center gap-1.5 group-hover:bg-[#fdf2f8] transition-colors duration-500">
-                <span className="text-[9px] font-bold text-primary uppercase tracking-widest">Atacado Premium</span>
+              <div className="bg-gradient-to-br from-[#fce4ec] to-[#fdf2f8] border-2 border-primary/40 rounded-2xl p-3 flex flex-col items-center gap-1 group-hover:border-primary/70 group-hover:shadow-md transition-all duration-300">
+                <div className="flex items-center gap-1">
+                  <span className="text-[9px] font-black text-primary uppercase tracking-widest">Atacado</span>
+                  <span className="text-primary text-[10px] leading-none">✦</span>
+                </div>
                 <div className="flex items-baseline text-primary">
                   <span className="text-xl sm:text-2xl font-black tracking-tighter">
                     {formatCurrency(getPrice('wholesale'))}

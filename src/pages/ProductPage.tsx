@@ -298,34 +298,28 @@ const ProductPage = () => {
                       <h3 className="text-xl font-black text-[#1A1A1A] uppercase tracking-wider">Confira o Valor:</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Varejo - Elegante */}
-                      <div className="bg-white border border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center gap-2 group">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Varejo</span>
-                        <div className="text-3xl font-black text-gray-600 tracking-tighter">
+                      {/* Varejo - Neutro e discreto */}
+                      <div className="bg-gray-50 border border-gray-100 rounded-3xl p-6 flex flex-col items-center justify-center gap-2">
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Varejo</span>
+                        <div className="text-2xl font-bold text-gray-400 tracking-tighter">
                           {formatCurrency(getPrice('retail'))}
                         </div>
-                        <span className="text-[10px] font-bold text-gray-400/60 uppercase">Para compra avulsa</span>
+                        <span className="text-[10px] font-medium text-gray-300 uppercase">Por peça avulsa</span>
                       </div>
 
-                      {/* Atacado - Destaque Sofisticado */}
-                      <div className="bg-[#fdf2f8] border border-primary/20 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-3 relative group">
-                        <div className="flex items-center gap-2">
-                           <div className="h-px w-3 bg-primary/30" />
-                           <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Atacado Premium</span>
-                           <div className="h-px w-3 bg-primary/30" />
+                      {/* Atacado - Destaque vantajoso, sem badge de desconto */}
+                      <div className="bg-gradient-to-br from-[#fce4ec] to-[#fdf2f8] border-2 border-primary/50 rounded-[2rem] p-6 flex flex-col items-center justify-center gap-3 relative shadow-md">
+                        {/* Selo de melhor preço */}
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-sm whitespace-nowrap">
+                          ★ Melhor Preço
                         </div>
-                        
+                        <span className="text-[11px] font-black text-primary uppercase tracking-[0.2em] mt-2">Atacado</span>
                         <div className="text-5xl font-black text-primary tracking-tighter drop-shadow-sm flex items-baseline gap-1">
                           <span className="text-xl font-bold">R$</span>
                           {getPrice('wholesale').toFixed(2).split('.')[0]}
                           <span className="text-xl font-bold">,{getPrice('wholesale').toFixed(2).split('.')[1]}</span>
                         </div>
-
-
-                        
-                        <div className="absolute top-2 right-2 flex gap-1">
-                           <Badge className="bg-primary/10 text-primary border-primary/20 text-[8px] h-4">10+ PÇS</Badge>
-                        </div>
+                        <span className="text-[10px] font-semibold text-primary/60 uppercase tracking-widest">A partir de 10 peças</span>
                       </div>
                     </div>
                   </div>
