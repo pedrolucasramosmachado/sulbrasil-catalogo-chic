@@ -136,15 +136,15 @@ export const ProductDetailModal = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {(product.retail_price || product.promotion_retail_price) && (
-                    <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <div className="flex items-center justify-center p-4 bg-[#fff0f5] rounded-lg border border-primary/20">
                       <div className="text-center">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Varejo</p>
+                        <p className="text-xs font-semibold text-primary/50 uppercase tracking-widest mb-1">Varejo</p>
                         {product.is_promotion && product.retail_price && (product.promotion_retail_price || product.promotion_wholesale_price) && (
                           <p className="text-xs text-destructive line-through opacity-70">
                             R$ {product.retail_price.toFixed(2).replace('.', ',')}
                           </p>
                         )}
-                        <p className={cn("text-xl font-bold text-gray-400", product.is_promotion && "text-destructive")}>
+                        <p className={cn("text-xl font-bold text-gray-700", product.is_promotion && "text-destructive")}>
                           R$ {(product.is_promotion 
                             ? (product.promotion_retail_price || product.promotion_wholesale_price || product.retail_price || 0)
                             : (product.retail_price || product.wholesale_price || 0)

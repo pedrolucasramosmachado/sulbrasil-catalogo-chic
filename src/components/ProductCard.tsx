@@ -140,11 +140,11 @@ export const ProductCard = ({
 
           {/* Preços: Varejo discreto | Atacado em destaque */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
-            {/* Varejo - Neutro */}
+            {/* Varejo - Rosa claro */}
             {product.retail_price && (
-              <div className="bg-gray-50 border border-gray-200/60 rounded-2xl p-3 flex flex-col items-center gap-1 transition-colors duration-300">
-                <span className="text-[9px] font-semibold text-gray-400 uppercase tracking-widest">Varejo</span>
-                <div className="flex items-baseline text-gray-500">
+              <div className="bg-[#fff0f5] border border-primary/20 rounded-2xl p-3 flex flex-col items-center gap-1 transition-colors duration-300">
+                <span className="text-[9px] font-semibold text-primary/50 uppercase tracking-widest">Varejo</span>
+                <div className="flex items-baseline text-gray-700">
                   <span className="text-lg sm:text-xl font-bold tracking-tighter">
                     {formatCurrency(getPrice('retail'))}
                   </span>
