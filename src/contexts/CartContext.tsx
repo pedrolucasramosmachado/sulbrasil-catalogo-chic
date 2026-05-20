@@ -382,7 +382,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           const showName = (cleanModel && cleanColor)
             ? `${cleanModel} ${cleanColor}`
             : cleanLabel(item.product.name);
-          msg += `▫️ ${item.quantity}x ${showName}${piecesInfo}\n`;
+          const sizeInfo = item.selectedSize ? ` (Tam: ${item.selectedSize})` : "";
+          msg += `▫️ ${item.quantity}x ${showName}${piecesInfo}${sizeInfo}\n`;
 
           const itemNameRaw = item.product?.name || "";
           const componentsMatch = itemNameRaw.match(/\(([^)]+)\)/);
@@ -412,7 +413,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         items.forEach(({ item, displayColor }) => {
           const piecesPerItem = getPieceCount(item.product);
           const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
-          msg += `▫️ ${item.quantity}x ${displayColor}${piecesInfo}\n`;
+          const sizeInfo = item.selectedSize ? ` (Tam: ${item.selectedSize})` : "";
+          msg += `▫️ ${item.quantity}x ${displayColor}${piecesInfo}${sizeInfo}\n`;
           sgPieces += piecesPerItem * item.quantity;
           sgValue  += getItemPrice(item) * item.quantity;
         });
