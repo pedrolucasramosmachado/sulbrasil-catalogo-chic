@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Save, MessageSquare, List, Phone, Type, Eye } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 
 interface WhatsAppSettings {
   id?: string;
@@ -16,6 +17,7 @@ interface WhatsAppSettings {
   footer_text: string | null;
   show_prices: boolean;
   show_total: boolean;
+  show_out_of_stock: boolean;
 }
 
 interface CategoryEmoji {
@@ -31,6 +33,7 @@ const AdminWhatsApp = () => {
     footer_text: "",
     show_prices: true,
     show_total: true,
+    show_out_of_stock: false,
   });
   const [categories, setCategories] = useState<CategoryEmoji[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +219,44 @@ const AdminWhatsApp = () => {
               >
                 <Save className="h-4 w-4" />
                 {saving ? "Salvando..." : "Salvar Textos"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-emerald-500/20 shadow-lg bg-card/50 backdrop-blur-sm">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-500/10 p-2 rounded-lg">
+                  <Eye className="h-5 w-5 text-emerald-500" />
+                </div>
+                <CardTitle>Exibição do Catálogo</CardTitle>
+              </div>
+              <CardDescription>Gerencie como os produtos aparecem para as clientes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-muted/30 rounded-xl border border-muted">
+                <div className="space-y-1 pr-4">
+                  <Label className="text-sm font-semibold cursor-pointer" htmlFor="show-out-of-stock">
+                    Mostrar Peças Esgotadas
+                  </Label>
+                  <p className="text-xs text-muted-foreground leading-normal">
+                    Se ativado, as peças esgotadas continuarão sendo exibidas no catálogo com o selo "Esgotado". Caso desativado, elas sumirão do catálogo automaticamente.
+                  </p>
+                </div>
+                <Switch 
+                  id="show-out-of-stock"
+                  checked={settings.show_out_of_stock}
+                  onCheckedChange={(checked) => setSettings({ ...settings, show_out_of_stock: checked })}
+                />
+              </div>
+              
+              <Button 
+                onClick={handleSaveSettings} 
+                className="w-full gap-2 transition-all hover:scale-[1.02] bg-emerald-600 hover:bg-emerald-700 text-white" 
+                disabled={saving}
+              >
+                <Save className="h-4 w-4" />
+                {saving ? "Salvando..." : "Salvar Configurações de Exibição"}
               </Button>
             </CardContent>
           </Card>

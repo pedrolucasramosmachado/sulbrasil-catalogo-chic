@@ -129,12 +129,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     footer_text: string | null;
     show_prices: boolean;
     show_total: boolean;
+    show_out_of_stock: boolean;
   }>({
     phone_number: DEFAULT_WHATSAPP_NUMBER,
     header_text: "🛍️ *PEDIDO*",
     footer_text: null,
     show_prices: true,
     show_total: true,
+    show_out_of_stock: false,
   });
   const [categoryEmojis, setCategoryEmojis] = useState<Record<string, string>>({});
 
@@ -382,7 +384,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           const showName = (cleanModel && cleanColor)
             ? `${cleanModel} ${cleanColor}`
             : cleanLabel(item.product.name);
-          const sizeInfo = item.selectedSize ? ` (Tam: ${item.selectedSize})` : "";
+          const sizeInfo = item.selectedSize && item.product.sizes && item.product.sizes.length > 1 ? ` (Tam: ${item.selectedSize})` : "";
           msg += `▫️ ${item.quantity}x ${showName}${piecesInfo}${sizeInfo}\n`;
 
           const itemNameRaw = item.product?.name || "";
@@ -407,20 +409,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       // ── Sub-grupos nomeados: cada um com seu próprio emoji + header ──
       namedSubGroups.forEach(({ modelLabel, items }) => {
-        let sgPieces = 0, sgValue = 0;
-        // Header = emoji + model_name (sem cabeçalho de categoria separado)
+        let sgPieces = 0;
+        let sgValue = 0;
+        let unitPrice = 0;
         msg += `${emoji} *${modelLabel}*\n`;
         items.forEach(({ item, displayColor }) => {
           const piecesPerItem = getPieceCount(item.product);
           const piecesInfo = piecesPerItem > 1 ? ` (${piecesPerItem} pçs)` : "";
-          const sizeInfo = item.selectedSize ? ` (Tam: ${item.selectedSize})` : "";
+          const sizeInfo = item.selectedSize && item.product.sizes && item.product.sizes.length > 1 ? ` (Tam: ${item.selectedSize})` : "";
           msg += `▫️ ${item.quantity}x ${displayColor}${piecesInfo}${sizeInfo}\n`;
           sgPieces += piecesPerItem * item.quantity;
-          sgValue  += getItemPrice(item) * item.quantity;
+          
+          const currentItemPrice = getItemPrice(item);
+          sgValue  += currentItemPrice * item.quantity;
+          if (unitPrice === 0) {
+            unitPrice = currentItemPrice;
+          }
         });
-        msg += `📦 Subtotal: ${sgPieces} peças\n`;
+        const formattedUnitPrice = unitPrice.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        const formattedTotal = sgValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        msg += `Peças: ${sgPieces}\n`;
         if (whatsappSettings.show_prices) {
-          msg += `💰 Valor: ${formatCurrency(sgValue)}\n`;
+            msg += `Valor: ${formattedUnitPrice}\n`;
+            msg += `Total: ${formattedTotal}\n`;
         }
         msg += "\n";
       });

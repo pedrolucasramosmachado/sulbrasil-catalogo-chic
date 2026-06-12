@@ -39,6 +39,7 @@ interface CategoryOrder {
 export const useProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryOrders, setCategoryOrders] = useState<CategoryOrder[]>([]);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -52,7 +53,7 @@ export const useProducts = () => {
       const from = currentPage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       
-      const [productsRes, categoriesRes] = await Promise.all([
+      const [productsRes, categoriesRes, settingsRes] = await Promise.all([
         supabase
           .from('products')
           .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at, weight_kg, color_name, model_name, display_emoji, is_kit, kit_piece_count')
@@ -61,7 +62,11 @@ export const useProducts = () => {
         supabase
           .from('categories')
           .select('id, name, display_order, cover_image_url')
-          .order('display_order', { ascending: true })
+          .order('display_order', { ascending: true }),
+        supabase
+          .from('whatsapp_settings')
+          .select('show_out_of_stock')
+          .maybeSingle()
       ]);
 
       if (productsRes.error) throw productsRes.error;
@@ -69,6 +74,10 @@ export const useProducts = () => {
 
       const newProducts = productsRes.data || [];
       const newCategories = categoriesRes.data || [];
+      
+      if (settingsRes && !settingsRes.error && settingsRes.data) {
+        setShowOutOfStock(settingsRes.data.show_out_of_stock);
+      }
 
       if (isInitial) {
         setProducts(newProducts);
@@ -104,7 +113,7 @@ export const useProducts = () => {
     );
     
     // Sort logic to prioritize "Diana" as requested
-    const filtered = categoryProducts.filter(p => !p.is_out_of_stock);
+    const filtered = categoryProducts.filter(p => !p.is_out_of_stock || showOutOfStock);
     return [...filtered].sort((a, b) => {
       const isADiana = a.name.toLowerCase().includes('diana');
       const isBDiana = b.name.toLowerCase().includes('diana');
@@ -120,27 +129,25 @@ export const useProducts = () => {
   };
 
   const getFeaturedProducts = () => {
-    return products.filter(product => product.is_featured && !product.is_out_of_stock);
+    return products.filter(product => product.is_featured && (!product.is_out_of_stock || showOutOfStock));
   };
 
   const getPromotionProducts = () => {
-    return products.filter(product => product.is_promotion === true && !product.is_out_of_stock);
+    return products.filter(product => product.is_promotion === true && (!product.is_out_of_stock || showOutOfStock));
   };
 
   const getLaunchProducts = () => {
-    const launchItems = products.filter(product => product.is_launch === true && !product.is_out_of_stock);
-    // Prioritize "Diana" products as requested by user
+    const launchItems = products.filter(product => product.is_launch === true && (!product.is_out_of_stock || showOutOfStock));
+    // Ordena por ordem de criação (mais recentes primeiro)
     return [...launchItems].sort((a, b) => {
-      const isADiana = a.name.toLowerCase().includes('diana');
-      const isBDiana = b.name.toLowerCase().includes('diana');
-      if (isADiana && !isBDiana) return -1;
-      if (!isADiana && isBDiana) return 1;
-      return 0;
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      return dateB - dateA;
     });
   };
 
   const getLatestProduct = () => {
-    const availableProducts = products.filter(p => !p.is_out_of_stock && p.image_url);
+    const availableProducts = products.filter(p => (!p.is_out_of_stock || showOutOfStock) && p.image_url);
     if (availableProducts.length === 0) return null;
     
     return [...availableProducts].sort((a, b) => {
@@ -172,7 +179,7 @@ export const useProducts = () => {
     // Then, aggregate data from products
     products.forEach((product) => {
       const productCategory = product.category?.trim();
-      if (!productCategory || product.is_out_of_stock) return;
+      if (!productCategory || (product.is_out_of_stock && !showOutOfStock)) return;
       
       let data = categoriesWithData.get(productCategory);
       
@@ -288,7 +295,7 @@ export const useProducts = () => {
     return products.filter(p => 
       (p.category_id === categoryOrId || p.category.toLowerCase() === categoryOrId.toLowerCase()) && 
       p.subcategory === subcategory &&
-      !p.is_out_of_stock
+      (!p.is_out_of_stock || showOutOfStock)
     );
   };
 
@@ -297,7 +304,7 @@ export const useProducts = () => {
       (p.category_id === categoryOrId || p.category.toLowerCase() === categoryOrId.toLowerCase()) && 
       p.subcategory && 
       p.subcategory.trim() !== '' &&
-      !p.is_out_of_stock
+      (!p.is_out_of_stock || showOutOfStock)
     );
   };
 

@@ -1481,6 +1481,164 @@ const AdminProducts = () => {
               </div>
             )}
             
+            {selectedProducts.size > 0 && (
+              <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+                <span className="text-sm font-medium">
+                  {selectedProducts.size} produto(s) selecionado(s)
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Dialog open={isBulkEditOpen} onOpenChange={setIsBulkEditOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="default" size="sm" className="flex items-center gap-2">
+                        <Edit2 className="h-4 w-4" />
+                        Edição em Massa
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edição em Massa ({selectedProducts.size} produtos)</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Deixe os campos em branco (ou como "Manter original") para não alterar aquele valor nos produtos selecionados.
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Categoria</label>
+                            <Select 
+                              value={bulkEditData.category} 
+                              onValueChange={(val) => setBulkEditData({...bulkEditData, category: val})}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Manter original" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="keep">Manter original</SelectItem>
+                                {categories.filter(c => c !== 'todos').map(c => (
+                                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Subcategoria / Modelo</label>
+                            <Input 
+                              placeholder="Manter original" 
+                              value={bulkEditData.subcategory}
+                              onChange={(e) => setBulkEditData({...bulkEditData, subcategory: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Preço Varejo</label>
+                            <Input 
+                              placeholder="Manter original (Ex: 29.90)" 
+                              value={bulkEditData.retail_price}
+                              onChange={(e) => setBulkEditData({...bulkEditData, retail_price: e.target.value})}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Preço Atacado</label>
+                            <Input 
+                              placeholder="Manter original (Ex: 25.90)" 
+                              value={bulkEditData.wholesale_price}
+                              onChange={(e) => setBulkEditData({...bulkEditData, wholesale_price: e.target.value})}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="border-t pt-4">
+                          <p className="text-sm font-semibold mb-3">Status</p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Lançamento</label>
+                              <Select 
+                                value={bulkEditData.is_launch} 
+                                onValueChange={(val: any) => setBulkEditData({...bulkEditData, is_launch: val})}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="keep">Manter original</SelectItem>
+                                  <SelectItem value="yes">Ativar</SelectItem>
+                                  <SelectItem value="no">Desativar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Promoção</label>
+                              <Select 
+                                value={bulkEditData.is_promotion} 
+                                onValueChange={(val: any) => setBulkEditData({...bulkEditData, is_promotion: val})}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="keep">Manter original</SelectItem>
+                                  <SelectItem value="yes">Ativar</SelectItem>
+                                  <SelectItem value="no">Desativar</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium">Estoque</label>
+                              <Select 
+                                value={bulkEditData.is_out_of_stock} 
+                                onValueChange={(val: any) => setBulkEditData({...bulkEditData, is_out_of_stock: val})}
+                              >
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="keep">Manter original</SelectItem>
+                                  <SelectItem value="no">Em Estoque</SelectItem>
+                                  <SelectItem value="yes">Esgotado (Ocultar)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+
+                        {bulkEditData.is_promotion === 'yes' && (
+                          <div className="grid grid-cols-2 gap-4 bg-destructive/5 p-4 rounded-lg border border-destructive/20 mt-4">
+                            <div className="space-y-2">
+                              <label className="text-sm font-bold text-destructive">Preço Varejo PROMO</label>
+                              <Input 
+                                placeholder="Manter original" 
+                                value={bulkEditData.promotion_retail_price}
+                                onChange={(e) => setBulkEditData({...bulkEditData, promotion_retail_price: e.target.value})}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-sm font-bold text-destructive">Preço Atacado PROMO</label>
+                              <Input 
+                                placeholder="Manter original" 
+                                value={bulkEditData.promotion_wholesale_price}
+                                onChange={(e) => setBulkEditData({...bulkEditData, promotion_wholesale_price: e.target.value})}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex justify-end gap-2 pt-4 border-t">
+                        <Button variant="outline" onClick={() => setIsBulkEditOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleBulkEdit} disabled={isSubmitting}>
+                          {isSubmitting ? 'Salvando...' : 'Aplicar Alterações'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRemovePromotion} 
+                    disabled={isSubmitting} 
+                    className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Remover Promoção
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="rounded-md border">
               <Table>
                 <TableHeader>

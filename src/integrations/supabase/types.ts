@@ -82,6 +82,7 @@ export type Database = {
           id: string
           name: string
           updated_at: string
+          whatsapp_emoji: string | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -90,6 +91,7 @@ export type Database = {
           id?: string
           name: string
           updated_at?: string
+          whatsapp_emoji?: string | null
         }
         Update: {
           cover_image_url?: string | null
@@ -98,6 +100,7 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+          whatsapp_emoji?: string | null
         }
         Relationships: []
       }
@@ -275,6 +278,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_settings: {
+        Row: {
+          id: string
+          phone_number: string
+          header_text: string
+          footer_text: string | null
+          show_prices: boolean
+          show_total: boolean
+          show_out_of_stock: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          phone_number?: string
+          header_text?: string
+          footer_text?: string | null
+          show_prices?: boolean
+          show_total?: boolean
+          show_out_of_stock?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          phone_number?: string
+          header_text?: string
+          footer_text?: string | null
+          show_prices?: boolean
+          show_total?: boolean
+          show_out_of_stock?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

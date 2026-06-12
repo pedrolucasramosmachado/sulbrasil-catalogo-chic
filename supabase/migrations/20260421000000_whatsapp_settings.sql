@@ -6,9 +6,13 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_settings (
     footer_text TEXT,
     show_prices BOOLEAN NOT NULL DEFAULT true,
     show_total BOOLEAN NOT NULL DEFAULT true,
+    show_out_of_stock BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- Garantir que a coluna show_out_of_stock existe caso a tabela já exista
+ALTER TABLE public.whatsapp_settings ADD COLUMN IF NOT EXISTS show_out_of_stock BOOLEAN NOT NULL DEFAULT false;
 
 -- Inserir configuração padrão se a tabela estiver vazia
 INSERT INTO public.whatsapp_settings (phone_number, header_text)
@@ -22,12 +26,14 @@ ALTER TABLE public.categories ADD COLUMN IF NOT EXISTS whatsapp_emoji TEXT;
 ALTER TABLE public.whatsapp_settings ENABLE ROW LEVEL SECURITY;
 
 -- Criar política de leitura pública
+DROP POLICY IF EXISTS "Leitura pública para whatsapp_settings" ON public.whatsapp_settings;
 CREATE POLICY "Leitura pública para whatsapp_settings" 
 ON public.whatsapp_settings FOR SELECT 
 TO public 
 USING (true);
 
--- Criar política de edição para autenticados
+-- Criar política de edição para administradores
+DROP POLICY IF EXISTS "Edição para administradores" ON public.whatsapp_settings;
 CREATE POLICY "Edição para administradores" 
 ON public.whatsapp_settings FOR ALL 
 TO authenticated 

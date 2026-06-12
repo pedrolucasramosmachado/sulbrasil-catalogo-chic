@@ -34,13 +34,57 @@ const AdminCategoryOrder = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: dbCategories, error } = await supabase
         .from('categories')
         .select('*')
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setCategories(data || []);
+      
+      const { data: productsData } = await supabase
+        .from('products')
+        .select('category, is_launch, is_promotion, is_out_of_stock');
+        
+      const existingNames = new Set((dbCategories || []).map(c => c.name.toLowerCase().trim()));
+      const newCategories: Category[] = [];
+      let maxOrder = dbCategories && dbCategories.length > 0 
+        ? Math.max(...dbCategories.map(c => c.display_order)) 
+        : 0;
+        
+      if (productsData) {
+        const productCategories = new Set(
+          productsData
+            .filter(p => !p.is_out_of_stock && p.category)
+            .map(p => p.category.trim())
+        );
+        
+        if (productsData.some(p => p.is_launch && !p.is_out_of_stock)) {
+          productCategories.add('Lançamentos');
+        }
+        if (productsData.some(p => p.is_promotion && !p.is_out_of_stock)) {
+          productCategories.add('Promoções');
+        }
+        
+        for (const catName of productCategories) {
+          if (!existingNames.has(catName.toLowerCase())) {
+            maxOrder += 10;
+            newCategories.push({
+              id: `new-${Date.now()}-${Math.random()}`,
+              name: catName,
+              display_order: maxOrder,
+              cover_image_url: null,
+            });
+            existingNames.add(catName.toLowerCase());
+          }
+        }
+      }
+
+      const allCategories = [...(dbCategories || []), ...newCategories];
+      setCategories(allCategories);
+      
+      if (newCategories.length > 0) {
+        setHasChanges(true);
+      }
     } catch (err) {
       console.error('Erro ao carregar categorias:', err);
     } finally {
@@ -66,10 +110,18 @@ const AdminCategoryOrder = () => {
     try {
       setSaving(true);
       for (const category of categories) {
-        await supabase.from('categories').update({ 
-          display_order: category.display_order,
-          cover_image_url: category.cover_image_url 
-        }).eq('id', category.id);
+        if (category.id.startsWith('new-')) {
+          await supabase.from('categories').insert({
+            name: category.name,
+            display_order: category.display_order,
+            cover_image_url: category.cover_image_url
+          });
+        } else {
+          await supabase.from('categories').update({ 
+            display_order: category.display_order,
+            cover_image_url: category.cover_image_url 
+          }).eq('id', category.id);
+        }
       }
       toast({ title: 'Sucesso', description: 'Alterações salvas!' });
       setHasChanges(false);
@@ -86,7 +138,15 @@ const AdminCategoryOrder = () => {
     setIsCoverDialogOpen(true);
     setLoadingProducts(true);
     try {
-      const { data } = await supabase.from('products').select('id, name, image_url').eq('category', category.name).order('created_at', { ascending: false });
+      let query = supabase.from('products').select('id, name, image_url');
+      if (category.name.toLowerCase() === 'lançamentos') {
+        query = query.eq('is_launch', true);
+      } else if (category.name.toLowerCase() === 'promoções' || category.name.toLowerCase() === 'promoções da semana') {
+        query = query.eq('is_promotion', true);
+      } else {
+        query = query.eq('category', category.name);
+      }
+      const { data } = await query.order('created_at', { ascending: false });
       setCategoryProducts(data || []);
     } finally {
       setLoadingProducts(false);
