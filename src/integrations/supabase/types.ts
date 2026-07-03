@@ -81,6 +81,7 @@ export type Database = {
           display_order: number
           id: string
           name: string
+          sector_id: string | null
           updated_at: string
           whatsapp_emoji: string | null
         }
@@ -90,6 +91,7 @@ export type Database = {
           display_order?: number
           id?: string
           name: string
+          sector_id?: string | null
           updated_at?: string
           whatsapp_emoji?: string | null
         }
@@ -99,10 +101,19 @@ export type Database = {
           display_order?: number
           id?: string
           name?: string
+          sector_id?: string | null
           updated_at?: string
           whatsapp_emoji?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       orders: {
         Row: {
@@ -240,6 +251,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sectors: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       transacoes: {
         Row: {

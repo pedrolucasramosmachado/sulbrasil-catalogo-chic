@@ -5,15 +5,16 @@ import { cn } from "@/lib/utils";
 
 interface QuickAccessMenuProps {
   isCatalog?: boolean;
+  activeSectorId?: string | null;
 }
 
-export const QuickAccessMenu = ({ isCatalog = false }: QuickAccessMenuProps) => {
+export const QuickAccessMenu = ({ isCatalog = false, activeSectorId = null }: QuickAccessMenuProps) => {
   const { getCategoriesWithImages, loading } = useProducts();
   const navigate = useNavigate();
 
   if (loading) return null;
 
-  const categories = getCategoriesWithImages();
+  const categories = getCategoriesWithImages(activeSectorId);
 
   const handleSelect = (category: string) => {
     const lowerCategory = category.toLowerCase();

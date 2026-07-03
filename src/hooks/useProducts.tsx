@@ -7,6 +7,7 @@ export const useProducts = () => {
   const {
     products,
     categoryOrders,
+    sectors,
     showOutOfStock,
     loading,
     error,
@@ -42,12 +43,24 @@ export const useProducts = () => {
     return products.filter(product => product.is_featured && (!product.is_out_of_stock || showOutOfStock));
   };
 
-  const getPromotionProducts = () => {
-    return products.filter(product => product.is_promotion === true && (!product.is_out_of_stock || showOutOfStock));
+  const getPromotionProducts = (sectorId?: string | null) => {
+    return products.filter(product => {
+      if (sectorId) {
+        const catConfig = categoryOrders.find(c => c.name.trim().toLowerCase() === product.category?.trim().toLowerCase());
+        if (!catConfig || catConfig.sector_id !== sectorId) return false;
+      }
+      return product.is_promotion === true && (!product.is_out_of_stock || showOutOfStock);
+    });
   };
 
-  const getLaunchProducts = () => {
-    const launchItems = products.filter(product => product.is_launch === true && (!product.is_out_of_stock || showOutOfStock));
+  const getLaunchProducts = (sectorId?: string | null) => {
+    const launchItems = products.filter(product => {
+      if (sectorId) {
+        const catConfig = categoryOrders.find(c => c.name.trim().toLowerCase() === product.category?.trim().toLowerCase());
+        if (!catConfig || catConfig.sector_id !== sectorId) return false;
+      }
+      return product.is_launch === true && (!product.is_out_of_stock || showOutOfStock);
+    });
     // Ordena por ordem de criação (mais recentes primeiro)
     return [...launchItems].sort((a, b) => {
       const dateA = new Date(a.created_at || 0).getTime();
@@ -67,7 +80,7 @@ export const useProducts = () => {
     })[0];
   };
 
-  const getCategoriesWithImages = () => {
+  const getCategoriesWithImages = (sectorId?: string | null) => {
     const categoriesWithData = new Map<string, { 
       minWholesale: number; 
       minRetail: number; 
@@ -78,6 +91,9 @@ export const useProducts = () => {
     // First, populate from categoryOrders (manual configuration)
     categoryOrders.forEach(cat => {
       const name = cat.name.trim();
+      // Filtrar por setor se for especificado
+      if (sectorId && cat.sector_id !== sectorId) return;
+
       categoriesWithData.set(name, {
         minWholesale: Infinity,
         minRetail: Infinity,
@@ -93,10 +109,7 @@ export const useProducts = () => {
       
       let data = categoriesWithData.get(productCategory);
       
-      if (!data) {
-        data = { minWholesale: Infinity, minRetail: Infinity };
-        categoriesWithData.set(productCategory, data);
-      }
+      if (!data) return;
 
       // Track prices
       const wPrice = (product.is_promotion && product.promotion_wholesale_price) ? product.promotion_wholesale_price : (product.wholesale_price || 0);
@@ -133,7 +146,7 @@ export const useProducts = () => {
       .sort((a, b) => a.displayOrder - b.displayOrder);
 
     // Add Special Categories (Promotions and Launches)
-    const promoProducts = getPromotionProducts();
+    const promoProducts = getPromotionProducts(sectorId);
     if (promoProducts.length > 0) {
       const promoConfig = categoryOrders.find(c => ["promoções da semana", "promoções"].includes(c.name.trim().toLowerCase()));
       result.unshift({
@@ -145,7 +158,7 @@ export const useProducts = () => {
       });
     }
 
-    const launchProducts = getLaunchProducts();
+    const launchProducts = getLaunchProducts(sectorId);
     if (launchProducts.length > 0) {
       const launchConfig = categoryOrders.find(c => c.name.trim().toLowerCase() === "lançamentos");
       result.unshift({
@@ -158,6 +171,102 @@ export const useProducts = () => {
     }
 
     return result;
+  };
+
+  const getSectorsWithData = () => {
+    const sectorsWithData = sectors.map(sector => {
+      // Find all categories in this sector
+      const sectorCategories = categoryOrders.filter(cat => cat.sector_id === sector.id);
+      const categoryNames = sectorCategories.map(c => c.name.trim().toLowerCase());
+
+      // Find products in this sector
+      const sectorProducts = products.filter(product => {
+        if (product.is_out_of_stock && !showOutOfStock) return false;
+        if (!product.category) return false;
+        return categoryNames.includes(product.category.trim().toLowerCase()) || (product.category_id && sectorCategories.some(c => c.id === product.category_id));
+      });
+
+      // Find min prices
+      let minWholesale = Infinity;
+      let minRetail = Infinity;
+      let coverImage: string | undefined = undefined;
+
+      // Try to find cover image from category cover image
+      const firstCatWithCover = sectorCategories.find(c => c.cover_image_url);
+      if (firstCatWithCover && firstCatWithCover.cover_image_url) {
+        coverImage = firstCatWithCover.cover_image_url;
+      }
+
+      sectorProducts.forEach(product => {
+        const wPrice = (product.is_promotion && product.promotion_wholesale_price) ? product.promotion_wholesale_price : (product.wholesale_price || 0);
+        const rPrice = (product.is_promotion && product.promotion_retail_price) ? product.promotion_retail_price : (product.retail_price || 0);
+        
+        if (wPrice > 0 && wPrice < minWholesale) minWholesale = wPrice;
+        if (rPrice > 0 && rPrice < minRetail) minRetail = rPrice;
+
+        // Fallback to first product image if no category cover image was found
+        if (!coverImage && product.image_url) {
+          coverImage = product.image_url;
+        }
+      });
+
+      return {
+        id: sector.id,
+        name: sector.name,
+        displayOrder: sector.display_order,
+        minWholesalePrice: minWholesale === Infinity ? 0 : minWholesale,
+        minRetailPrice: minRetail === Infinity ? 0 : minRetail,
+        imageUrl: coverImage || '/placeholder.svg',
+        categoryCount: sectorCategories.length
+      };
+    });
+
+    // Handle categories that do not belong to any sector (orphan categories)
+    // To ensure nothing is lost, let's create a virtual "Outros" sector if there are any orphans
+    const orphanCategories = categoryOrders.filter(cat => !cat.sector_id && !['promoções', 'promoções da semana', 'lançamentos'].includes(cat.name.trim().toLowerCase()));
+    if (orphanCategories.length > 0) {
+      const orphanNames = orphanCategories.map(c => c.name.trim().toLowerCase());
+      const orphanProducts = products.filter(product => {
+        if (product.is_out_of_stock && !showOutOfStock) return false;
+        if (!product.category) return false;
+        return orphanNames.includes(product.category.trim().toLowerCase());
+      });
+
+      if (orphanProducts.length > 0 || orphanCategories.length > 0) {
+        let minWholesale = Infinity;
+        let minRetail = Infinity;
+        let coverImage: string | undefined = undefined;
+
+        const firstCatWithCover = orphanCategories.find(c => c.cover_image_url);
+        if (firstCatWithCover && firstCatWithCover.cover_image_url) {
+          coverImage = firstCatWithCover.cover_image_url;
+        }
+
+        orphanProducts.forEach(product => {
+          const wPrice = (product.is_promotion && product.promotion_wholesale_price) ? product.promotion_wholesale_price : (product.wholesale_price || 0);
+          const rPrice = (product.is_promotion && product.promotion_retail_price) ? product.promotion_retail_price : (product.retail_price || 0);
+          
+          if (wPrice > 0 && wPrice < minWholesale) minWholesale = wPrice;
+          if (rPrice > 0 && rPrice < minRetail) minRetail = rPrice;
+
+          if (!coverImage && product.image_url) {
+            coverImage = product.image_url;
+          }
+        });
+
+        sectorsWithData.push({
+          id: 'outros',
+          name: 'Outros',
+          displayOrder: 9999,
+          minWholesalePrice: minWholesale === Infinity ? 0 : minWholesale,
+          minRetailPrice: minRetail === Infinity ? 0 : minRetail,
+          imageUrl: coverImage || '/placeholder.svg',
+          categoryCount: orphanCategories.length
+        });
+      }
+    }
+
+    return sectorsWithData.sort((a, b) => a.displayOrder - b.displayOrder);
   };
 
   const getSubcategoriesWithData = (categoryOrId: string) => {
@@ -237,5 +346,7 @@ export const useProducts = () => {
     getProductsBySubcategory,
     categoryHasSubcategories,
     categoryOrders,
+    sectors,
+    getSectorsWithData,
   };
 };

@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { ScrollIndicator } from "@/components/ScrollIndicator";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductImageZoom } from "@/components/ProductImageZoom";
-import { CategoryCard } from "@/components/CategoryCard";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Product, useProducts } from "@/hooks/useProducts";
 import { ProductSkeleton } from "@/components/ProductSkeleton";
+import { cn } from "@/lib/utils";
+import { optimizeImageUrl } from "@/lib/url";
 
 
 const CategoryPage = () => {
@@ -47,16 +49,16 @@ const CategoryPage = () => {
       return launchProducts;
     }
     if (subcategory) {
-      return getProductsBySubcategory(category || '', subcategory);
+      return getProductsBySubcategory(category || '', decodeURIComponent(subcategory));
     }
-    if (category) {
+    if (category && !categoryHasSubcategories(category)) {
       return getProductsByCategory(category);
     }
     return [];
   };
 
   const displaySubcategories = () => {
-    if (category && categoryHasSubcategories(category) && category !== 'promocoes' && category !== 'lancamentos') {
+    if (category && !subcategory && categoryHasSubcategories(category) && category !== 'promocoes' && category !== 'lancamentos') {
       return getSubcategoriesWithData(category);
     }
     return [];
@@ -67,12 +69,16 @@ const CategoryPage = () => {
   const showProducts = currentProducts.length > 0;
   const showSubcategories = currentSubcategories.length > 0;
 
+  const allSubcategories = category && categoryHasSubcategories(category) && category !== 'promocoes' && category !== 'lancamentos'
+    ? getSubcategoriesWithData(category)
+    : [];
+
   const pageTitle = category === 'promocoes' 
     ? 'Promoções da Semana 🔥'
     : category === 'lancamentos'
     ? 'Lançamentos ✨'
     : subcategory 
-    ? subcategory
+    ? decodeURIComponent(subcategory)
     : category || '';
 
   return (
@@ -87,12 +93,11 @@ const CategoryPage = () => {
         <div className="container mx-auto px-4 py-3">
           <Button
             onClick={() => navigate(subcategory ? `/catalogo/${category}` : '/catalogo')}
-            variant="default"
-            className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
-            size="default"
+            className="group relative gap-2 rounded-full px-5 py-4 font-semibold text-white bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 border-none overflow-hidden"
           >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            {subcategory ? 'Voltar às subcategorias' : 'Voltar ao catálogo'}
+            <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            <span>{subcategory ? 'Voltar para Categorias' : 'Voltar para Modinhas'}</span>
           </Button>
         </div>
       </div>
@@ -114,7 +119,7 @@ const CategoryPage = () => {
       </section>
 
       {/* Subcategories Horizontal Filter (Pills) */}
-      {showSubcategories && (
+      {subcategory && allSubcategories.length > 0 && (
         <section className="border-b border-border/50 bg-surface/95 backdrop-blur-md sticky top-[106px] sm:top-[116px] z-30 shadow-none">
           <div className="container mx-auto px-4 py-3">
             <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-1 snap-x">
@@ -126,10 +131,10 @@ const CategoryPage = () => {
               >
                 Todos
               </Button>
-              {currentSubcategories.map((subcat) => (
+              {allSubcategories.map((subcat) => (
                 <Button
                   key={subcat.subcategory}
-                  variant={subcategory === subcat.subcategory ? "default" : "outline"}
+                  variant={decodeURIComponent(subcategory) === subcat.subcategory ? "default" : "outline"}
                   size="sm"
                   className="rounded-full whitespace-nowrap snap-start shadow-sm"
                   onClick={() => handleSubcategorySelect(subcat.subcategory)}
@@ -152,9 +157,24 @@ const CategoryPage = () => {
               ))}
             </div>
           ) : error ? (
-
             <div className="text-center py-16">
               <div className="text-2xl mb-4 text-red-600">Erro: {error}</div>
+            </div>
+          ) : showSubcategories ? (
+            <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
+              {currentSubcategories.map((subcat, index) => (
+                <div 
+                  key={subcat.subcategory} 
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <SubcategoryCard
+                    subcategory={subcat.subcategory}
+                    imageUrl={subcat.imageUrl}
+                    onSelect={() => handleSubcategorySelect(subcat.subcategory)}
+                  />
+                </div>
+              ))}
             </div>
           ) : showProducts ? (
             <div className="grid gap-4 sm:gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 auto-rows-fr">
@@ -195,6 +215,58 @@ const CategoryPage = () => {
         }}
       />
     </div>
+  );
+};
+
+// Card de subcategoria com preços
+const SubcategoryCard = ({ 
+  subcategory, 
+  imageUrl, 
+  onSelect 
+}: { 
+  subcategory: string; 
+  imageUrl: string | null; 
+  onSelect: () => void;
+}) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  return (
+    <Card 
+      className="group cursor-pointer overflow-hidden border-0 shadow-elegant hover:shadow-glow transition-all duration-500 transform hover:scale-[1.02] bg-white/90 backdrop-blur-sm"
+      onClick={onSelect}
+    >
+      <div className="relative">
+        <div className={cn(
+          "aspect-[3/4] relative overflow-hidden",
+          !imageLoaded && "animate-pulse bg-surface"
+        )}>
+          <img
+            src={optimizeImageUrl(imageUrl) || "/placeholder.svg"}
+            alt={subcategory}
+            className={cn(
+              "w-full h-full object-cover object-top transition-all duration-700 group-hover:scale-110",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            onLoad={() => setImageLoaded(true)}
+          />
+          
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          
+          {/* Hover Effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-all duration-500" />
+        </div>
+        
+        <CardContent className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 drop-shadow-lg text-center">
+            {subcategory}
+          </h3>
+          <p className="text-xs sm:text-sm text-white/80 text-center">
+            Clique para ver
+          </p>
+        </CardContent>
+      </div>
+    </Card>
   );
 };
 

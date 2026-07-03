@@ -28,16 +28,24 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface Sector {
+  id: string;
+  name: string;
+  display_order: number;
+}
+
 export interface CategoryOrder {
   id: string;
   name: string;
   display_order: number;
   cover_image_url?: string | null;
+  sector_id?: string | null;
 }
 
 interface ProductContextType {
   products: Product[];
   categoryOrders: CategoryOrder[];
+  sectors: Sector[];
   showOutOfStock: boolean;
   loading: boolean;
   error: string | null;
@@ -55,6 +63,7 @@ const PAGE_SIZE = 1000;
 export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryOrders, setCategoryOrders] = useState<CategoryOrder[]>([]);
+  const [sectors, setSectors] = useState<Sector[]>([]);
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +77,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const from = currentPage * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       
-      const [productsRes, categoriesRes, settingsRes] = await Promise.all([
+      const [productsRes, categoriesRes, settingsRes, sectorsRes] = await Promise.all([
         supabase
           .from('products')
           .select('id, name, wholesale_price, retail_price, promotion_wholesale_price, promotion_retail_price, category, subcategory, image_url, sizes, is_featured, is_promotion, is_launch, is_out_of_stock, created_at, weight_kg, color_name, model_name, display_emoji, is_kit, kit_piece_count')
@@ -76,12 +85,16 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .order('created_at', { ascending: false }),
         supabase
           .from('categories')
-          .select('id, name, display_order, cover_image_url')
+          .select('id, name, display_order, cover_image_url, sector_id')
           .order('display_order', { ascending: true }),
         supabase
           .from('whatsapp_settings')
           .select('show_out_of_stock')
-          .maybeSingle()
+          .maybeSingle(),
+        supabase
+          .from('sectors')
+          .select('id, name, display_order')
+          .order('display_order', { ascending: true })
       ]);
 
       if (productsRes.error) throw productsRes.error;
@@ -89,6 +102,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const newProducts = productsRes.data || [];
       const newCategories = categoriesRes.data || [];
+      const newSectors = sectorsRes && !sectorsRes.error ? sectorsRes.data || [] : [];
       
       if (settingsRes && !settingsRes.error && settingsRes.data) {
         setShowOutOfStock(settingsRes.data.show_out_of_stock);
@@ -104,6 +118,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       setHasMore(newProducts.length === PAGE_SIZE);
       setCategoryOrders(newCategories);
+      setSectors(newSectors);
       setError(null);
     } catch (err) {
       console.error('Erro ao carregar produtos/categorias do Supabase:', err);
@@ -147,6 +162,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <ProductContext.Provider value={{
       products,
       categoryOrders,
+      sectors,
       showOutOfStock,
       loading,
       error,

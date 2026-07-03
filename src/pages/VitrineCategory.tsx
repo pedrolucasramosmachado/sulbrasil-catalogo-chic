@@ -81,12 +81,11 @@ const VitrineCategory = () => {
         <div className="container mx-auto px-4 py-3">
           <Button
             onClick={() => navigate(subcategory ? `/vitrine/${category}` : '/vitrine')}
-            variant="default"
-            className="gap-2 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg transition-all"
-            size="default"
+            className="group relative gap-2 rounded-full px-5 py-4 font-semibold text-white bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 border-none overflow-hidden"
           >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            {subcategory ? 'Voltar às subcategorias' : 'Voltar à vitrine'}
+            <span className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 group-hover:-translate-x-1 transition-transform duration-300" />
+            <span>{subcategory ? 'Voltar para Categorias' : 'Voltar para Modinhas'}</span>
           </Button>
         </div>
       </div>
