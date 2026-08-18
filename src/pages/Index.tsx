@@ -21,7 +21,9 @@ const Index = () => {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(() => {
-    return sessionStorage.getItem('activeSectorId');
+    const saved = sessionStorage.getItem('activeSectorId');
+    if (saved === 'promocoes' || saved === 'lancamentos') return null;
+    return saved;
   });
 
   useEffect(() => {
@@ -35,6 +37,16 @@ const Index = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  const handleSelectSector = (sectorId: string | null) => {
+    if (sectorId === 'promocoes') {
+      navigate('/catalogo/promocoes');
+    } else if (sectorId === 'lancamentos') {
+      navigate('/catalogo/lancamentos');
+    } else {
+      setSelectedSectorId(sectorId);
+    }
+  };
 
   const handleCategorySelect = (category: string) => {
     const lowerCategory = category.toLowerCase();
@@ -68,7 +80,7 @@ const Index = () => {
         <SectorSelector
           sectors={sectors}
           activeSectorId={selectedSectorId}
-          onSelectSector={setSelectedSectorId}
+          onSelectSector={handleSelectSector}
         />
       )}
 
@@ -169,7 +181,7 @@ const Index = () => {
                         imageUrl={sector.imageUrl}
                         minWholesalePrice={sector.minWholesalePrice}
                         minRetailPrice={sector.minRetailPrice}
-                        onSelect={() => setSelectedSectorId(sector.id)}
+                        onSelect={() => handleSelectSector(sector.id)}
                       />
                     </div>
                   ))

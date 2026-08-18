@@ -37,12 +37,14 @@ interface Category {
   display_order: number;
   cover_image_url?: string | null;
   sector_id?: string | null;
+  subcategory_order?: string[] | null;
 }
 
 interface Sector {
   id: string;
   name: string;
   display_order: number;
+  cover_image_url?: string | null;
 }
 
 interface TreeSubcategory {
@@ -58,6 +60,7 @@ interface TreeCategory {
   display_order: number;
   cover_image_url?: string | null;
   sector_id?: string | null;
+  subcategory_order?: string[] | null;
   subcategories: TreeSubcategory[];
   productCount: number;
   isNew?: boolean;
@@ -67,6 +70,7 @@ interface TreeSector {
   id: string;
   name: string;
   display_order: number;
+  cover_image_url?: string | null;
   categories: TreeCategory[];
 }
 
@@ -79,9 +83,10 @@ interface DraggedItem {
 }
 
 interface DragOverTarget {
-  type: 'sector_reorder' | 'sector_container' | 'category_reorder' | 'category_container' | 'subcategory_container';
+  type: 'sector_reorder' | 'sector_container' | 'category_reorder' | 'category_container' | 'subcategory_container' | 'subcategory_reorder';
   id: string;
   position?: 'before' | 'after' | 'inside';
+  parentCategoryId?: string;
 }
 
 interface PendingChange {
@@ -115,6 +120,7 @@ const AdminCategoryOrder = () => {
   const [categoryProducts, setCategoryProducts] = useState<any[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedSectorRef = useRef<TreeSector | null>(null); // ref estável para callbacks async
   const [uploading, setUploading] = useState(false);
 
   // Creation/Renaming Modals states
@@ -226,12 +232,26 @@ const AdminCategoryOrder = () => {
         subMapId.forEach((count, sub) => mergedSubcats.set(sub, count));
         subMapName.forEach((count, sub) => mergedSubcats.set(sub, (mergedSubcats.get(sub) || 0) + count));
 
+        const subcatOrder = cat.subcategory_order || [];
         const subcategoriesList: TreeSubcategory[] = Array.from(mergedSubcats.entries()).map(([name, count]) => ({
           name,
           categoryName: cat.name,
           categoryId: cat.id,
           productCount: count
-        })).sort((a, b) => a.name.localeCompare(b.name));
+        }));
+        
+        if (subcatOrder && subcatOrder.length > 0) {
+          subcategoriesList.sort((a, b) => {
+            const indexA = subcatOrder.indexOf(a.name);
+            const indexB = subcatOrder.indexOf(b.name);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a.name.localeCompare(b.name);
+          });
+        } else {
+          subcategoriesList.sort((a, b) => a.name.localeCompare(b.name));
+        }
 
         const directCount = (directProductCount.get(catKeyId) || 0) + (directProductCount.get(catKeyName) || 0);
 
@@ -250,6 +270,7 @@ const AdminCategoryOrder = () => {
           id: sec.id,
           name: sec.name,
           display_order: sec.display_order,
+          cover_image_url: sec.cover_image_url || null,
           categories: sectorCats
         };
       });
@@ -566,7 +587,8 @@ const AdminCategoryOrder = () => {
       isValid = 
         target.type === 'category_container' || 
         target.type === 'sector_container' || 
-        target.type === 'category_reorder'; // to promote under a sector/zone
+        target.type === 'category_reorder' ||
+        target.type === 'subcategory_reorder';
     }
 
     if (isValid) {
@@ -766,6 +788,41 @@ const AdminCategoryOrder = () => {
           toast({ title: 'Subcategoria Movida', description: `"${subcatObj.name}" movida para "${destCat.name}"` });
         }
       } 
+      else if (target.type === 'subcategory_reorder') {
+        const destCatId = target.parentCategoryId;
+        let destCat: TreeCategory | null = null;
+        
+        sectors.forEach(s => {
+          const found = s.categories.find(c => c.id === destCatId);
+          if (found) destCat = found;
+        });
+        if (!destCat) {
+          destCat = unassignedCategories.find(c => c.id === destCatId) || null;
+        }
+        
+        if (destCat && subcatObj) {
+          subcatObj.categoryId = destCat.id;
+          subcatObj.categoryName = destCat.name;
+          
+          let toIdx = destCat.subcategories.findIndex(s => s.name === target.id);
+          if (toIdx !== -1) {
+            if (target.position === 'after') toIdx += 1;
+            destCat.subcategories.splice(toIdx, 0, subcatObj);
+          } else {
+            destCat.subcategories.push(subcatObj);
+          }
+          
+          if (draggedItem.parentCategoryId !== destCat.id) {
+            destCat.productCount += subcatObj.productCount;
+            toast({ title: 'Subcategoria Movida', description: `"${subcatObj.name}" movida para "${destCat.name}"` });
+          } else {
+            toast({ title: 'Subcategoria Reordenada', description: `"${subcatObj.name}" reordenada` });
+          }
+          
+          setSectors([...sectors]);
+          setUnassignedCategories([...unassignedCategories]);
+        }
+      }
       else if (target.type === 'sector_container' || target.type === 'category_reorder') {
         // Promote subcategory to new category
         const destSectorId = target.type === 'sector_container' ? target.id : (target.id === 'unassigned' ? null : sectors.find(s => s.categories.some(c => c.id === target.id))?.id || null);
@@ -820,6 +877,138 @@ const AdminCategoryOrder = () => {
       setUnassignedCategories(JSON.parse(JSON.stringify(initialUnassigned)));
       toast({ title: 'Alterações Descartadas' });
     }
+  };
+
+  const moveSector = (sectorId: string, action: 'up' | 'down' | 'first' | 'last') => {
+    const index = sectors.findIndex(s => s.id === sectorId);
+    if (index === -1) return;
+    const newSectors = [...sectors];
+    const [moved] = newSectors.splice(index, 1);
+    
+    if (action === 'first') {
+      newSectors.unshift(moved);
+    } else if (action === 'last') {
+      newSectors.push(moved);
+    } else if (action === 'up') {
+      const newIdx = Math.max(0, index - 1);
+      newSectors.splice(newIdx, 0, moved);
+    } else if (action === 'down') {
+      const newIdx = Math.min(newSectors.length, index + 1);
+      newSectors.splice(newIdx, 0, moved);
+    }
+    
+    const updated = newSectors.map((s, i) => ({
+      ...s,
+      display_order: (i + 1) * 10
+    }));
+    setSectors(updated);
+    toast({ title: 'Modinha Reordenada', description: `Modinha reordenada com sucesso` });
+  };
+
+  const moveCategory = (categoryId: string, action: 'up' | 'down' | 'first' | 'last') => {
+    let parentSectorId: string | null = null;
+    let index = -1;
+    
+    const sector = sectors.find(s => {
+      const idx = s.categories.findIndex(c => c.id === categoryId);
+      if (idx !== -1) {
+        index = idx;
+        return true;
+      }
+      return false;
+    });
+    
+    if (sector) {
+      parentSectorId = sector.id;
+    } else {
+      index = unassignedCategories.findIndex(c => c.id === categoryId);
+    }
+    
+    if (index === -1) return;
+    
+    if (parentSectorId) {
+      const newSectors = sectors.map(s => {
+        if (s.id === parentSectorId) {
+          const newCats = [...s.categories];
+          const [moved] = newCats.splice(index, 1);
+          
+          if (action === 'first') {
+            newCats.unshift(moved);
+          } else if (action === 'last') {
+            newCats.push(moved);
+          } else if (action === 'up') {
+            const newIdx = Math.max(0, index - 1);
+            newCats.splice(newIdx, 0, moved);
+          } else if (action === 'down') {
+            const newIdx = Math.min(newCats.length, index + 1);
+            newCats.splice(newIdx, 0, moved);
+          }
+          
+          return {
+            ...s,
+            categories: newCats.map((c, i) => ({ ...c, display_order: (i + 1) * 10 }))
+          };
+        }
+        return s;
+      });
+      setSectors(newSectors);
+    } else {
+      const newUnassigned = [...unassignedCategories];
+      const [moved] = newUnassigned.splice(index, 1);
+      
+      if (action === 'first') {
+        newUnassigned.unshift(moved);
+      } else if (action === 'last') {
+        newUnassigned.push(moved);
+      } else if (action === 'up') {
+        const newIdx = Math.max(0, index - 1);
+        newUnassigned.splice(newIdx, 0, moved);
+      } else if (action === 'down') {
+        const newIdx = Math.min(newUnassigned.length, index + 1);
+        newUnassigned.splice(newIdx, 0, moved);
+      }
+      
+      setUnassignedCategories(newUnassigned.map((c, i) => ({ ...c, display_order: (i + 1) * 10 })));
+    }
+    toast({ title: 'Categoria Reordenada', description: `Categoria reordenada com sucesso` });
+  };
+
+  const moveSubcategory = (categoryId: string, subcatName: string, action: 'up' | 'down' | 'first' | 'last') => {
+    let category: TreeCategory | null = null;
+    
+    sectors.forEach(s => {
+      const found = s.categories.find(c => c.id === categoryId);
+      if (found) category = found;
+    });
+    if (!category) {
+      category = unassignedCategories.find(c => c.id === categoryId) || null;
+    }
+    
+    if (!category) return;
+    
+    const index = category.subcategories.findIndex(s => s.name === subcatName);
+    if (index === -1) return;
+    
+    const newSubcats = [...category.subcategories];
+    const [moved] = newSubcats.splice(index, 1);
+    
+    if (action === 'first') {
+      newSubcats.unshift(moved);
+    } else if (action === 'last') {
+      newSubcats.push(moved);
+    } else if (action === 'up') {
+      const newIdx = Math.max(0, index - 1);
+      newSubcats.splice(newIdx, 0, moved);
+    } else if (action === 'down') {
+      const newIdx = Math.min(newSubcats.length, index + 1);
+      newSubcats.splice(newIdx, 0, moved);
+    }
+    
+    category.subcategories = newSubcats;
+    
+    setSectors([...sectors]);
+    setUnassignedCategories([...unassignedCategories]);
+    toast({ title: 'Subcategoria Reordenada', description: `Subcategoria reordenada com sucesso` });
   };
 
   const saveOrder = async () => {
@@ -922,7 +1111,8 @@ const AdminCategoryOrder = () => {
               name: cat.name,
               display_order: cat.display_order,
               sector_id: cat.sector_id,
-              cover_image_url: cat.cover_image_url
+              cover_image_url: cat.cover_image_url,
+              subcategory_order: cat.subcategories.map(s => s.name)
             })
             .select('id')
             .single();
@@ -957,7 +1147,8 @@ const AdminCategoryOrder = () => {
               name: cat.name,
               display_order: cat.display_order,
               sector_id: cat.sector_id,
-              cover_image_url: cat.cover_image_url
+              cover_image_url: cat.cover_image_url,
+              subcategory_order: cat.subcategories.map(s => s.name)
             })
             .eq('id', realId);
 
@@ -1015,6 +1206,18 @@ const AdminCategoryOrder = () => {
     }
   };
 
+  // ──────────────────────────────────────────────────────────────
+  // Setor Cover
+  // ──────────────────────────────────────────────────────────────
+  const [selectedSector, setSelectedSector] = useState<TreeSector | null>(null);
+
+  const openSectorCoverPicker = (sector: TreeSector) => {
+    selectedSectorRef.current = sector;  // ref síncrona — sempre atualizada
+    setSelectedSector(sector);
+    setSelectedCategory(null);
+    setIsCoverDialogOpen(true);
+  };
+
   // Inline creations and renames
   const handleCreateSector = async () => {
     if (!newSectorName.trim()) return;
@@ -1023,6 +1226,7 @@ const AdminCategoryOrder = () => {
       id: tempId,
       name: newSectorName.trim(),
       display_order: (sectors.length + 1) * 10,
+      cover_image_url: null,
       categories: []
     };
     setSectors([...sectors, newSec]);
@@ -1166,32 +1370,56 @@ const AdminCategoryOrder = () => {
   };
 
   const selectCover = (imageUrl: string | null) => {
-    if (!selectedCategory) return;
-    
-    const updateCover = (cat: TreeCategory) => {
-      if (cat.id === selectedCategory.id) {
-        return { ...cat, cover_image_url: imageUrl };
+    // Usa a ref para garantir valor correto mesmo após re-renders assíncronos
+    const activeSector = selectedSectorRef.current;
+    if (activeSector) {
+      // Modo setor: atualiza cover do setor e persiste imediatamente
+      setSectors(prev => prev.map(s =>
+        s.id === activeSector.id ? { ...s, cover_image_url: imageUrl } : s
+      ));
+      // Salva direto no Supabase
+      if (!activeSector.id.startsWith('new-')) {
+        supabase.from('sectors')
+          .update({ cover_image_url: imageUrl })
+          .eq('id', activeSector.id)
+          .then(({ error, data }) => {
+            if (error) {
+              console.error('Erro ao salvar capa do setor:', error);
+              toast({ title: 'Erro', description: `Falha ao salvar capa: ${error.message}`, variant: 'destructive' });
+            } else {
+              toast({ title: '✅ Capa do setor salva!', description: `Capa de "${activeSector.name}" atualizada com sucesso.` });
+            }
+          });
       }
-      return cat;
-    };
-
-    setSectors(prev => prev.map(s => ({
-      ...s,
-      categories: s.categories.map(updateCover)
-    })));
-    setUnassignedCategories(prev => prev.map(updateCover));
+      selectedSectorRef.current = null;
+      setSelectedSector(null);
+    } else if (selectedCategory) {
+      const updateCover = (cat: TreeCategory) => {
+        if (cat.id === selectedCategory.id) {
+          return { ...cat, cover_image_url: imageUrl };
+        }
+        return cat;
+      };
+      setSectors(prev => prev.map(s => ({
+        ...s,
+        categories: s.categories.map(updateCover)
+      })));
+      setUnassignedCategories(prev => prev.map(updateCover));
+    }
     setIsCoverDialogOpen(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !selectedCategory) return;
+    // Usa a ref para checar se há setor ativo (mais confiável que estado)
+    if (!file || (!selectedCategory && !selectedSectorRef.current)) return;
 
     try {
       setUploading(true);
       const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}.${fileExt}`;
-      const filePath = `categories/${fileName}`;
+      const folder = selectedSectorRef.current ? 'sectors' : 'categories';
+      const filePath = `${folder}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('catalog')
@@ -1217,6 +1445,8 @@ const AdminCategoryOrder = () => {
       });
     } finally {
       setUploading(false);
+      // Reset file input para permitir novo upload do mesmo arquivo
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -1295,34 +1525,99 @@ const AdminCategoryOrder = () => {
                           onDrop={(e) => handleDrop(e, { type: 'sector_container', id: sector.id })}
                           className={`group rounded-xl border bg-card transition-all ${
                             isDragOverSector 
-                              ? 'border-primary border-2 border-dashed bg-primary/5 scale-[1.01]' 
-                              : 'border-border hover:shadow-md'
+                              ? 'border-indigo-500 border-2 border-dashed bg-indigo-500/5 scale-[1.01]' 
+                              : 'border-indigo-100 dark:border-indigo-900/40 hover:border-indigo-300 dark:hover:border-indigo-800 hover:shadow-md'
                           }`}
                         >
                           <div className="p-4 flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="cursor-grab text-muted-foreground hover:text-foreground shrink-0 p-1">
+                              <div className="cursor-grab text-indigo-400 hover:text-indigo-600 shrink-0 p-1">
                                 <GripVertical className="w-5 h-5" />
                               </div>
                               <button 
                                 onClick={() => toggleCollapse(sector.id)} 
-                                className="text-muted-foreground hover:text-foreground shrink-0"
+                                className="text-indigo-400 hover:text-indigo-600 shrink-0"
                               >
                                 {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                               </button>
-                              <FolderOpen className="w-5 h-5 text-indigo-500 shrink-0" />
-                              <span className="font-bold text-lg truncate">{sector.name}</span>
-                              <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400 text-xs px-2.5 py-1 rounded-full font-bold">
+                              {/* Thumbnail da capa do setor */}
+                              <div
+                                onClick={() => openSectorCoverPicker(sector)}
+                                title="Clique para definir a capa deste setor"
+                                className="w-11 h-11 rounded-lg overflow-hidden bg-indigo-50 dark:bg-indigo-950/30 border-2 border-indigo-200 dark:border-indigo-800 shrink-0 cursor-pointer hover:border-indigo-400 transition-colors relative group/thumb"
+                              >
+                                {sector.cover_image_url ? (
+                                  <img src={sector.cover_image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-indigo-300">
+                                    <ImageIcon className="w-5 h-5" />
+                                  </div>
+                                )}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span className="text-white text-[9px] font-bold">CAPA</span>
+                                </div>
+                              </div>
+                              <FolderOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                              <span className="font-extrabold text-lg text-indigo-950 dark:text-indigo-50 truncate">{sector.name}</span>
+                              <span className="bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-xs px-2.5 py-1 rounded-full font-bold">
+                                Modinha
+                              </span>
+                              <span className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 text-xs px-2 py-0.5 rounded-full font-medium">
                                 {sector.categories.length} {sector.categories.length === 1 ? 'categoria' : 'categorias'}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-3">
+                              {/* Setinhas e Select para Modinha */}
+                              <div className="flex items-center gap-1 bg-muted/65 p-1 rounded-lg border border-border/40 shrink-0">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  disabled={sIdx === 0} 
+                                  onClick={() => moveSector(sector.id, 'up')}
+                                  className="h-7 w-7 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 disabled:opacity-30"
+                                  title="Subir Modinha"
+                                >
+                                  <ArrowUp className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  disabled={sIdx === sectors.length - 1} 
+                                  onClick={() => moveSector(sector.id, 'down')}
+                                  className="h-7 w-7 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/10 disabled:opacity-30"
+                                  title="Descer Modinha"
+                                >
+                                  <ArrowDown className="w-3.5 h-3.5" />
+                                </Button>
+                                <div className="h-4 w-px bg-border/80 mx-0.5" />
+                                <select
+                                  value=""
+                                  onChange={(e) => {
+                                    const val = e.target.value as any;
+                                    if (val) moveSector(sector.id, val);
+                                  }}
+                                  className="text-xs bg-transparent border-none font-bold text-indigo-600 dark:text-indigo-400 focus:ring-0 focus:outline-none cursor-pointer pr-6 py-0 h-6"
+                                >
+                                  <option value="" disabled>Ordem</option>
+                                  <option value="first">Ficar em Primeiro</option>
+                                  <option value="last">Mover para o Fim</option>
+                                </select>
+                              </div>
+
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => openSectorCoverPicker(sector)}
+                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                              >
+                                <ImageIcon className="w-3.5 h-3.5 mr-1" /> Capa
+                              </Button>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => handleCreateCategoryInline(sector.id)}
-                                className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
+                                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
                               >
                                 <Plus className="w-3.5 h-3.5 mr-1" /> Add Categoria
                               </Button>
@@ -1334,7 +1629,7 @@ const AdminCategoryOrder = () => {
                                   setRenameValue(sector.name);
                                   setIsRenameDialogOpen(true);
                                 }}
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                className="h-8 w-8 text-muted-foreground hover:text-indigo-600"
                               >
                                 <Edit className="w-4 h-4" />
                               </Button>
@@ -1381,7 +1676,10 @@ const AdminCategoryOrder = () => {
                                 const isDragOverCat = dragOverTarget?.type === 'category_container' && dragOverTarget?.id === category.id;
 
                                 return (
-                                  <div key={category.id} className="space-y-2">
+                                  <div key={category.id} className="space-y-2 relative">
+                                    {/* Ramo Horizontal de Conexão à Modinha */}
+                                    <div className="absolute -left-6 md:-left-10 top-7 w-6 md:w-10 h-0 border-t-2 border-dashed border-indigo-200 dark:border-indigo-950/40" />
+
                                     {/* Category Card */}
                                     <div
                                       draggable
@@ -1390,10 +1688,10 @@ const AdminCategoryOrder = () => {
                                       onDragOver={(e) => handleDragOver(e, { type: 'category_container', id: category.id })}
                                       onDragLeave={handleDragLeave}
                                       onDrop={(e) => handleDrop(e, { type: 'category_container', id: category.id })}
-                                      className={`group rounded-xl border bg-card transition-all ${
+                                      className={`group rounded-xl border bg-card transition-all relative ${
                                         isDragOverCat 
-                                          ? 'border-primary border-2 border-dashed bg-primary/5 scale-[1.01]' 
-                                          : 'border-border hover:border-indigo-300'
+                                          ? 'border-violet-500 border-2 border-dashed bg-violet-500/5 scale-[1.01]' 
+                                          : 'border-violet-100 dark:border-violet-900/40 hover:border-violet-300 dark:hover:border-violet-800 hover:shadow-md'
                                       }`}
                                     >
                                       <div className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1418,9 +1716,10 @@ const AdminCategoryOrder = () => {
                                           </div>
 
                                           <div className="min-w-0">
-                                            <div className="flex items-center gap-2">
-                                              <Folder className="w-4 h-4 text-purple-500 shrink-0" />
+                                            <div className="flex items-center flex-wrap gap-2">
+                                              <Folder className="w-4.5 h-4.5 text-violet-600 dark:text-violet-400 shrink-0" />
                                               <span className="font-bold text-sm text-foreground truncate">{category.name}</span>
+                                              <span className="bg-violet-100 dark:bg-violet-950/80 text-violet-700 dark:text-violet-300 text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0">Categoria</span>
                                               {category.isNew && (
                                                 <span className="bg-emerald-100 text-emerald-700 text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Novo</span>
                                               )}
@@ -1433,7 +1732,44 @@ const AdminCategoryOrder = () => {
                                           </div>
                                         </div>
 
-                                        <div className="flex items-center justify-end gap-1.5">
+                                        <div className="flex items-center justify-end flex-wrap gap-1.5">
+                                          {/* Setinhas e Select para Categoria */}
+                                          <div className="flex items-center gap-1 bg-muted/65 p-1 rounded-lg border border-border/40 shrink-0 mr-1">
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              disabled={cIdx === 0} 
+                                              onClick={() => moveCategory(category.id, 'up')}
+                                              className="h-7 w-7 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 disabled:opacity-30"
+                                              title="Subir Categoria"
+                                            >
+                                              <ArrowUp className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="icon" 
+                                              disabled={cIdx === sector.categories.length - 1} 
+                                              onClick={() => moveCategory(category.id, 'down')}
+                                              className="h-7 w-7 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 disabled:opacity-30"
+                                              title="Descer Categoria"
+                                            >
+                                              <ArrowDown className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <div className="h-4 w-px bg-border/80 mx-0.5" />
+                                            <select
+                                              value=""
+                                              onChange={(e) => {
+                                                const val = e.target.value as any;
+                                                if (val) moveCategory(category.id, val);
+                                              }}
+                                              className="text-xs bg-transparent border-none font-bold text-violet-600 dark:text-violet-400 focus:ring-0 focus:outline-none cursor-pointer pr-6 py-0 h-6"
+                                            >
+                                              <option value="" disabled>Ordem</option>
+                                              <option value="first">Ficar em Primeiro</option>
+                                              <option value="last">Mover para o Fim</option>
+                                            </select>
+                                          </div>
+
                                           <Button 
                                             variant="ghost" 
                                             size="sm" 
@@ -1466,45 +1802,129 @@ const AdminCategoryOrder = () => {
                                       </div>
                                     </div>
 
-                                    {/* Subcategories (Indented Nivel 3) */}
+                                    {/* Subcategories (Indented Nivel 3 - Lista Vertical com Conectores Esmeralda) */}
                                     {!isCatCollapsed && (
-                                      <div className="pl-12 border-l border-dashed border-purple-200 dark:border-purple-950 ml-6 py-2 space-y-2">
+                                      <div className="pl-8 md:pl-10 border-l-2 border-dashed border-violet-200 dark:border-violet-950/40 ml-6 py-2 space-y-1 relative">
                                         {category.subcategories.length === 0 ? (
-                                          <div className="py-2 text-[10px] text-muted-foreground italic">Nenhuma subcategoria vinculada. Arraste subcategorias aqui.</div>
+                                          <div className="py-2 text-[10px] text-muted-foreground italic pl-4">Nenhuma subcategoria vinculada. Arraste subcategorias aqui.</div>
                                         ) : (
-                                          <div className="flex flex-wrap gap-2">
+                                          <div className="flex flex-col gap-1.5">
+                                            {/* Drop zone inside category, before first subcategory */}
+                                            <div
+                                              onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: category.subcategories[0]?.name || category.id, position: 'before', parentCategoryId: category.id })}
+                                              onDragLeave={handleDragLeave}
+                                              onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: category.subcategories[0]?.name || category.id, position: 'before', parentCategoryId: category.id })}
+                                              className={`h-1.5 transition-all rounded-md ml-4 ${
+                                                dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === (category.subcategories[0]?.name || category.id) && dragOverTarget?.position === 'before' && dragOverTarget?.parentCategoryId === category.id
+                                                  ? 'bg-emerald-500 h-4 shadow-glow border border-emerald-500/50'
+                                                  : 'bg-transparent'
+                                              }`}
+                                            />
+
                                             {category.subcategories.map((sub, sIdx) => (
-                                              <div
-                                                key={sub.name}
-                                                draggable
-                                                onDragStart={(e) => handleDragStart(e, { type: 'subcategory', name: sub.name, parentCategoryId: category.id })}
-                                                onDragEnd={handleDragEnd}
-                                                className="group/pill inline-flex items-center gap-2 bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full text-xs font-semibold cursor-grab transition-all shadow-sm"
-                                              >
-                                                <FileText className="w-3 h-3 text-muted-foreground" />
-                                                <span>{sub.name}</span>
-                                                <span className="bg-muted-foreground/10 text-muted-foreground text-[10px] px-1.5 py-0.2 rounded-full font-normal">
-                                                  {sub.productCount}
-                                                </span>
-                                                
-                                                <div className="flex items-center gap-1 ml-1 opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                                                  <button 
-                                                    onClick={() => {
-                                                      setRenameTarget({ type: 'subcategory', id: sub.name, oldName: sub.name, parentId: category.id });
-                                                      setRenameValue(sub.name);
-                                                      setIsRenameDialogOpen(true);
-                                                    }}
-                                                    className="p-0.5 text-muted-foreground hover:text-foreground"
-                                                  >
-                                                    <Edit className="w-2.5 h-2.5" />
-                                                  </button>
-                                                  <button 
-                                                    onClick={() => handleDeleteSubcategoryInline(category.id, sub.name)}
-                                                    className="p-0.5 text-destructive hover:text-red-500"
-                                                  >
-                                                    <X className="w-2.5 h-2.5" />
-                                                  </button>
+                                              <div key={sub.name} className="relative py-1">
+                                                {/* Ramo Horizontal ligando a subcategoria ao tronco da categoria */}
+                                                <div className="absolute -left-8 md:-left-10 top-6 w-8 md:w-10 h-0 border-t-2 border-dashed border-violet-200 dark:border-violet-950/40" />
+
+                                                {/* Subcategory Card */}
+                                                <div
+                                                  draggable
+                                                  onDragStart={(e) => handleDragStart(e, { type: 'subcategory', name: sub.name, parentCategoryId: category.id })}
+                                                  onDragEnd={handleDragEnd}
+                                                  onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: sub.name, position: 'inside', parentCategoryId: category.id })}
+                                                  onDragLeave={handleDragLeave}
+                                                  onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: sub.name, position: 'inside', parentCategoryId: category.id })}
+                                                  className={`group/pill flex items-center justify-between gap-3 bg-emerald-50 hover:bg-emerald-100/55 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 border border-emerald-100/80 dark:border-emerald-950/30 px-3 py-2 rounded-xl text-xs font-semibold cursor-grab transition-all shadow-sm max-w-xl ${
+                                                    dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === sub.name && dragOverTarget?.position === 'inside' && dragOverTarget?.parentCategoryId === category.id
+                                                      ? 'border-emerald-500 border-2 border-dashed bg-emerald-500/10 scale-[1.01]' 
+                                                      : ''
+                                                  }`}
+                                                >
+                                                  <div className="flex items-center gap-2.5 min-w-0">
+                                                    <div className="cursor-grab text-emerald-400 hover:text-emerald-600 shrink-0 p-0.5">
+                                                      <GripVertical className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                    <span className="truncate">{sub.name}</span>
+                                                    <span className="bg-emerald-100/70 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                                                      Subcategoria
+                                                    </span>
+                                                    <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] px-2 py-0.5 rounded-full font-medium">
+                                                      {sub.productCount} prod.
+                                                    </span>
+                                                  </div>
+
+                                                  <div className="flex items-center gap-2">
+                                                    {/* Setinhas e Select para Subcategoria */}
+                                                    <div className="flex items-center gap-0.5 bg-background/60 p-0.5 rounded-lg border border-border/30 shrink-0">
+                                                      <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        disabled={sIdx === 0} 
+                                                        onClick={() => moveSubcategory(category.id, sub.name, 'up')}
+                                                        className="h-6 w-6 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30"
+                                                        title="Subir Subcategoria"
+                                                      >
+                                                        <ArrowUp className="w-3 h-3" />
+                                                      </Button>
+                                                      <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        disabled={sIdx === category.subcategories.length - 1} 
+                                                        onClick={() => moveSubcategory(category.id, sub.name, 'down')}
+                                                        className="h-6 w-6 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30"
+                                                        title="Descer Subcategoria"
+                                                      >
+                                                        <ArrowDown className="w-3 h-3" />
+                                                      </Button>
+                                                      <div className="h-3 w-px bg-border/60 mx-0.5" />
+                                                      <select
+                                                        value=""
+                                                        onChange={(e) => {
+                                                          const val = e.target.value as any;
+                                                          if (val) moveSubcategory(category.id, sub.name, val);
+                                                        }}
+                                                        className="text-[10px] bg-transparent border-none font-bold text-emerald-600 dark:text-emerald-400 focus:ring-0 focus:outline-none cursor-pointer pr-5 py-0 h-5"
+                                                      >
+                                                        <option value="" disabled>Ordem</option>
+                                                        <option value="first">Ficar em Primeiro</option>
+                                                        <option value="last">Mover para o Fim</option>
+                                                      </select>
+                                                    </div>
+
+                                                    {/* Botões de Ação para Subcategoria */}
+                                                    <div className="flex items-center gap-0.5 opacity-60 group-hover/pill:opacity-100 transition-opacity">
+                                                      <button 
+                                                        onClick={() => {
+                                                          setRenameTarget({ type: 'subcategory', id: sub.name, oldName: sub.name, parentId: category.id });
+                                                          setRenameValue(sub.name);
+                                                          setIsRenameDialogOpen(true);
+                                                        }}
+                                                        className="p-0.5 text-muted-foreground hover:text-emerald-600"
+                                                      >
+                                                        <Edit className="w-3 h-3" />
+                                                      </button>
+                                                      <button 
+                                                        onClick={() => handleDeleteSubcategoryInline(category.id, sub.name)}
+                                                        className="p-0.5 text-destructive hover:text-red-500"
+                                                      >
+                                                        <X className="w-3 h-3" />
+                                                      </button>
+                                                    </div>
+                                                  </div>
                                                 </div>
+
+                                                {/* Drop zone after subcategory card */}
+                                                <div
+                                                  onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: sub.name, position: 'after', parentCategoryId: category.id })}
+                                                  onDragLeave={handleDragLeave}
+                                                  onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: sub.name, position: 'after', parentCategoryId: category.id })}
+                                                  className={`h-1.5 transition-all rounded-md ml-4 ${
+                                                    dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === sub.name && dragOverTarget?.position === 'after' && dragOverTarget?.parentCategoryId === category.id
+                                                      ? 'bg-emerald-500 h-4 shadow-glow border border-emerald-500/50'
+                                                      : 'bg-transparent'
+                                                  }`}
+                                                />
                                               </div>
                                             ))}
                                           </div>
@@ -1596,7 +2016,8 @@ const AdminCategoryOrder = () => {
                             const isDragOverCat = dragOverTarget?.type === 'category_container' && dragOverTarget?.id === category.id;
 
                             return (
-                              <div key={category.id} className="space-y-2">
+                              <div key={category.id} className="space-y-2 relative">
+                                {/* Category Card */}
                                 <div
                                   draggable
                                   onDragStart={(e) => handleDragStart(e, { type: 'category', id: category.id, parentSectorId: null })}
@@ -1604,10 +2025,10 @@ const AdminCategoryOrder = () => {
                                   onDragOver={(e) => handleDragOver(e, { type: 'category_container', id: category.id })}
                                   onDragLeave={handleDragLeave}
                                   onDrop={(e) => handleDrop(e, { type: 'category_container', id: category.id })}
-                                  className={`group rounded-xl border bg-card transition-all ${
+                                  className={`group rounded-xl border bg-card transition-all relative ${
                                     isDragOverCat 
-                                      ? 'border-primary border-2 border-dashed bg-primary/5 scale-[1.01]' 
-                                      : 'border-border hover:border-primary/50'
+                                      ? 'border-violet-500 border-2 border-dashed bg-violet-500/5 scale-[1.01]' 
+                                      : 'border-violet-100 dark:border-violet-900/40 hover:border-violet-300 dark:hover:border-violet-800 hover:shadow-md'
                                   }`}
                                 >
                                   <div className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1631,56 +2052,131 @@ const AdminCategoryOrder = () => {
                                       </div>
 
                                       <div className="min-w-0">
-                                        <div className="flex items-center gap-2">
-                                          <Folder className="w-4 h-4 text-purple-500 shrink-0" />
+                                        <div className="flex items-center flex-wrap gap-2">
+                                          <Folder className="w-4.5 h-4.5 text-violet-600 dark:text-violet-400 shrink-0" />
                                           <span className="font-bold text-sm text-foreground truncate">{category.name}</span>
+                                          <span className="bg-violet-100 dark:bg-violet-950/80 text-violet-700 dark:text-violet-300 text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0">Categoria</span>
                                         </div>
                                         <div className="text-[11px] text-muted-foreground mt-0.5">
                                           <span>{category.productCount} produtos diretos</span>
+                                          {category.subcategories.length > 0 && (
+                                            <span className="ml-2">• {category.subcategories.length} subcategorias</span>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
 
-                                    <div className="flex items-center justify-end gap-1.5">
+                                    <div className="flex items-center justify-end flex-wrap gap-1.5">
+                                      {/* Setinhas e Select */}
+                                      <div className="flex items-center gap-1 bg-muted/65 p-1 rounded-lg border border-border/40 shrink-0 mr-1">
+                                        <Button 
+                                          variant="ghost" size="icon" 
+                                          disabled={cIdx === 0} 
+                                          onClick={() => moveCategory(category.id, 'up')}
+                                          className="h-7 w-7 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 disabled:opacity-30"
+                                          title="Subir Categoria"
+                                        >
+                                          <ArrowUp className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button 
+                                          variant="ghost" size="icon" 
+                                          disabled={cIdx === unassignedCategories.length - 1} 
+                                          onClick={() => moveCategory(category.id, 'down')}
+                                          className="h-7 w-7 text-violet-600 dark:text-violet-400 hover:bg-violet-500/10 disabled:opacity-30"
+                                          title="Descer Categoria"
+                                        >
+                                          <ArrowDown className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <div className="h-4 w-px bg-border/80 mx-0.5" />
+                                        <select
+                                          value=""
+                                          onChange={(e) => { const val = e.target.value as any; if (val) moveCategory(category.id, val); }}
+                                          className="text-xs bg-transparent border-none font-bold text-violet-600 dark:text-violet-400 focus:ring-0 focus:outline-none cursor-pointer pr-6 py-0 h-6"
+                                        >
+                                          <option value="" disabled>Ordem</option>
+                                          <option value="first">Ficar em Primeiro</option>
+                                          <option value="last">Mover para o Fim</option>
+                                        </select>
+                                      </div>
                                       <Button variant="ghost" size="sm" onClick={() => openCoverPicker(category)} className="text-[11px] text-primary hover:bg-primary/5 h-8 px-2">Capa</Button>
                                       <Button variant="ghost" size="icon" onClick={() => {
                                         setRenameTarget({ type: 'category', id: category.id, oldName: category.name });
                                         setRenameValue(category.name);
                                         setIsRenameDialogOpen(true);
-                                      }} className="h-8 w-8 text-muted-foreground"><Edit className="w-3.5 h-3.5" /></Button>
-                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteCategoryInline(category.id, category.name)} className="h-8 w-8 text-destructive"><Trash2 className="w-3.5 h-3.5" /></Button>
+                                      }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Edit className="w-3.5 h-3.5" /></Button>
+                                      <Button variant="ghost" size="icon" onClick={() => handleDeleteCategoryInline(category.id, category.name)} className="h-8 w-8 text-destructive hover:bg-destructive/10"><Trash2 className="w-3.5 h-3.5" /></Button>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Unassigned Category Subcategories */}
+                                {/* Unassigned Category Subcategories - Lista Vertical Esmeralda */}
                                 {!isCatCollapsed && (
-                                  <div className="pl-12 border-l border-dashed border-purple-200 dark:border-purple-950 ml-6 py-2 space-y-2">
+                                  <div className="pl-8 md:pl-10 border-l-2 border-dashed border-violet-200 dark:border-violet-950/40 ml-6 py-2 relative">
                                     {category.subcategories.length === 0 ? (
-                                      <div className="py-2 text-[10px] text-muted-foreground italic">Nenhuma subcategoria vinculada.</div>
+                                      <div className="py-2 text-[10px] text-muted-foreground italic pl-4">Nenhuma subcategoria vinculada.</div>
                                     ) : (
-                                      <div className="flex flex-wrap gap-2">
-                                        {category.subcategories.map(sub => (
-                                          <div
-                                            key={sub.name}
-                                            draggable
-                                            onDragStart={(e) => handleDragStart(e, { type: 'subcategory', name: sub.name, parentCategoryId: category.id })}
-                                            onDragEnd={handleDragEnd}
-                                            className="group/pill inline-flex items-center gap-2 bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full text-xs font-semibold cursor-grab transition-all shadow-sm"
-                                          >
-                                            <FileText className="w-3 h-3 text-muted-foreground" />
-                                            <span>{sub.name}</span>
-                                            <span className="bg-muted-foreground/10 text-muted-foreground text-[10px] px-1.5 py-0.2 rounded-full">
-                                              {sub.productCount}
-                                            </span>
-                                            <div className="flex items-center gap-1 ml-1 opacity-0 group-hover/pill:opacity-100 transition-opacity">
-                                              <button onClick={() => {
-                                                setRenameTarget({ type: 'subcategory', id: sub.name, oldName: sub.name, parentId: category.id });
-                                                setRenameValue(sub.name);
-                                                setIsRenameDialogOpen(true);
-                                              }} className="p-0.5 text-muted-foreground"><Edit className="w-2.5 h-2.5" /></button>
-                                              <button onClick={() => handleDeleteSubcategoryInline(category.id, sub.name)} className="p-0.5 text-destructive"><X className="w-2.5 h-2.5" /></button>
+                                      <div className="flex flex-col gap-1.5">
+                                        {/* Drop zone before first */}
+                                        <div
+                                          onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: category.subcategories[0]?.name || category.id, position: 'before', parentCategoryId: category.id })}
+                                          onDragLeave={handleDragLeave}
+                                          onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: category.subcategories[0]?.name || category.id, position: 'before', parentCategoryId: category.id })}
+                                          className={`h-1.5 transition-all rounded-md ml-4 ${
+                                            dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === (category.subcategories[0]?.name || category.id) && dragOverTarget?.position === 'before' && dragOverTarget?.parentCategoryId === category.id
+                                              ? 'bg-emerald-500 h-4 border border-emerald-500/50' : 'bg-transparent'
+                                          }`}
+                                        />
+                                        {category.subcategories.map((sub, sIdx) => (
+                                          <div key={sub.name} className="relative py-1">
+                                            <div className="absolute -left-8 md:-left-10 top-6 w-8 md:w-10 h-0 border-t-2 border-dashed border-violet-200 dark:border-violet-950/40" />
+                                            <div
+                                              draggable
+                                              onDragStart={(e) => handleDragStart(e, { type: 'subcategory', name: sub.name, parentCategoryId: category.id })}
+                                              onDragEnd={handleDragEnd}
+                                              onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: sub.name, position: 'inside', parentCategoryId: category.id })}
+                                              onDragLeave={handleDragLeave}
+                                              onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: sub.name, position: 'inside', parentCategoryId: category.id })}
+                                              className={`group/pill flex items-center justify-between gap-3 bg-emerald-50 hover:bg-emerald-100/55 dark:bg-emerald-950/15 text-emerald-800 dark:text-emerald-300 border border-emerald-100/80 dark:border-emerald-950/30 px-3 py-2 rounded-xl text-xs font-semibold cursor-grab transition-all shadow-sm max-w-xl ${
+                                                dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === sub.name && dragOverTarget?.position === 'inside' && dragOverTarget?.parentCategoryId === category.id
+                                                  ? 'border-emerald-500 border-2 border-dashed bg-emerald-500/10 scale-[1.01]' : ''
+                                              }`}
+                                            >
+                                              <div className="flex items-center gap-2.5 min-w-0">
+                                                <div className="cursor-grab text-emerald-400 hover:text-emerald-600 shrink-0 p-0.5">
+                                                  <GripVertical className="w-3.5 h-3.5" />
+                                                </div>
+                                                <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                                                <span className="truncate">{sub.name}</span>
+                                                <span className="bg-emerald-100/70 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 text-[10px] px-2 py-0.5 rounded-full font-bold">Subcategoria</span>
+                                                <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] px-2 py-0.5 rounded-full font-medium">{sub.productCount} prod.</span>
+                                              </div>
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-0.5 bg-background/60 p-0.5 rounded-lg border border-border/30 shrink-0">
+                                                  <Button variant="ghost" size="icon" disabled={sIdx === 0} onClick={() => moveSubcategory(category.id, sub.name, 'up')} className="h-6 w-6 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30"><ArrowUp className="w-3 h-3" /></Button>
+                                                  <Button variant="ghost" size="icon" disabled={sIdx === category.subcategories.length - 1} onClick={() => moveSubcategory(category.id, sub.name, 'down')} className="h-6 w-6 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-30"><ArrowDown className="w-3 h-3" /></Button>
+                                                  <div className="h-3 w-px bg-border/60 mx-0.5" />
+                                                  <select value="" onChange={(e) => { const val = e.target.value as any; if (val) moveSubcategory(category.id, sub.name, val); }} className="text-[10px] bg-transparent border-none font-bold text-emerald-600 dark:text-emerald-400 focus:ring-0 focus:outline-none cursor-pointer pr-5 py-0 h-5">
+                                                    <option value="" disabled>Ordem</option>
+                                                    <option value="first">Ficar em Primeiro</option>
+                                                    <option value="last">Mover para o Fim</option>
+                                                  </select>
+                                                </div>
+                                                <div className="flex items-center gap-0.5 opacity-60 group-hover/pill:opacity-100 transition-opacity">
+                                                  <button onClick={() => { setRenameTarget({ type: 'subcategory', id: sub.name, oldName: sub.name, parentId: category.id }); setRenameValue(sub.name); setIsRenameDialogOpen(true); }} className="p-0.5 text-muted-foreground hover:text-emerald-600"><Edit className="w-3 h-3" /></button>
+                                                  <button onClick={() => handleDeleteSubcategoryInline(category.id, sub.name)} className="p-0.5 text-destructive hover:text-red-500"><X className="w-3 h-3" /></button>
+                                                </div>
+                                              </div>
                                             </div>
+                                            {/* Drop zone after each subcategory */}
+                                            <div
+                                              onDragOver={(e) => handleDragOver(e, { type: 'subcategory_reorder', id: sub.name, position: 'after', parentCategoryId: category.id })}
+                                              onDragLeave={handleDragLeave}
+                                              onDrop={(e) => handleDrop(e, { type: 'subcategory_reorder', id: sub.name, position: 'after', parentCategoryId: category.id })}
+                                              className={`h-1.5 transition-all rounded-md ml-4 ${
+                                                dragOverTarget?.type === 'subcategory_reorder' && dragOverTarget?.id === sub.name && dragOverTarget?.position === 'after' && dragOverTarget?.parentCategoryId === category.id
+                                                  ? 'bg-emerald-500 h-4 border border-emerald-500/50' : 'bg-transparent'
+                                              }`}
+                                            />
                                           </div>
                                         ))}
                                       </div>
@@ -1688,15 +2184,14 @@ const AdminCategoryOrder = () => {
                                   </div>
                                 )}
 
-                                {/* Drop zone after category card */}
+                                {/* Drop zone after category */}
                                 <div
                                   onDragOver={(e) => handleDragOver(e, { type: 'category_reorder', id: category.id, position: 'after' })}
                                   onDragLeave={handleDragLeave}
                                   onDrop={(e) => handleDrop(e, { type: 'category_reorder', id: category.id, position: 'after' })}
                                   className={`h-1.5 transition-all rounded-md ${
                                     dragOverTarget?.type === 'category_reorder' && dragOverTarget?.id === category.id && dragOverTarget?.position === 'after'
-                                      ? 'bg-primary h-5 shadow-glow border border-primary/50'
-                                      : 'bg-transparent'
+                                      ? 'bg-primary h-5 shadow-glow border border-primary/50' : 'bg-transparent'
                                   }`}
                                 />
                               </div>
@@ -1883,10 +2378,20 @@ const AdminCategoryOrder = () => {
         </Tabs>
 
         {/* DIALOG: COVER IMAGE PICKER */}
-        <Dialog open={isCoverDialogOpen} onOpenChange={setIsCoverDialogOpen}>
+        <Dialog open={isCoverDialogOpen} onOpenChange={(open) => { 
+          setIsCoverDialogOpen(open); 
+          if (!open) { 
+            selectedSectorRef.current = null;
+            setSelectedSector(null); 
+          } 
+        }}>
           <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-xl">
             <DialogHeader>
-              <DialogTitle className="text-xl font-bold">Definir Capa para {selectedCategory?.name}</DialogTitle>
+              <DialogTitle className="text-xl font-bold">
+                {selectedSector
+                  ? <>Definir Capa da Modinha <span className="text-indigo-600">{selectedSector.name}</span></>
+                  : <>Definir Capa para <span className="text-primary">{selectedCategory?.name}</span></>}
+              </DialogTitle>
             </DialogHeader>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-6 pt-4 border-t">
@@ -1907,7 +2412,7 @@ const AdminCategoryOrder = () => {
                 {uploading ? 'Carregando Imagem...' : 'Enviar Foto do Meu Dispositivo'}
               </Button>
               
-              {selectedCategory?.cover_image_url && (
+              {(selectedSector?.cover_image_url || selectedCategory?.cover_image_url) && (
                 <Button 
                   variant="destructive" 
                   onClick={() => selectCover(null)}
@@ -1919,30 +2424,50 @@ const AdminCategoryOrder = () => {
               )}
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-sm font-bold text-foreground">Ou selecione uma imagem já cadastrada em algum produto dessa categoria:</h4>
-              
-              {loadingProducts ? (
-                <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
-              ) : categoryProducts.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto com imagem encontrado nesta categoria.</p>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[350px] overflow-y-auto p-1">
-                  {categoryProducts.map(p => (
-                    <button 
-                      key={p.id} 
-                      onClick={() => selectCover(p.image_url)} 
-                      className="aspect-square relative group rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all bg-muted shadow-sm"
-                    >
-                      <img src={p.image_url} alt="" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <span className="text-white text-[10px] font-bold bg-primary px-2.5 py-1 rounded-md">Usar foto</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Para setores, apenas upload — não há grade de produtos */}
+            {selectedSector ? (
+              <div className="flex flex-col items-center gap-3 py-6 text-center text-muted-foreground">
+                {selectedSector.cover_image_url ? (
+                  <>
+                    <img src={selectedSector.cover_image_url} alt="Capa atual" className="w-48 h-48 object-cover rounded-xl border-2 border-indigo-200" />
+                    <p className="text-xs">Capa atual da Modinha. Envie uma nova foto acima para substituir.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-24 h-24 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border-2 border-dashed border-indigo-200 flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-indigo-300" />
+                    </div>
+                    <p className="text-sm">Esta modinha ainda não tem uma foto de capa.</p>
+                    <p className="text-xs">Clique em <strong>Enviar Foto</strong> acima para escolher uma imagem.</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h4 className="text-sm font-bold text-foreground">Ou selecione uma imagem já cadastrada em algum produto dessa categoria:</h4>
+                
+                {loadingProducts ? (
+                  <div className="py-12 flex justify-center"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div></div>
+                ) : categoryProducts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-6">Nenhum produto com imagem encontrado nesta categoria.</p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 max-h-[350px] overflow-y-auto p-1">
+                    {categoryProducts.map(p => (
+                      <button 
+                        key={p.id} 
+                        onClick={() => selectCover(p.image_url)} 
+                        className="aspect-square relative group rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all bg-muted shadow-sm"
+                      >
+                        <img src={p.image_url} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <span className="text-white text-[10px] font-bold bg-primary px-2.5 py-1 rounded-md">Usar foto</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 

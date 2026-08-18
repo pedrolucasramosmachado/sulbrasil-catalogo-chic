@@ -40,6 +40,7 @@ export interface CategoryOrder {
   display_order: number;
   cover_image_url?: string | null;
   sector_id?: string | null;
+  subcategory_order?: string[] | null;
 }
 
 interface ProductContextType {
@@ -85,7 +86,7 @@ export const ProductProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .order('created_at', { ascending: false }),
         supabase
           .from('categories')
-          .select('id, name, display_order, cover_image_url, sector_id')
+          .select('id, name, display_order, cover_image_url, sector_id, subcategory_order')
           .order('display_order', { ascending: true }),
         supabase
           .from('whatsapp_settings')

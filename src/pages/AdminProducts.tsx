@@ -159,17 +159,18 @@ const AdminProducts = () => {
   const categories = getCategories();
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const productName = product.name || '';
+    const matchesSearch = productName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'todos' || product.category === selectedCategory;
     const matchesSubcategory = selectedSubcategory === 'todos' || product.subcategory === selectedSubcategory;
     const matchesLaunch = !filterLaunches || product.is_launch;
     const matchesPromotion = !filterPromotions || product.is_promotion;
     
     const isProblematic = (
-      product.name.toLowerCase().includes('test') || 
+      productName.toLowerCase().includes('test') || 
       product.model_name?.toLowerCase().includes('test') || 
       product.color_name?.toLowerCase().includes('test') ||
-      product.name.toLowerCase().includes('placeholder')
+      productName.toLowerCase().includes('placeholder')
     );
     
     const matchesDataHealth = !filterDataHealth || isProblematic;
@@ -785,7 +786,7 @@ const AdminProducts = () => {
 
               {/* Data Health Warning */}
               {products.some(p => (
-                p.name.toLowerCase().includes('test') || 
+                (p.name || '').toLowerCase().includes('test') || 
                 (p as any).model_name?.toLowerCase().includes('test') || 
                 (p as any).color_name?.toLowerCase().includes('test')
               )) && (

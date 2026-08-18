@@ -18,7 +18,9 @@ const Vitrine = () => {
   const navigate = useNavigate();
   const { loading, error, getCategoriesWithImages, sectors, getSectorsWithData } = useProducts();
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(() => {
-    return sessionStorage.getItem('activeSectorId');
+    const saved = sessionStorage.getItem('activeSectorId');
+    if (saved === 'promocoes' || saved === 'lancamentos') return null;
+    return saved;
   });
 
   useEffect(() => {
@@ -32,6 +34,16 @@ const Vitrine = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  const handleSelectSector = (sectorId: string | null) => {
+    if (sectorId === 'promocoes') {
+      navigate('/vitrine/promocoes');
+    } else if (sectorId === 'lancamentos') {
+      navigate('/vitrine/lancamentos');
+    } else {
+      setSelectedSectorId(sectorId);
+    }
+  };
 
   const handleCategorySelect = (category: string) => {
     const lowerCategory = category.toLowerCase();
@@ -52,7 +64,7 @@ const Vitrine = () => {
       <SectorSelector
         sectors={sectors}
         activeSectorId={selectedSectorId}
-        onSelectSector={setSelectedSectorId}
+        onSelectSector={handleSelectSector}
       />
 
       {/* Banner Carousel */}
@@ -122,7 +134,7 @@ const Vitrine = () => {
                     <VitrineCategoryCard
                       category={sector.name}
                       imageUrl={sector.imageUrl}
-                      onSelect={() => setSelectedSectorId(sector.id)}
+                      onSelect={() => handleSelectSector(sector.id)}
                     />
                   </div>
                 ))
