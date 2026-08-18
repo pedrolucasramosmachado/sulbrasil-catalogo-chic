@@ -746,11 +746,13 @@ const AdminProducts = () => {
                     <SelectValue placeholder="Categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category === 'todos' ? 'Todas as categorias' : category}
-                      </SelectItem>
-                    ))}
+                    {categories
+                      .filter((category): category is string => Boolean(category && typeof category === 'string' && category.trim() !== ''))
+                      .map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category === 'todos' ? 'Todas as categorias' : category}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
 
@@ -763,9 +765,10 @@ const AdminProducts = () => {
                       <SelectItem value="todos">Todas as subcategorias</SelectItem>
                       {[...new Set(products
                         .filter(p => p.category === selectedCategory)
-                        .map(p => p.subcategory)
-                        .filter(Boolean))].map(sub => (
-                        <SelectItem key={sub!} value={sub!}>
+                        .map(p => p.subcategory?.trim())
+                        .filter((sub): sub is string => Boolean(sub && typeof sub === 'string' && sub.trim() !== ''))
+                      )].map(sub => (
+                        <SelectItem key={sub} value={sub}>
                           {sub}
                         </SelectItem>
                       ))}
@@ -919,7 +922,7 @@ const AdminProducts = () => {
                                         + Nova Categoria
                                       </SelectItem>
                                       {categories
-                                        .filter(cat => cat !== 'todos')
+                                        .filter((cat): cat is string => Boolean(cat && typeof cat === 'string' && cat !== 'todos' && cat.trim() !== ''))
                                         .map(category => (
                                           <SelectItem key={category} value={category}>
                                             {category}
@@ -940,7 +943,8 @@ const AdminProducts = () => {
                         control={form.control}
                         name="subcategory"
                         render={({ field }) => {
-                          const existingSubcategories = [...new Set(products.map(p => p.subcategory).filter(Boolean))] as string[];
+                          const existingSubcategories = [...new Set(products.map(p => p.subcategory?.trim()).filter(Boolean))]
+                            .filter((sub): sub is string => Boolean(sub && typeof sub === 'string' && sub.trim() !== ''));
                           return (
                             <FormItem>
                               <FormLabel>Subcategoria (Modelo)</FormLabel>
@@ -1516,9 +1520,11 @@ const AdminProducts = () => {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="keep">Manter original</SelectItem>
-                                {categories.filter(c => c !== 'todos').map(c => (
-                                  <SelectItem key={c} value={c}>{c}</SelectItem>
-                                ))}
+                                {categories
+                                  .filter((c): c is string => Boolean(c && typeof c === 'string' && c !== 'todos' && c.trim() !== ''))
+                                  .map(c => (
+                                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                                  ))}
                               </SelectContent>
                             </Select>
                           </div>
